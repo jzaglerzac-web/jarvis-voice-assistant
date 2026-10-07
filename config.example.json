@@ -4,10 +4,12 @@
   "elevenlabs_voice_id": "YOUR_VOICE_ID",
   "user_name": "YOUR_NAME",
   "user_address": "Sir",
+  "user_role": "YOUR_ROLE",
   "city": "YOUR_CITY",
   "workspace_path": "C:\\Users\\YOUR_USER\\Desktop\\jarvis_template",
   "spotify_track": "spotify:track:YOUR_TRACK_ID",
   "browser_url": "https://your-website.com",
   "obsidian_inbox_path": "C:\\Users\\YOUR_USER\\path\\to\\obsidian\\inbox",
-  "apps": ["obsidian://open"]
+  "apps": ["obsidian://open"],
+  "host": "127.0.0.1"
 }

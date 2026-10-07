@@ -6,7 +6,7 @@ Dieses Workspace ist **Jarvis** — ein persoenlicher KI-Assistent mit Sprachste
 
 ## Fuer Claude Code: Setup-Modus
 
-Wenn der Nutzer nach dem Setup fragt oder "Richte Jarvis ein" sagt, folge den Anweisungen in `SETUP.md`. Frage den Nutzer nach seinem Namen, seiner Taetigkeit, und wie er angesprochen werden moechte — diese Infos muessen in den Systemprompt in `server.py` eingetragen werden (ersetze die aktuellen Platzhalter "Julian", "KI-Berater und Automatisierungsexperte", "Sir").
+Wenn der Nutzer nach dem Setup fragt oder "Richte Jarvis ein" sagt, folge den Anweisungen in `SETUP.md`. Frage den Nutzer nach seinem Namen, seiner Taetigkeit, und wie er angesprochen werden moechte — diese Infos kommen als `user_name`, `user_role` und `user_address` in `config.json`. Der Systemprompt in `server.py` liest sie von dort, der Code muss nicht angepasst werden.
 
 **WICHTIG — Pruefe und installiere zuerst alle Voraussetzungen:**
 

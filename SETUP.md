@@ -57,6 +57,7 @@ Claude Code erstellt `config.json` aus `config.example.json` mit deinen echten D
   "elevenlabs_voice_id": "VOICE_ID",
   "user_name": "Dein Name",
   "user_address": "Sir",
+  "user_role": "KI-Berater und Automatisierungsexperte",
   "city": "Hamburg",
   "workspace_path": "C:\\pfad\\zum\\jarvis_template",
   "spotify_track": "spotify:track:DEIN_TRACK_ID",
@@ -172,18 +173,8 @@ Erstelle `config.json` aus `config.example.json` mit den Nutzerdaten. Setze den 
 - Empfehle eine deutsche Stimme
 - Trage die Voice ID in die Config ein
 
-**Schritt 4 — Systemprompt anpassen:**
-Oeffne `server.py` und finde die Funktion `build_system_prompt()`. Dort steht der komplette Systemprompt als f-String. Ersetze ALLE Vorkommen der folgenden Werte im gesamten Prompt-Text:
-- Jedes "Julian" → Name des Nutzers (kommt mehrfach vor im Prompt!)
-- "KI-Berater und Automatisierungsexperte" → Taetigkeit/Rolle des Nutzers
-- Jedes "Sir" als Anrede → gewuenschte Anrede des Nutzers
-- "Hamburg" → Stadt des Nutzers
-
-Ausserdem oben in `server.py` bei den Config-Defaults:
-- `USER_NAME = config.get("user_name", "Julian")` → Default-Name anpassen
-- `CITY = config.get("city", "Hamburg")` → Default-Stadt anpassen
-
-WICHTIG: Pruefe den Prompt sorgfaeltig — "Julian" und "Sir" kommen an mehreren Stellen vor. Alle muessen ersetzt werden.
+**Schritt 4 — Systemprompt pruefen:**
+Der Systemprompt in `server.py` (`build_system_prompt()`) wird automatisch aus `config.json` gebaut: `user_name`, `user_role`, `user_address` und `city`. Code muss dafuer nicht mehr angepasst werden. Trage die Taetigkeit/Rolle des Nutzers als `user_role` in die Config ein.
 
 **Schritt 5 — Testen:**
 - Starte den Server: `python server.py`
