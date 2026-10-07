@@ -29,6 +29,25 @@ public class WinPos {
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
     [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
     [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr w, IntPtr l);
+    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+
+    // Main window of one of these processes, including one hidden in the tray
+    // (apps like Todoist only hide their window when closed). Visible windows win.
+    public static IntPtr AppWindow(int[] pids) {
+        var set = new HashSet<int>(pids);
+        var skip = new HashSet<string> { "Default IME", "MSCTFIME UI", "DDE Server Window" };
+        IntPtr visible = IntPtr.Zero, hidden = IntPtr.Zero;
+        EnumWindows((h, l) => {
+            uint pid; GetWindowThreadProcessId(h, out pid);
+            if (!set.Contains((int)pid)) return true;
+            var sb = new StringBuilder(256); GetWindowText(h, sb, 256);
+            if (sb.Length == 0 || skip.Contains(sb.ToString())) return true;
+            if (IsWindowVisible(h)) { if (visible == IntPtr.Zero) visible = h; }
+            else if (hidden == IntPtr.Zero) hidden = h;
+            return true;
+        }, IntPtr.Zero);
+        return visible != IntPtr.Zero ? visible : hidden;
+    }
 
     // All visible top-level windows with their titles
     public static Dictionary<IntPtr, string> Windows() {
@@ -174,6 +193,20 @@ foreach ($entry in $config.layout) {
         $hwnd = Get-ProcessWindow @("olk", "OUTLOOK") 20
     } elseif ($entry.app -eq "spotify") {
         $hwnd = Get-ProcessWindow @("Spotify") 15
+    } elseif ($entry.app -and $entry.process) {
+        # Any other program from "programs" (e.g. Todoist): start it if it is not running.
+        # A window hidden in the tray is shown again by Place-Window.
+        if (-not $ArrangeOnly -and -not (Get-Process -Name $entry.process -ErrorAction SilentlyContinue)) {
+            $appId = $config.programs.($entry.app)
+            if ($appId) { Start-Process "explorer.exe" "shell:AppsFolder\$appId" }
+        }
+        $deadline = (Get-Date).AddSeconds(20)
+        do {
+            $pids = [int[]]@(Get-Process -Name $entry.process -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
+            if ($pids.Count -gt 0) { $hwnd = [WinPos]::AppWindow($pids) }
+            if ($hwnd -ne [IntPtr]::Zero) { break }
+            Start-Sleep -Milliseconds 500
+        } while ((Get-Date) -lt $deadline)
     }
     if ($hwnd -eq [IntPtr]::Zero) { continue }
     if ($entry.position -eq "minimized") { [WinPos]::ShowWindow($hwnd, 6) | Out-Null; continue }
