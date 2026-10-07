@@ -51,18 +51,43 @@ import browser_tools
 import screen_capture
 
 
-def get_weather_sync():
-    """Fetch raw weather data at startup."""
-    import urllib.request
+LOCATION_PS = (
+    "Add-Type -AssemblyName System.Device;"
+    "$w=New-Object System.Device.Location.GeoCoordinateWatcher;$w.Start();$i=0;"
+    "while(($w.Status -ne 'Ready') -and $i -lt 25){Start-Sleep -Milliseconds 200;$i++};"
+    "$c=$w.Position.Location;if(-not $c.IsUnknown){"
+    "'{0},{1}' -f $c.Latitude.ToString([cultureinfo]::InvariantCulture),$c.Longitude.ToString([cultureinfo]::InvariantCulture)}"
+)
+
+
+def get_device_location():
+    """Current 'lat,lon' from Windows location services, or None."""
     try:
-        req = urllib.request.Request(f"https://wttr.in/{CITY}?format=j1", headers={"User-Agent": "curl"})
-        resp = urllib.request.urlopen(req, timeout=5)
+        out = subprocess.run(["powershell", "-NoProfile", "-Command", LOCATION_PS],
+                             capture_output=True, text=True, timeout=10).stdout.strip()
+        return out if re.fullmatch(r"-?[\d.]+,-?[\d.]+", out) else None
+    except Exception:
+        return None
+
+
+def get_weather_sync():
+    """Fetch raw weather data. city "auto" uses the device's current location."""
+    import urllib.parse
+    import urllib.request
+    place = CITY
+    if CITY.lower() == "auto":
+        place = get_device_location() or ""  # empty lets wttr.in fall back to IP location
+    try:
+        req = urllib.request.Request(f"https://wttr.in/{urllib.parse.quote(place)}?format=j1&lang=de", headers={"User-Agent": "curl"})
+        resp = urllib.request.urlopen(req, timeout=8)
         data = json.loads(resp.read())
         c = data["current_condition"][0]
+        area = data.get("nearest_area", [{}])[0].get("areaName", [{}])[0].get("value", "")
         return {
+            "place": area if CITY.lower() == "auto" else CITY,
             "temp": c["temp_C"],
             "feels_like": c["FeelsLikeC"],
-            "description": c["weatherDesc"][0]["value"],
+            "description": c.get("lang_de", c["weatherDesc"])[0]["value"],
             "humidity": c["humidity"],
             "wind_kmh": c["windspeedKmph"],
         }
@@ -158,7 +183,7 @@ def build_system_prompt():
     weather_block = ""
     if WEATHER_INFO:
         w = WEATHER_INFO
-        weather_block = f"\nWetter {CITY}: {w['temp']}°C, gefuehlt {w['feels_like']}°C, {w['description']}"
+        weather_block = f"\nWetter {w['place']}: {w['temp']}°C, gefuehlt {w['feels_like']}°C, {w['description']}"
 
     task_block = f"\nDringende Aufgaben (ueberfaellig oder in den naechsten {TASK_WINDOW_HOURS} Stunden faellig): keine"
     if TASKS_INFO:

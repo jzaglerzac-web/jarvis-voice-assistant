@@ -5,7 +5,7 @@
   "user_name": "YOUR_NAME",
   "user_address": "Sir",
   "user_role": "YOUR_ROLE",
-  "city": "YOUR_CITY",
+  "city": "auto",
   "workspace_path": "C:\\Users\\YOUR_USER\\Desktop\\jarvis_template",
   "spotify_track": "spotify:track:YOUR_TRACK_ID",
   "browser_url": "https://your-website.com",
