@@ -40,6 +40,9 @@ function connect() {
             addTranscript('jarvis', data.text);
             if (data.audio && data.audio.length > 0) {
                 queueAudio(data.audio);
+            } else if (data.text) {
+                // No ElevenLabs audio (e.g. quota used up): the browser's own voice speaks instead
+                queueAudio({ text: data.text });
             } else {
                 setOrbState('idle');
                 setTimeout(startListening, 500);
@@ -77,7 +80,12 @@ function playNext() {
     // Keep listening while Jarvis speaks so "mach langsam" can interrupt him
     if (!isListening) startListening();
 
-    const b64 = audioQueue.shift();
+    const item = audioQueue.shift();
+    if (typeof item === 'object') {
+        speakWithBrowser(item.text);
+        return;
+    }
+    const b64 = item;
     const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: 'audio/mpeg' });
     const url = URL.createObjectURL(blob);
@@ -98,6 +106,20 @@ function playNext() {
             }).catch(() => playNext());
         });
     });
+}
+
+// Fallback voice: the browser's built-in German speech synthesis
+function speakWithBrowser(text) {
+    if (!window.speechSynthesis) { playNext(); return; }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'de-DE';
+    const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('de'));
+    // Prefer a male German voice (Jarvis), otherwise any German one
+    utterance.voice = voices.find(v => /stefan|conrad|killian|male|mann/i.test(v.name)) || voices[0] || null;
+    utterance.rate = 1.05;
+    utterance.onend = () => { if (isPlaying) playNext(); };
+    utterance.onerror = () => { if (isPlaying) playNext(); };
+    speechSynthesis.speak(utterance);
 }
 
 // Speech Recognition
@@ -169,6 +191,7 @@ function stopSpeaking() {
         currentAudio.pause();
         currentAudio = null;
     }
+    if (window.speechSynthesis) speechSynthesis.cancel();
     isPlaying = false;
     // Drop answers that are still on their way until the user says something new
     interrupted = true;
