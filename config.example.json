@@ -13,6 +13,9 @@
   "todoist_api_token": "YOUR_TODOIST_API_TOKEN",
   "task_window_hours": 5,
   "activate_url": "",
+  "activate_window_title": "",
+  "work_browser_urls": [],
+  "work_window_title": "",
   "apps": ["obsidian://open"],
   "programs": {
     "rechner": "Microsoft.WindowsCalculator_8wekyb3d8bbwe!App",

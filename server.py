@@ -43,6 +43,9 @@ if "YOUR_" in TODOIST_TOKEN:
 TASK_WINDOW_HOURS = config.get("task_window_hours", 5)
 # Website opened in its own browser window on "Jarvis activate"
 ACTIVATE_URL = config.get("activate_url", "")
+# launch-session.ps1 opens and places that window itself
+if os.environ.get("JARVIS_LAUNCH_SESSION"):
+    ACTIVATE_URL = ""
 
 ai = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
 http = httpx.AsyncClient(timeout=30)
