@@ -28,6 +28,7 @@ public class WinPos {
     [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int W, int H, bool repaint);
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
     [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
+    [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr w, IntPtr l);
 
     // All visible top-level windows with their titles
     public static Dictionary<IntPtr, string> Windows() {
@@ -106,31 +107,32 @@ function Place-Window($hwnd, $screen, $half) {
 $mutex = New-Object System.Threading.Mutex($false, "JarvisLaunchSession")
 if (-not $mutex.WaitOne(0)) { Stop-Transcript | Out-Null; exit }
 
-# If Jarvis is already running, only re-arrange instead of opening everything twice
-if (-not $ArrangeOnly) {
-    try {
-        Invoke-WebRequest "http://127.0.0.1:8340" -UseBasicParsing -TimeoutSec 2 | Out-Null
-        $ArrangeOnly = $true
-    } catch {}
-}
+# Is the Jarvis server already running? Then it is not started a second time.
+$serverRunning = $false
+try {
+    Invoke-WebRequest "http://127.0.0.1:8340" -UseBasicParsing -TimeoutSec 2 | Out-Null
+    $serverRunning = $true
+} catch {}
 
 if (-not $ArrangeOnly) {
-# 1. Start server + Spotify + Outlook + apps
-# Prefer the project's virtualenv Python if there is one
-$PYTHON = Join-Path $WORKSPACE_PATH ".venv\Scripts\python.exe"
-if (-not (Test-Path $PYTHON)) { $PYTHON = "python" }
-# Run the server without a console window; its output goes to server.log.
-# The flag tells the server that the layout below opens the website windows.
-$env:JARVIS_LAUNCH_SESSION = "1"
-Start-Process $PYTHON -ArgumentList "server.py" -WorkingDirectory $WORKSPACE_PATH -WindowStyle Hidden `
-    -RedirectStandardOutput (Join-Path $WORKSPACE_PATH "server.log") -RedirectStandardError (Join-Path $WORKSPACE_PATH "server.err.log")
-if ($SPOTIFY_URI -and $SPOTIFY_URI -notmatch "YOUR_") { Start-Process $SPOTIFY_URI }
-if ($config.programs.outlook) { Start-Process "explorer.exe" "shell:AppsFolder\$($config.programs.outlook)" }
+# 1. Start whatever is not running yet: server, Spotify, Outlook, apps
+if (-not $serverRunning) {
+    # Prefer the project's virtualenv Python if there is one
+    $PYTHON = Join-Path $WORKSPACE_PATH ".venv\Scripts\python.exe"
+    if (-not (Test-Path $PYTHON)) { $PYTHON = "python" }
+    # Run the server without a console window; its output goes to server.log.
+    # The flag tells the server that the layout below opens the website windows.
+    $env:JARVIS_LAUNCH_SESSION = "1"
+    Start-Process $PYTHON -ArgumentList "server.py" -WorkingDirectory $WORKSPACE_PATH -WindowStyle Hidden `
+        -RedirectStandardOutput (Join-Path $WORKSPACE_PATH "server.log") -RedirectStandardError (Join-Path $WORKSPACE_PATH "server.err.log")
+}
+if ($SPOTIFY_URI -and $SPOTIFY_URI -notmatch "YOUR_" -and -not (Get-Process Spotify -ErrorAction SilentlyContinue)) { Start-Process $SPOTIFY_URI }
+if ($config.programs.outlook -and -not (Get-Process olk, OUTLOOK -ErrorAction SilentlyContinue)) { Start-Process "explorer.exe" "shell:AppsFolder\$($config.programs.outlook)" }
 if (Get-Command code -ErrorAction SilentlyContinue) { code $WORKSPACE_PATH }
 foreach ($app in $config.apps) { Start-Process $app }
 
 # Give the server a moment before the UI connects
-Start-Sleep -Seconds 4
+if (-not $serverRunning) { Start-Sleep -Seconds 4 }
 }
 
 # 2. Monitors: 1 = primary, then the biggest remaining ones (a laptop screen comes last).
@@ -157,8 +159,16 @@ foreach ($entry in $config.layout) {
     if ($entry.url) {
         $urls = @($entry.url)
         if ($urls -match "localhost:8340") { $urls = @("--autoplay-policy=no-user-gesture-required") + $urls }
-        if ($ArrangeOnly) { $hwnd = Find-Window $entry.title }
-        else { $hwnd = New-ChromeWindow $urls }
+        # Reuse a window that is already open instead of opening it twice
+        $hwnd = Find-Window $entry.title
+        $isJarvis = [bool]($urls -match "localhost:8340")
+        if ($isJarvis -and $hwnd -ne [IntPtr]::Zero -and -not $serverRunning -and -not $ArrangeOnly) {
+            # Old Jarvis page from before "ZAC aus": close it, the new server needs a fresh one
+            [WinPos]::PostMessage($hwnd, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null  # WM_CLOSE
+            Start-Sleep -Milliseconds 500
+            $hwnd = [IntPtr]::Zero
+        }
+        if ($hwnd -eq [IntPtr]::Zero -and -not $ArrangeOnly) { $hwnd = New-ChromeWindow $urls }
     } elseif ($entry.app -eq "outlook") {
         # Outlook's main window, not an open mail window
         $hwnd = Get-ProcessWindow @("olk", "OUTLOOK") 20
