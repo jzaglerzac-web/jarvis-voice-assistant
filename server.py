@@ -9,6 +9,7 @@ import base64
 import json
 import os
 import re
+import subprocess
 import time
 
 import anthropic
@@ -19,7 +20,7 @@ from fastapi.responses import FileResponse
 
 # Load config
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
-with open(CONFIG_PATH, "r") as f:
+with open(CONFIG_PATH, "r", encoding="utf-8") as f:
     config = json.load(f)
 
 ANTHROPIC_API_KEY = config["anthropic_api_key"]
@@ -31,6 +32,8 @@ USER_ROLE = config.get("user_role", "KI-Berater und Automatisierungsexperte")
 CITY = config.get("city", "Hamburg")
 # Nur lokal erreichbar; "0.0.0.0" setzen, um Jarvis bewusst im Netzwerk freizugeben
 HOST = config.get("host", "127.0.0.1")
+# Programs Jarvis may launch: {"name": "Windows AppID from Get-StartApps"}
+PROGRAMS = {k.lower(): v for k, v in config.get("programs", {}).items()}
 TASKS_FILE = config.get("obsidian_inbox_path", "")
 
 ai = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
@@ -113,6 +116,7 @@ AKTIONEN - Schreibe die passende Aktion ans ENDE deiner Antwort. Der Text VOR de
 [ACTION:BROWSE] url - Webseite lesen und Inhalt zusammenfassen
 [ACTION:SCREEN] - Bildschirm ansehen und beschreiben. WICHTIG: Bei SCREEN schreibe NUR die Aktion, KEINEN Text davor. Also NUR "[ACTION:SCREEN]" und sonst nichts.
 [ACTION:NEWS] - Aktuelle Weltnachrichten abrufen. Nutze diese Aktion wenn nach News, Nachrichten, was in der Welt passiert, aktuelle Lage oder Weltgeschehen gefragt wird. Schreibe einen kurzen Satz davor wie "Ich schaue nach den aktuellen Nachrichten."
+[ACTION:APP] programmname - Ein Programm auf dem PC starten. Erlaubte Namen (exakt so schreiben): {", ".join(PROGRAMS) or "keine"}. Fuer andere Programme sage, dass sie nicht freigegeben sind.
 
 WENN {USER_NAME} "Jarvis activate" sagt:
 - Begruesse ihn passend zur Tageszeit (aktuelle Zeit: {{time}}).
@@ -207,6 +211,14 @@ async def execute_action(action: dict) -> str:
         result = await browser_tools.fetch_news()
         return result
 
+    elif t == "APP":
+        app_id = PROGRAMS.get(p.strip().lower())
+        if not app_id:
+            return f"Programm fehlgeschlagen: {p} ist nicht freigegeben"
+        # Launch through the Start-menu AppsFolder so Store and desktop apps both work
+        subprocess.Popen(["explorer.exe", f"shell:AppsFolder\\{app_id}"])
+        return f"Geoeffnet: {p}"
+
     return ""
 
 
@@ -266,7 +278,7 @@ async def process_message(session_id: str, user_text: str, ws: WebSocket):
             print(f"  Action error: {e}", flush=True)
             action_result = f"Fehler: {e}"
 
-        if action["type"] == "OPEN":
+        if action["type"] in ("OPEN", "APP") and "fehlgeschlagen" not in action_result:
             # Just opened browser, nothing to summarize
             return
 

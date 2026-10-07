@@ -2,7 +2,7 @@
 
 # Load config
 $configPath = Join-Path $PSScriptRoot "..\config.json"
-$config = Get-Content $configPath | ConvertFrom-Json
+$config = Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
 $WORKSPACE_PATH = $config.workspace_path
 $SPOTIFY_URI = $config.spotify_track
@@ -35,13 +35,21 @@ $halfW = [math]::Floor($screenW / 2)
 $halfH = [math]::Floor($screenH / 2)
 
 # 1. Start server + Spotify + apps
-Start-Process "wt.exe" -ArgumentList "new-tab -d `"$WORKSPACE_PATH`" cmd /k `"python $WORKSPACE_PATH\server.py`"" -WindowStyle Minimized
-Start-Process $SPOTIFY_URI
-code $WORKSPACE_PATH
+# Prefer the project's virtualenv Python if there is one
+$PYTHON = Join-Path $WORKSPACE_PATH ".venv\Scripts\python.exe"
+if (-not (Test-Path $PYTHON)) { $PYTHON = "python" }
+Start-Process $PYTHON -ArgumentList "server.py" -WorkingDirectory $WORKSPACE_PATH -WindowStyle Minimized
+if ($SPOTIFY_URI -and $SPOTIFY_URI -notmatch "YOUR_") { Start-Process $SPOTIFY_URI }
+if (Get-Command code -ErrorAction SilentlyContinue) { code $WORKSPACE_PATH }
 foreach ($app in $config.apps) { Start-Process $app }
 
-# 2. Chrome with Jarvis + Skool
-Start-Process "chrome" -ArgumentList "--autoplay-policy=no-user-gesture-required http://localhost:8340 $BROWSER_URL"
+# Give the server a moment before the UI connects
+Start-Sleep -Seconds 4
+
+# 2. Chrome with Jarvis + optional website
+$chromeArgs = "--autoplay-policy=no-user-gesture-required http://localhost:8340"
+if ($BROWSER_URL -and $BROWSER_URL -notmatch "your-website") { $chromeArgs += " $BROWSER_URL" }
+Start-Process "chrome" -ArgumentList $chromeArgs
 
 # 3. Snap all windows into quadrants
 Start-Sleep -Seconds 3
