@@ -11,5 +11,9 @@
   "browser_url": "https://your-website.com",
   "obsidian_inbox_path": "C:\\Users\\YOUR_USER\\path\\to\\obsidian\\inbox",
   "apps": ["obsidian://open"],
+  "programs": {
+    "rechner": "Microsoft.WindowsCalculator_8wekyb3d8bbwe!App",
+    "chrome": "Chrome"
+  },
   "host": "127.0.0.1"
 }
