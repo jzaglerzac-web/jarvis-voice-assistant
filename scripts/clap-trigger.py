@@ -14,7 +14,7 @@ import json
 
 # Load config
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.json")
-with open(CONFIG_PATH, "r") as f:
+with open(CONFIG_PATH, "r", encoding="utf-8") as f:
     config = json.load(f)
 
 WORKSPACE_PATH = config["workspace_path"]
