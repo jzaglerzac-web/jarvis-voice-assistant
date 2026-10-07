@@ -13,10 +13,13 @@
   "todoist_api_token": "YOUR_TODOIST_API_TOKEN",
   "task_window_hours": 5,
   "activate_url": "",
-  "activate_window_title": "",
-  "work_browser_urls": [],
-  "work_window_title": "",
   "apps": ["obsidian://open"],
+  "layout": [
+    {"app": "outlook", "monitor": 1, "position": "full"},
+    {"url": ["https://example.com"], "monitor": 2, "position": "left", "title": "Example"},
+    {"url": ["http://localhost:8340"], "monitor": 2, "position": "right", "title": "^J\\.A\\.R\\.V\\.I\\.S\\."},
+    {"app": "spotify", "position": "minimized"}
+  ],
   "programs": {
     "rechner": "Microsoft.WindowsCalculator_8wekyb3d8bbwe!App",
     "chrome": "Chrome"

@@ -9,9 +9,6 @@ $config = Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
 $WORKSPACE_PATH = $config.workspace_path
 $SPOTIFY_URI = $config.spotify_track
-$BROWSER_URL = $config.browser_url
-# URLs for the separate work browser window (first one is the active tab)
-$WORK_URLS = if ($config.work_browser_urls) { @($config.work_browser_urls) } else { @() }
 
 # Load assemblies
 Add-Type -AssemblyName System.Windows.Forms
@@ -48,6 +45,7 @@ public class WinPos {
 [WinPos]::SetProcessDPIAware() | Out-Null
 
 function Find-Window($pattern) {
+    if (-not $pattern) { return [IntPtr]::Zero }
     foreach ($w in [WinPos]::Windows().GetEnumerator()) {
         if ($w.Value -match $pattern) { return $w.Key }
     }
@@ -107,7 +105,7 @@ if (-not $ArrangeOnly) {
 $PYTHON = Join-Path $WORKSPACE_PATH ".venv\Scripts\python.exe"
 if (-not (Test-Path $PYTHON)) { $PYTHON = "python" }
 # Run the server without a console window; its output goes to server.log.
-# The flag tells the server that this script opens the activate_url window.
+# The flag tells the server that the layout below opens the website windows.
 $env:JARVIS_LAUNCH_SESSION = "1"
 Start-Process $PYTHON -ArgumentList "server.py" -WorkingDirectory $WORKSPACE_PATH -WindowStyle Hidden `
     -RedirectStandardOutput (Join-Path $WORKSPACE_PATH "server.log") -RedirectStandardError (Join-Path $WORKSPACE_PATH "server.err.log")
@@ -118,50 +116,41 @@ foreach ($app in $config.apps) { Start-Process $app }
 
 # Give the server a moment before the UI connects
 Start-Sleep -Seconds 4
-
-# 2. Three separate Chrome windows, opened one after another so no URL lands as a tab
-#    in another window: website (activate_url), Jarvis, work window (e.g. WhatsApp + Staffomatic)
-if ($config.activate_url) { $zac = New-ChromeWindow @($config.activate_url) }
-$jarvisUrls = @("--autoplay-policy=no-user-gesture-required", "http://localhost:8340")
-if ($BROWSER_URL -and $BROWSER_URL -notmatch "your-website") { $jarvisUrls += $BROWSER_URL }
-$jarvis = New-ChromeWindow $jarvisUrls
-if ($WORK_URLS.Count -gt 0) { $work = New-ChromeWindow $WORK_URLS }
 }
 
-# 4. Spread windows over the monitors
-# Primary monitor first, then the biggest remaining ones (a laptop screen comes last)
+# 2. Monitors: 1 = primary, then the biggest remaining ones (a laptop screen comes last).
+#    A layout entry for a monitor that is not connected goes to the last one.
 $screens = @([System.Windows.Forms.Screen]::AllScreens | Sort-Object { -not $_.Primary }, { -($_.Bounds.Width * $_.Bounds.Height) }, { $_.Bounds.X })
-$m1 = $screens[0]
-$m2 = if ($screens.Count -ge 2) { $screens[1] } else { $m1 }
-$m3 = if ($screens.Count -ge 3) { $screens[2] } else { $null }
+function Get-Monitor($n) { $screens[[math]::Min([int]$n, $screens.Count) - 1] }
 
-# Windows opened above are already known; in -ArrangeOnly mode find them by title
-if (-not $zac)    { $zac    = Wait-Window $config.activate_window_title 3 }
-if (-not $jarvis) { $jarvis = Find-Window "^J\.A\.R\.V\.I\.S\." }
-if (-not $work)   { $work   = Wait-Window $config.work_window_title 3 }
-$outlook = Wait-Window "Outlook$" 15
-# Prefer Outlook's main window over open mail windows
-$olkMain = (Get-Process -Name "olk", "OUTLOOK" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1).MainWindowHandle
-if ($olkMain) { $outlook = $olkMain }
-$spotify = (Get-Process -Name "Spotify" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1).MainWindowHandle
+function Get-ProcessWindow($names, $seconds) {
+    $deadline = (Get-Date).AddSeconds($seconds)
+    do {
+        $p = Get-Process -Name $names -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
+        if ($p) { return $p.MainWindowHandle }
+        Start-Sleep -Milliseconds 500
+    } while ((Get-Date) -lt $deadline)
+    return [IntPtr]::Zero
+}
 
-# Main monitor: website left half, Outlook right half
-Place-Window $zac $m1 "left"
-Place-Window $outlook $m1 "right"
-
-if ($screens.Count -eq 1) {
-    # One monitor: the rest stacks behind the website and Outlook
-    Place-Window $work $m1 "left"
-    Place-Window $jarvis $m1 "right"
-} elseif ($screens.Count -eq 2) {
-    Place-Window $work $m2 "left"
-    Place-Window $jarvis $m2 "right"
-} else {
-    Place-Window $work $m2 "full"
-    if ($spotify) {
-        Place-Window $jarvis $m3 "left"
-        Place-Window $spotify $m3 "right"
-    } else {
-        Place-Window $jarvis $m3 "full"
+# 3. Open and place every window from config.json "layout".
+#    Each entry: {"url": [...] or "app": "outlook"/"spotify", "monitor": 1-3,
+#                 "position": "left"/"right"/"full"/"minimized", "title": regex for -ArrangeOnly}
+#    Chrome windows open one after another so no URL lands as a tab in another window.
+foreach ($entry in $config.layout) {
+    $hwnd = [IntPtr]::Zero
+    if ($entry.url) {
+        $urls = @($entry.url)
+        if ($urls -match "localhost:8340") { $urls = @("--autoplay-policy=no-user-gesture-required") + $urls }
+        if ($ArrangeOnly) { $hwnd = Find-Window $entry.title }
+        else { $hwnd = New-ChromeWindow $urls }
+    } elseif ($entry.app -eq "outlook") {
+        # Outlook's main window, not an open mail window
+        $hwnd = Get-ProcessWindow @("olk", "OUTLOOK") 20
+    } elseif ($entry.app -eq "spotify") {
+        $hwnd = Get-ProcessWindow @("Spotify") 15
     }
+    if ($hwnd -eq [IntPtr]::Zero) { continue }
+    if ($entry.position -eq "minimized") { [WinPos]::ShowWindow($hwnd, 6) | Out-Null; continue }
+    Place-Window $hwnd (Get-Monitor $entry.monitor) $entry.position
 }
