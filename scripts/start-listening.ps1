@@ -1,6 +1,7 @@
 # Jarvis - start both triggers in the background:
 # double clap (clap-trigger.py) and wake phrase (voice-trigger.ps1).
-# Both keep listening; launch-session.ps1 does nothing twice if Jarvis already runs.
+# Whichever fires first starts launch-session.ps1, which then stops both listeners:
+# they only work once per Windows start, later starts go through the desktop icon.
 
 $root = Split-Path $PSScriptRoot -Parent
 $python = Join-Path $root ".venv\Scripts\pythonw.exe"

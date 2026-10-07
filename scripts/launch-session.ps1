@@ -126,6 +126,14 @@ function Place-Window($hwnd, $screen, $half) {
 $mutex = New-Object System.Threading.Mutex($false, "JarvisLaunchSession")
 if (-not $mutex.WaitOne(0)) { Stop-Transcript | Out-Null; exit }
 
+# Voice phrase and double clap only start Jarvis once after Windows starts.
+# After that (whatever started it) they stop listening; later starts use the desktop icon.
+if (-not $ArrangeOnly) {
+    Get-CimInstance Win32_Process -Filter "Name like 'python%' or Name = 'powershell.exe'" |
+        Where-Object { $_.CommandLine -match "clap-trigger\.py|voice-trigger\.ps1" } |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+}
+
 # Is the Jarvis server already running? Then it is not started a second time.
 $serverRunning = $false
 try {
