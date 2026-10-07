@@ -109,6 +109,7 @@ You (speak) → Chrome Browser (Web Speech API) → FastAPI Server (local)
      "elevenlabs_voice_id": "YOUR_VOICE_ID",
      "user_name": "Your Name",
      "user_address": "Sir",
+     "user_role": "AI consultant",
      "city": "Hamburg",
      "workspace_path": "C:\\path\\to\\jarvis-voice-assistant",
      "spotify_track": "spotify:track:YOUR_TRACK_ID",
@@ -124,6 +125,8 @@ You (speak) → Chrome Browser (Web Speech API) → FastAPI Server (local)
    ```
 
 5. **Open Chrome** and go to `http://localhost:8340`
+
+   The server only listens on your own machine (`127.0.0.1`). To reach Jarvis from other devices on your network, set `"host": "0.0.0.0"` in `config.json`. Anyone on that network can then control your browser and screen capture.
 
 6. **Click anywhere** on the page, then speak!
 
@@ -192,7 +195,7 @@ jarvis-voice-assistant/
 ## Customization
 
 ### Change Jarvis's personality
-Edit the system prompt in `server.py` → `build_system_prompt()`. The personality, greeting behavior, and action instructions are all defined there.
+Name, role, form of address and city come from `config.json`. To change anything else, edit the system prompt in `server.py` → `build_system_prompt()`. The personality, greeting behavior, and action instructions are all defined there.
 
 ### Change which apps launch
 Edit `config.json`:

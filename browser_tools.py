@@ -6,12 +6,13 @@ Web search via DuckDuckGo Lite, page visits via Playwright, URL opening.
 import re
 import webbrowser
 import subprocess
-from urllib.parse import unquote, parse_qs, urlparse
+from urllib.parse import quote_plus, unquote, parse_qs, urlparse
 import httpx
 from playwright.async_api import async_playwright
 
 _browser = None
 _context = None
+_visible_page = None  # Zuletzt fuer den Nutzer offen gelassener Tab
 
 
 def _bring_chromium_to_front():
@@ -41,13 +42,22 @@ async def _get_browser():
     return _context
 
 
+async def _new_visible_page():
+    """Open a tab the user can watch, closing the previous one so tabs don't pile up."""
+    global _visible_page
+    ctx = await _get_browser()
+    if _visible_page is not None and not _visible_page.is_closed():
+        await _visible_page.close()
+    _visible_page = await ctx.new_page()
+    return _visible_page
+
+
 async def search_and_read(query: str) -> dict:
     """Search DuckDuckGo in visible browser, click first result, read the page."""
-    ctx = await _get_browser()
-    page = await ctx.new_page()
+    page = await _new_visible_page()
     try:
         # DuckDuckGo search (no cookie banner, no reCAPTCHA)
-        search_url = f"https://duckduckgo.com/?q={query}"
+        search_url = f"https://duckduckgo.com/?q={quote_plus(query)}"
         await page.goto(search_url, timeout=15000)
         _bring_chromium_to_front()
         await page.wait_for_timeout(2000)
@@ -78,8 +88,6 @@ async def search_and_read(query: str) -> dict:
             return {"title": "Keine Ergebnisse", "url": search_url, "content": "Keine Ergebnisse gefunden."}
     except Exception as e:
         return {"error": str(e), "url": query}
-    finally:
-        pass
 
 
 async def visit(url: str, max_chars: int = 5000) -> dict:
@@ -110,8 +118,7 @@ async def visit(url: str, max_chars: int = 5000) -> dict:
 
 async def fetch_news() -> str:
     """Fetch current world news from worldmonitor.app in visible browser."""
-    ctx = await _get_browser()
-    page = await ctx.new_page()
+    page = await _new_visible_page()
     try:
         await page.goto("https://www.worldmonitor.app/", timeout=20000)
         _bring_chromium_to_front()
@@ -122,8 +129,6 @@ async def fetch_news() -> str:
         return f"World Monitor Nachrichten:\n{content}"
     except Exception as e:
         return f"News konnten nicht geladen werden: {e}"
-    finally:
-        pass  # Keep page open so user can see it
 
 
 async def open_url(url: str):
@@ -135,8 +140,9 @@ async def open_url(url: str):
 
 
 async def close():
-    global _browser, _context
+    global _browser, _context, _visible_page
     if _browser:
         await _browser.close()
         _browser = None
         _context = None
+        _visible_page = None
