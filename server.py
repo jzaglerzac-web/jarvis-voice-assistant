@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import time
+from datetime import date, datetime, timedelta
 
 import anthropic
 import httpx
@@ -35,6 +36,11 @@ HOST = config.get("host", "127.0.0.1")
 # Programs Jarvis may launch: {"name": "Windows AppID from Get-StartApps"}
 PROGRAMS = {k.lower(): v for k, v in config.get("programs", {}).items()}
 TASKS_FILE = config.get("obsidian_inbox_path", "")
+TODOIST_TOKEN = config.get("todoist_api_token", "")
+if "YOUR_" in TODOIST_TOKEN:
+    TODOIST_TOKEN = ""
+# Only tasks that are overdue or due within this many hours are read out
+TASK_WINDOW_HOURS = config.get("task_window_hours", 5)
 
 ai = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
 http = httpx.AsyncClient(timeout=30)
@@ -64,17 +70,71 @@ def get_weather_sync():
         return None
 
 
-def get_tasks_sync():
-    """Read open tasks from Obsidian (sync)."""
+def is_task_urgent(due: str) -> bool:
+    """True if a due date/time is overdue or within TASK_WINDOW_HOURS.
+    A date without a time counts as due on that whole day."""
+    now = datetime.now()
+    try:
+        if "T" in due:
+            dt = datetime.fromisoformat(due.replace("Z", "+00:00"))
+            if dt.tzinfo:
+                dt = dt.astimezone().replace(tzinfo=None)
+            return dt <= now + timedelta(hours=TASK_WINDOW_HOURS)
+        return date.fromisoformat(due[:10]) <= now.date()
+    except ValueError:
+        return False
+
+
+OBSIDIAN_DUE = re.compile(r"(?:📅|due::?)\s*(\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2})?)")
+
+
+def get_obsidian_tasks():
+    """Open '- [ ]' tasks from Tasks.md that carry an urgent due date (📅 2026-10-07 or 📅 2026-10-07 14:00)."""
     if not TASKS_FILE:
         return []
     try:
-        tasks_path = os.path.join(TASKS_FILE, "Tasks.md")
-        with open(tasks_path, "r", encoding="utf-8") as f:
+        with open(os.path.join(TASKS_FILE, "Tasks.md"), "r", encoding="utf-8") as f:
             lines = f.readlines()
-        return [l.strip().replace("- [ ]", "").strip() for l in lines if l.strip().startswith("- [ ]")]
-    except Exception:
+    except OSError:
         return []
+    tasks = []
+    for line in lines:
+        line = line.strip()
+        if not line.startswith("- [ ]"):
+            continue
+        m = OBSIDIAN_DUE.search(line)
+        if m and is_task_urgent(m.group(1).replace(" ", "T")):
+            tasks.append(OBSIDIAN_DUE.sub("", line.replace("- [ ]", "")).strip())
+    return tasks
+
+
+def get_todoist_tasks():
+    """Overdue tasks and tasks due within the window from Todoist."""
+    if not TODOIST_TOKEN:
+        return []
+    import urllib.parse
+    import urllib.request
+    query = urllib.parse.quote("overdue | today | tomorrow")
+    req = urllib.request.Request(
+        f"https://api.todoist.com/api/v1/tasks/filter?query={query}&limit=200",
+        headers={"Authorization": f"Bearer {TODOIST_TOKEN}"},
+    )
+    try:
+        data = json.loads(urllib.request.urlopen(req, timeout=8).read())
+    except Exception as e:
+        print(f"[jarvis] Todoist Fehler: {e}", flush=True)
+        return []
+    tasks = []
+    for t in data.get("results", []):
+        due = t.get("due") or {}
+        if due.get("date") and is_task_urgent(due["date"]):
+            tasks.append(t["content"])
+    return tasks
+
+
+def get_tasks_sync():
+    """Urgent tasks from Obsidian and Todoist (sync)."""
+    return get_obsidian_tasks() + get_todoist_tasks()
 
 
 def refresh_data():
@@ -100,9 +160,9 @@ def build_system_prompt():
         w = WEATHER_INFO
         weather_block = f"\nWetter {CITY}: {w['temp']}°C, gefuehlt {w['feels_like']}°C, {w['description']}"
 
-    task_block = ""
+    task_block = f"\nDringende Aufgaben (ueberfaellig oder in den naechsten {TASK_WINDOW_HOURS} Stunden faellig): keine"
     if TASKS_INFO:
-        task_block = f"\nOffene Aufgaben ({len(TASKS_INFO)}): " + ", ".join(TASKS_INFO[:5])
+        task_block = f"\nDringende Aufgaben (ueberfaellig oder in den naechsten {TASK_WINDOW_HOURS} Stunden faellig, {len(TASKS_INFO)}): " + ", ".join(TASKS_INFO[:8])
 
     return f"""Du bist Jarvis, der KI-Assistent von Tony Stark aus Iron Man. Dein Dienstherr ist {USER_NAME}, {USER_ROLE}. Du sprichst ausschliesslich Deutsch. {USER_NAME} moechte mit "{USER_ADDRESS}" angesprochen und gesiezt werden. Nutze "Sie" als Pronomen — FALSCH: "{USER_ADDRESS} planen", RICHTIG: "Sie planen, {USER_ADDRESS}". Dein Ton ist trocken, sarkastisch und britisch-hoeflich - wie ein Butler der alles gesehen hat und trotzdem loyal bleibt. Du machst subtile, trockene Bemerkungen, bist aber niemals respektlos. Wenn {USER_ADDRESS} eine offensichtliche Frage stellt, darfst du mit elegantem Sarkasmus antworten. Du bist hochintelligent, effizient und immer einen Schritt voraus. Halte deine Antworten kurz - maximal 3 Saetze. Du kommentierst fragwuerdige Entscheidungen hoeflich aber spitz.
 
