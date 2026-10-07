@@ -8,6 +8,8 @@ let audioQueue = [];
 let isPlaying = false;
 let audioUnlocked = false;
 let shutDown = false;
+let currentAudio = null;
+let interrupted = false;
 
 // Unlock audio on ANY user interaction
 function unlockAudio() {
@@ -34,6 +36,7 @@ function connect() {
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'response') {
+            if (interrupted) return;
             addTranscript('jarvis', data.text);
             if (data.audio && data.audio.length > 0) {
                 queueAudio(data.audio);
@@ -71,16 +74,15 @@ function playNext() {
     isPlaying = true;
     setOrbState('speaking');
     status.textContent = '';
-    if (isListening) {
-        recognition.stop();
-        isListening = false;
-    }
+    // Keep listening while Jarvis speaks so "mach langsam" can interrupt him
+    if (!isListening) startListening();
 
     const b64 = audioQueue.shift();
     const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: 'audio/mpeg' });
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
+    currentAudio = audio;
     audio.onended = () => { URL.revokeObjectURL(url); playNext(); };
     audio.onerror = () => { URL.revokeObjectURL(url); playNext(); };
     audio.play().catch(err => {
@@ -107,13 +109,22 @@ if (SpeechRecognition) {
     recognition = new SpeechRecognition();
     recognition.lang = 'de-DE';
     recognition.continuous = true;
-    recognition.interimResults = false;
+    // Interim results let "mach langsam" stop Jarvis before the sentence is finished
+    recognition.interimResults = true;
 
     recognition.onresult = (event) => {
         const last = event.results[event.results.length - 1];
-        if (last.isFinal) {
-            const text = last[0].transcript.trim();
+        const heard = last[0].transcript.trim();
+        if (STOP_PATTERN.test(heard)) {
+            if (isPlaying) stopSpeaking();
+            return;
+        }
+        // While Jarvis speaks, the mic also hears him; only "mach langsam" and "ZAC aus" count then
+        if (last.isFinal && isPlaying && /\b(zac|zack|zak)\s*aus\b/i.test(heard)) stopSpeaking();
+        if (last.isFinal && !isPlaying) {
+            const text = heard;
             if (text) {
+                interrupted = false;
                 addTranscript('user', text);
                 setOrbState('thinking');
                 status.textContent = 'Jarvis denkt nach...';
@@ -124,13 +135,13 @@ if (SpeechRecognition) {
 
     recognition.onend = () => {
         isListening = false;
-        if (!isPlaying) setTimeout(startListening, 300);
+        setTimeout(startListening, 300);
     };
 
     recognition.onerror = (event) => {
         isListening = false;
         if (event.error === 'no-speech' || event.error === 'aborted') {
-            if (!isPlaying) setTimeout(startListening, 300);
+            setTimeout(startListening, 300);
         } else {
             setTimeout(startListening, 1000);
         }
@@ -138,13 +149,32 @@ if (SpeechRecognition) {
 }
 
 function startListening() {
-    if (isPlaying || shutDown) return;
+    if (shutDown || isListening) return;
     try {
         recognition.start();
         isListening = true;
-        setOrbState('listening');
-        status.textContent = '';
+        if (!isPlaying) {
+            setOrbState('listening');
+            status.textContent = '';
+        }
     } catch(e) {}
+}
+
+// "mach langsam" (also "mach mal langsam") interrupts Jarvis
+const STOP_PATTERN = /mach(e)?\s+(mal\s+)?langsam/i;
+
+function stopSpeaking() {
+    audioQueue = [];
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+    }
+    isPlaying = false;
+    // Drop answers that are still on their way until the user says something new
+    interrupted = true;
+    addTranscript('user', 'mach langsam');
+    setOrbState('listening');
+    status.textContent = 'Unterbrochen.';
 }
 
 orb.addEventListener('click', () => {

@@ -3,6 +3,9 @@
 # -ArrangeOnly only re-arranges windows that are already open.
 param([switch]$ArrangeOnly)
 
+# Everything this script does and every error goes to launch.log
+Start-Transcript -Path (Join-Path $PSScriptRoot "..\launch.log") | Out-Null
+
 # Load config
 $configPath = Join-Path $PSScriptRoot "..\config.json"
 $config = Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -97,6 +100,18 @@ function Place-Window($hwnd, $screen, $half) {
             [WinPos]::ShowWindow($hwnd, 3) | Out-Null  # maximize on that monitor
         }
     }
+}
+
+# Only one launch at a time (voice, clap and a double click can overlap)
+$mutex = New-Object System.Threading.Mutex($false, "JarvisLaunchSession")
+if (-not $mutex.WaitOne(0)) { Stop-Transcript | Out-Null; exit }
+
+# If Jarvis is already running, only re-arrange instead of opening everything twice
+if (-not $ArrangeOnly) {
+    try {
+        Invoke-WebRequest "http://127.0.0.1:8340" -UseBasicParsing -TimeoutSec 2 | Out-Null
+        $ArrangeOnly = $true
+    } catch {}
 }
 
 if (-not $ArrangeOnly) {

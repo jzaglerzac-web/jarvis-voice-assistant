@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 Jarvis — Double Clap Trigger
-Listens to mic. Detects two claps within 1.2s, min 0.1s apart.
-On trigger: runs scripts/launch-session.ps1 then exits.
+Listens to mic. Detects two claps within 1.5s, min 0.1s apart.
+On trigger: runs scripts/launch-session.ps1, then keeps listening
+(so Jarvis can be started again after "ZAC aus").
 """
 
 import sounddevice as sd
@@ -10,33 +11,34 @@ import numpy as np
 import subprocess
 import time
 import os
-import json
 
-# Load config
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.json")
-with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-    config = json.load(f)
-
-WORKSPACE_PATH = config["workspace_path"]
-SCRIPT_PATH = os.path.join(WORKSPACE_PATH, "scripts", "launch-session.ps1")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SCRIPT_PATH = os.path.join(SCRIPT_DIR, "launch-session.ps1")
+LOG_PATH = os.path.join(SCRIPT_DIR, "..", "clap.log")
 
 SAMPLE_RATE = 44100
 BLOCK_SIZE = 1024
-THRESHOLD = 0.15       # RMS volume spike threshold — lower = more sensitive
+THRESHOLD = 0.08       # RMS volume spike threshold — lower = more sensitive
 MIN_GAP = 0.1          # Minimum seconds between claps
-MAX_GAP = 1.2          # Maximum seconds between claps — more time for second clap
-COOLDOWN = 3.0         # Seconds to ignore after trigger fires
+MAX_GAP = 1.5          # Maximum seconds between claps — more time for second clap
+COOLDOWN = 30.0        # Seconds to ignore claps after the trigger fired (Jarvis is starting)
 
 last_clap_time = 0.0
-triggered = False
+cooldown_until = 0.0
+
+
+def log(msg):
+    with open(LOG_PATH, "a", encoding="utf-8") as f:
+        f.write(f"{time.strftime('%H:%M:%S')} {msg}\n")
+
 
 def audio_callback(indata, frames, time_info, status):
-    global last_clap_time, triggered
-
-    if triggered:
-        return
+    global last_clap_time, cooldown_until
 
     now = time.time()
+    if now < cooldown_until:
+        return
+
     rms = float(np.sqrt(np.mean(indata ** 2)))
 
     if rms > THRESHOLD:
@@ -44,15 +46,17 @@ def audio_callback(indata, frames, time_info, status):
 
         if gap >= MIN_GAP:
             if gap <= MAX_GAP and last_clap_time > 0:
-                # Second clap — fire trigger and shut down
-                print(f"[jarvis] Double clap detected! Firing launch script. Shutting down.", flush=True)
-                triggered = True
+                # Second clap — fire trigger, then ignore claps for COOLDOWN seconds
+                log(f"Doppelklatschen erkannt (rms={rms:.3f}), starte Jarvis")
                 last_clap_time = 0.0
-                subprocess.Popen(["powershell", "-ExecutionPolicy", "Bypass", "-File", SCRIPT_PATH])
+                cooldown_until = now + COOLDOWN
+                subprocess.Popen(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", SCRIPT_PATH],
+                                 creationflags=subprocess.CREATE_NO_WINDOW)
             else:
                 # First clap
-                print(f"[jarvis] First clap detected (rms={rms:.3f})", flush=True)
+                log(f"Erstes Klatschen (rms={rms:.3f})")
                 last_clap_time = now
+
 
 with sd.InputStream(
     samplerate=SAMPLE_RATE,
@@ -61,7 +65,6 @@ with sd.InputStream(
     dtype="float32",
     callback=audio_callback,
 ):
-    print("[jarvis] Listening for double clap...", flush=True)
-    while not triggered:
-        time.sleep(0.1)
-    print("[jarvis] Trigger fired — stopped listening.", flush=True)
+    log("Warte auf Doppelklatschen")
+    while True:
+        time.sleep(1)
