@@ -41,6 +41,8 @@ if "YOUR_" in TODOIST_TOKEN:
     TODOIST_TOKEN = ""
 # Only tasks that are overdue or due within this many hours are read out
 TASK_WINDOW_HOURS = config.get("task_window_hours", 5)
+# Spotify volume (0-1) while Jarvis is awake / in sleep mode
+MUSIC_VOLUME = {"active": 0.15, "sleep": 0.25, **config.get("music_volume", {})}
 # Website opened in its own browser window on "Jarvis activate"
 ACTIVATE_URL = config.get("activate_url", "")
 # launch-session.ps1 opens and places that window itself
@@ -446,6 +448,30 @@ async def websocket_endpoint(ws: WebSocket):
 
 
 app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "frontend")), name="static")
+
+
+def set_app_volume(process_name: str, level: float) -> bool:
+    """Set the Windows mixer volume (0-1) of every audio session of a program."""
+    try:
+        from pycaw.pycaw import AudioUtilities
+    except ImportError:
+        return False
+    found = False
+    for s in AudioUtilities.GetAllSessions():
+        if s.Process and s.Process.name().lower() == process_name.lower():
+            s.SimpleAudioVolume.SetMasterVolume(max(0.0, min(1.0, level)), None)
+            found = True
+    return found
+
+
+@app.post("/api/music-volume")
+async def music_volume(mode: str):
+    """mode "active" while Jarvis is awake, "sleep" in sleep mode (volumes from config)."""
+    level = MUSIC_VOLUME.get(mode)
+    if level is None:
+        return {"ok": False}
+    ok = await asyncio.to_thread(set_app_volume, "Spotify.exe", level)
+    return {"ok": ok, "level": level}
 
 
 @app.get("/")
