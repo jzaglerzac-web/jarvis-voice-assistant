@@ -7,6 +7,7 @@ let ws;
 let audioQueue = [];
 let isPlaying = false;
 let audioUnlocked = false;
+let shutDown = false;
 
 // Unlock audio on ANY user interaction
 function unlockAudio() {
@@ -40,11 +41,15 @@ function connect() {
                 setOrbState('idle');
                 setTimeout(startListening, 500);
             }
+        } else if (data.type === 'shutdown') {
+            shutDown = true;
+            status.textContent = 'Jarvis wurde beendet.';
         } else if (data.type === 'status') {
             status.textContent = data.text;
         }
     };
     ws.onclose = () => {
+        if (shutDown) { setOrbState('idle'); return; }
         status.textContent = 'Verbindung verloren...';
         setTimeout(connect, 3000);
     };
@@ -133,7 +138,7 @@ if (SpeechRecognition) {
 }
 
 function startListening() {
-    if (isPlaying) return;
+    if (isPlaying || shutDown) return;
     try {
         recognition.start();
         isListening = true;

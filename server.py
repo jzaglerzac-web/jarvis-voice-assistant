@@ -41,6 +41,8 @@ if "YOUR_" in TODOIST_TOKEN:
     TODOIST_TOKEN = ""
 # Only tasks that are overdue or due within this many hours are read out
 TASK_WINDOW_HOURS = config.get("task_window_hours", 5)
+# Website opened in its own browser window on "Jarvis activate"
+ACTIVATE_URL = config.get("activate_url", "")
 
 ai = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
 http = httpx.AsyncClient(timeout=30)
@@ -214,7 +216,8 @@ WENN {USER_NAME} "Jarvis activate" sagt:
 
 
 def get_system_prompt():
-    return build_system_prompt().replace("{time}", time.strftime("%H:%M"))
+    weekday = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"][datetime.now().weekday()]
+    return build_system_prompt().replace("{time}", f"{weekday}, {time.strftime('%d.%m.%Y %H:%M')}")
 
 
 def extract_action(text: str):
@@ -307,14 +310,44 @@ async def execute_action(action: dict) -> str:
     return ""
 
 
+# "ZAC aus" ends Jarvis; speech recognition may also write Zack/Zak
+SHUTDOWN_PATTERN = re.compile(r"\b(zac|zack|zak|z\.?\s?a\.?\s?c\.?)\s*aus\b", re.IGNORECASE)
+activate_url_opened = False
+
+
+def open_activate_url():
+    """Open the activation website once per server run in its own Chrome window."""
+    global activate_url_opened
+    if not ACTIVATE_URL or activate_url_opened:
+        return
+    activate_url_opened = True
+    subprocess.Popen(["cmd", "/c", "start", "", "chrome", "--new-window", ACTIVATE_URL])
+
+
+async def shutdown_jarvis(ws: WebSocket):
+    """Say goodbye, tell the UI to stop, then end the server process."""
+    print("[jarvis] Shutdown-Kommando erhalten", flush=True)
+    text = f"Sehr wohl, {USER_ADDRESS}. Jarvis wird beendet."
+    audio = await synthesize_speech(text)
+    await ws.send_json({"type": "response", "text": text,
+                        "audio": base64.b64encode(audio).decode("utf-8") if audio else ""})
+    await ws.send_json({"type": "shutdown"})
+    asyncio.get_running_loop().call_later(2, os._exit, 0)
+
+
 async def process_message(session_id: str, user_text: str, ws: WebSocket):
     """Process message and send responses via WebSocket."""
     if session_id not in conversations:
         conversations[session_id] = []
 
     # Refresh weather + tasks on activate
+    if SHUTDOWN_PATTERN.search(user_text):
+        await shutdown_jarvis(ws)
+        return
+
     if "activate" in user_text.lower():
         refresh_data()
+        open_activate_url()
 
     conversations[session_id].append({"role": "user", "content": user_text})
     history = conversations[session_id][-16:]
