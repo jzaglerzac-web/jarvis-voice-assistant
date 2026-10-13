@@ -26,5 +26,8 @@
   },
   "telegram_bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
   "telegram_allowed_ids": [],
+  "mail_accounts": [
+    {"email": "info@example.com", "group": "arbeit", "imap_host": "imap.example.com", "user": "info@example.com", "password": "YOUR_PASSWORD"}
+  ],
   "host": "127.0.0.1"
 }
