@@ -208,6 +208,7 @@ AKTIONEN - Schreibe die passende Aktion ans ENDE deiner Antwort. Der Text VOR de
 [ACTION:BROWSE] url - Webseite lesen und Inhalt zusammenfassen
 [ACTION:SCREEN] - Bildschirm ansehen und beschreiben. WICHTIG: Bei SCREEN schreibe NUR die Aktion, KEINEN Text davor. Also NUR "[ACTION:SCREEN]" und sonst nichts.
 [ACTION:NEWS] - Aktuelle Weltnachrichten abrufen. Nutze diese Aktion wenn nach News, Nachrichten, was in der Welt passiert, aktuelle Lage oder Weltgeschehen gefragt wird. Schreibe einen kurzen Satz davor wie "Ich schaue nach den aktuellen Nachrichten."
+[ACTION:TASKS] - Alle offenen Todoist-Aufgaben der naechsten 7 Tage abrufen und zusammenfassen. Nutze diese Aktion, wenn nach Aufgaben, To-dos oder Terminen gefragt wird, die ueber die dringenden hinausgehen.
 [ACTION:APP] programmname - Ein Programm auf dem PC starten. Erlaubte Namen (exakt so schreiben): {", ".join(PROGRAMS) or "keine"}. Fuer andere Programme sage, dass sie nicht freigegeben sind.
 
 WENN {USER_NAME} "Jarvis activate" sagt:
@@ -312,7 +313,31 @@ async def execute_action(action: dict) -> str:
         subprocess.Popen(["explorer.exe", f"shell:AppsFolder\\{app_id}"])
         return f"Geoeffnet: {p}"
 
+    elif t == "TASKS":
+        tasks = await asyncio.to_thread(get_upcoming_tasks)
+        return "\n".join(tasks) if tasks else "Keine offenen Aufgaben in den naechsten 7 Tagen."
+
     return ""
+
+
+def get_upcoming_tasks(days: int = 7):
+    """Open Todoist tasks that are overdue or due within the next days, as 'date: content' lines."""
+    if not TODOIST_TOKEN:
+        return []
+    import urllib.parse
+    import urllib.request
+    query = urllib.parse.quote(f"overdue | {days} days")
+    req = urllib.request.Request(
+        f"https://api.todoist.com/api/v1/tasks/filter?query={query}&limit=200",
+        headers={"Authorization": f"Bearer {TODOIST_TOKEN}"},
+    )
+    try:
+        data = json.loads(urllib.request.urlopen(req, timeout=8).read())
+    except Exception as e:
+        print(f"[jarvis] Todoist Fehler: {e}", flush=True)
+        return []
+    rows = [((t.get("due") or {}).get("date", ""), t["content"]) for t in data.get("results", [])]
+    return [f"{d.replace('T', ' ')[:16]}: {c}" for d, c in sorted(rows)]
 
 
 # "ZAC aus" ends Jarvis; speech recognition may also write Zack/Zak
@@ -425,6 +450,62 @@ async def process_message(session_id: str, user_text: str, ws: WebSocket):
             "text": summary,
             "audio": base64.b64encode(audio2).decode("utf-8") if audio2 else "",
         })
+
+
+TELEGRAM_NOTE = (
+    "\n\nDiese Nachricht kommt per Telegram. Deine Antwort wird als Textnachricht geschickt, "
+    "nicht vorgelesen. Leite aus der Nachricht ab, was gewuenscht ist, und nutze bei Bedarf eine Aktion. "
+    "Bleib kurz. Kein Markdown, keine Sternchen."
+)
+data_refreshed_at = time.time()
+
+
+async def telegram_answer(messages: list) -> str:
+    """Answer a Telegram conversation (Claude messages, last one from the user) as text."""
+    global data_refreshed_at
+    # Weather and urgent tasks in the prompt should not be older than 10 minutes
+    if time.time() - data_refreshed_at > 600:
+        await asyncio.to_thread(refresh_data)
+        data_refreshed_at = time.time()
+
+    response = await ai.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=300,
+        system=get_system_prompt() + TELEGRAM_NOTE,
+        messages=messages,
+    )
+    text, action = extract_action(response.content[0].text)
+    if not action:
+        return text
+
+    print(f"  Telegram-Aktion: {action['type']} -> {action['payload'][:100]}", flush=True)
+    try:
+        result = await execute_action(action)
+    except Exception as e:
+        result = f"Fehler: {e}"
+    if action["type"] in ("OPEN", "APP"):
+        return text or result
+    if not result or "fehlgeschlagen" in result:
+        return f"{text}\n\nDas hat leider nicht funktioniert, {USER_ADDRESS}.".strip()
+
+    summary = await ai.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=300,
+        system=f"Du bist Jarvis. Fasse die folgenden Informationen kurz auf Deutsch zusammen, im Jarvis-Stil, als Textnachricht. Bei Aufgabenlisten nenne die Aufgaben knapp mit Datum, eine pro Zeile. Kein Markdown, keine Sternchen. Sprich den Nutzer als {USER_ADDRESS} an. KEINE Tags in eckigen Klammern.",
+        messages=[{"role": "user", "content": f"Frage: {messages[-1]['content']}\n\nInformationen:\n{result}"}],
+    )
+    summary_text, _ = extract_action(summary.content[0].text)
+    return summary_text
+
+
+@app.on_event("startup")
+async def start_telegram():
+    token = config.get("telegram_bot_token", "")
+    if not token or "YOUR_" in token:
+        return
+    import telegram_bot
+    allowed = {int(i) for i in config.get("telegram_allowed_ids", [])}
+    asyncio.create_task(telegram_bot.run(token, allowed, telegram_answer))
 
 
 @app.websocket("/ws")

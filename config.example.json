@@ -24,5 +24,7 @@
     "rechner": "Microsoft.WindowsCalculator_8wekyb3d8bbwe!App",
     "chrome": "Chrome"
   },
+  "telegram_bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
+  "telegram_allowed_ids": [],
   "host": "127.0.0.1"
 }
