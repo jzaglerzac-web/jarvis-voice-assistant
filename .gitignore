@@ -6,3 +6,8 @@ config.json
 
 .venv/
 server*.log
+launch*.log
+launch.*.txt
+voice*.log
+clap*.log
+telegram.db

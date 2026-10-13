@@ -7,3 +7,4 @@ Pillow>=10.0.0
 websockets>=13.0
 sounddevice>=0.4.6
 numpy>=1.24.0
+pycaw>=20240316; sys_platform == "win32"

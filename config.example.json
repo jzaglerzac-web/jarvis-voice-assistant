@@ -5,15 +5,29 @@
   "user_name": "YOUR_NAME",
   "user_address": "Sir",
   "user_role": "YOUR_ROLE",
-  "city": "YOUR_CITY",
+  "city": "auto",
   "workspace_path": "C:\\Users\\YOUR_USER\\Desktop\\jarvis_template",
   "spotify_track": "spotify:track:YOUR_TRACK_ID",
   "browser_url": "https://your-website.com",
   "obsidian_inbox_path": "C:\\Users\\YOUR_USER\\path\\to\\obsidian\\inbox",
+  "todoist_api_token": "YOUR_TODOIST_API_TOKEN",
+  "task_window_hours": 5,
+  "activate_url": "",
   "apps": ["obsidian://open"],
+  "layout": [
+    {"app": "outlook", "monitor": 1, "position": "full"},
+    {"url": ["https://example.com"], "monitor": 2, "position": "left", "title": "Example"},
+    {"url": ["http://localhost:8340"], "monitor": 2, "position": "right", "title": "^J\\.A\\.R\\.V\\.I\\.S\\."},
+    {"app": "spotify", "position": "minimized"}
+  ],
   "programs": {
     "rechner": "Microsoft.WindowsCalculator_8wekyb3d8bbwe!App",
     "chrome": "Chrome"
   },
+  "telegram_bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
+  "telegram_allowed_ids": [],
+  "mail_accounts": [
+    {"email": "info@example.com", "group": "arbeit", "imap_host": "imap.example.com", "user": "info@example.com", "password": "YOUR_PASSWORD"}
+  ],
   "host": "127.0.0.1"
 }
