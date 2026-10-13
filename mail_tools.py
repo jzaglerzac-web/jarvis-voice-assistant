@@ -1,13 +1,15 @@
 """
-Jarvis — read-only mail access over IMAP.
-Mailboxes are opened read-only (EXAMINE / BODY.PEEK): Jarvis never marks mails
-as read, moves, deletes or sends anything.
+Jarvis — mail access.
+Reading opens mailboxes read-only (EXAMINE / BODY.PEEK): Jarvis never marks mails
+as read, moves or deletes anything. Sending (send_mail) only happens after the user
+confirmed the draft; see PendingMail handling in server.py.
 """
 
 import email
 import email.header
 import email.utils
 import imaplib
+import time
 from datetime import datetime, timedelta
 
 GROUP_NAMES = {"arbeit": "Arbeit", "projekt": "Projekt", "privat": "Privat"}
@@ -62,6 +64,50 @@ def _read_account(acc: dict, days: int, unread_only: bool, limit: int) -> list:
                 "snippet": _snippet(msg),
             })
         return mails
+
+
+def smtp_host(acc: dict) -> str:
+    """SMTP server of an account: explicit smtp_host, Gmail, otherwise the IMAP host (All-Inkl)."""
+    if acc.get("smtp_host"):
+        return acc["smtp_host"]
+    return "smtp.gmail.com" if acc["imap_host"] == "imap.gmail.com" else acc["imap_host"]
+
+
+def send_mail(acc: dict, to: str, subject: str, body: str) -> None:
+    """Send a plain-text mail from acc and file a copy in its Sent folder.
+    Only call this after the user has confirmed the exact draft."""
+    import smtplib
+    from email.message import EmailMessage
+
+    msg = EmailMessage()
+    msg["From"] = acc["email"]
+    msg["To"] = to
+    msg["Subject"] = subject
+    msg["Date"] = email.utils.formatdate(localtime=True)
+    msg["Message-ID"] = email.utils.make_msgid()
+    msg.set_content(body)
+
+    with smtplib.SMTP_SSL(smtp_host(acc), int(acc.get("smtp_port", 465)), timeout=30) as smtp:
+        smtp.login(acc.get("user") or acc["email"], acc["password"])
+        smtp.send_message(msg)
+
+    # Gmail files sent mail itself; other providers need an IMAP copy to show it in "Gesendet"
+    if acc["imap_host"] == "imap.gmail.com":
+        return
+    try:
+        with imaplib.IMAP4_SSL(acc["imap_host"], int(acc.get("imap_port", 993)), timeout=20) as imap:
+            imap.login(acc.get("user") or acc["email"], acc["password"])
+            sent = None
+            _, folders = imap.list()
+            for line in folders or []:
+                text = line.decode(errors="replace")
+                if "\\Sent" in text or text.rstrip('"').endswith(("Sent", "Gesendet", "Gesendete Elemente")):
+                    sent = text.split(' "/" ')[-1].split(' "." ')[-1].strip()
+                    break
+            if sent:
+                imap.append(sent, "\\Seen", imaplib.Time2Internaldate(time.time()), msg.as_bytes())
+    except Exception as e:
+        print(f"[jarvis] Kopie in Gesendet nicht moeglich: {e}", flush=True)
 
 
 def read_mails(accounts: list, request: str = "", days: int = 3, limit: int = 8) -> str:
