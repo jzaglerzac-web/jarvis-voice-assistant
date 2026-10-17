@@ -57,6 +57,7 @@ function connect() {
             if (interrupted) return;
             clearTimeout(sleepTimer);
             addTranscript('jarvis', data.text);
+            if (window.onJarvisResponse) window.onJarvisResponse(data);
             lastJarvisText += ' ' + data.text;
             if (data.audio && data.audio.length > 0) {
                 queueAudio(data.audio);
@@ -103,6 +104,8 @@ function playNext() {
         finishedSpeaking();
         return;
     }
+    // ZAC Zentrale: voice switched off, the answer is only shown
+    if (window.jarvisMuted) { audioQueue = []; finishedSpeaking(); return; }
     isPlaying = true;
     setOrbState('speaking');
     status.textContent = '';
@@ -222,6 +225,8 @@ if (SpeechRecognition) {
         const last = event.results[event.results.length - 1];
         const heard = last[0].transcript.trim();
         if (!heard) return;
+        // Zentrale: dictation into a text field (e.g. Todoist line) instead of talking to Jarvis
+        if (window.onJarvisDictation && window.onJarvisDictation(heard, last.isFinal)) return;
 
         if (isPlaying) {
             // The mic also hears Jarvis now; only "mach langsam" and "ZAC aus" count
@@ -304,7 +309,11 @@ orb.addEventListener('click', () => {
     }
 });
 
-function setOrbState(state) { orb.className = state; }
+function setOrbState(state) {
+    orb.className = state;
+    // ZAC Zentrale shows the state in its Obsidian hub
+    if (window.onJarvisState) window.onJarvisState(state);
+}
 
 function addTranscript(role, text) {
     const div = document.createElement('div');
@@ -312,6 +321,25 @@ function addTranscript(role, text) {
     div.textContent = role === 'user' ? `Du: ${text}` : `Jarvis: ${text}`;
     transcript.appendChild(div);
     transcript.scrollTop = transcript.scrollHeight;
+}
+
+// Only one Jarvis window may listen and speak (Jarvis page or ZAC Zentrale):
+// the window opened last takes over, the older one goes quiet.
+if (window.BroadcastChannel) {
+    const jarvisChannel = new BroadcastChannel('jarvis-voice');
+    jarvisChannel.onmessage = (event) => {
+        if (event.data !== 'takeover' || shutDown) return;
+        shutDown = true;
+        audioQueue = [];
+        if (currentAudio) currentAudio.pause();
+        if (window.speechSynthesis) speechSynthesis.cancel();
+        clearTimeout(sleepTimer);
+        if (recognition) recognition.abort();
+        if (ws) ws.close();
+        setOrbState('idle');
+        status.textContent = 'Jarvis läuft jetzt im anderen Fenster.';
+    };
+    jarvisChannel.postMessage('takeover');
 }
 
 connect();

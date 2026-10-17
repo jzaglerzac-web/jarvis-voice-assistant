@@ -54,7 +54,7 @@ def history(chat_id):
 
 
 async def run(token: str, allowed_ids: set, answer):
-    """Poll Telegram forever. answer(messages) -> reply text (async)."""
+    """Poll Telegram forever. answer(messages) -> reply text, or (text, jpeg bytes) (async)."""
     init_db()
     api = f"https://api.telegram.org/bot{token}"
     offset = 0
@@ -97,6 +97,15 @@ async def run(token: str, allowed_ids: set, answer):
                         print(f"[telegram] Fehler bei der Antwort: {e}", flush=True)
                         reply = "Da ist etwas schiefgelaufen, Sir. Bitte versuchen Sie es gleich noch einmal."
 
+                photo = None
+                if isinstance(reply, tuple):
+                    reply, photo = reply
                 reply = (reply or "…")[:MAX_MESSAGE_LENGTH]
                 await http.post(f"{api}/sendMessage", data={"chat_id": chat_id, "text": reply})
+                if photo:
+                    try:
+                        await http.post(f"{api}/sendPhoto", data={"chat_id": chat_id},
+                                        files={"photo": ("browser.jpg", photo, "image/jpeg")})
+                    except Exception as e:
+                        print(f"[telegram] Bild nicht gesendet: {e}", flush=True)
                 store(chat_id, user_id, username, "out", allowed, reply)

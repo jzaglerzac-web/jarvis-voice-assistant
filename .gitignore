@@ -11,3 +11,15 @@ launch.*.txt
 voice*.log
 clap*.log
 telegram.db
+arbeitsspace.json
+browser-profile/
+
+# Lokale Daten und Sicherungen der ZAC Zentrale (nicht ins Repo)
+*.backup*
+*.backup-*
+rechnungen-cache.json
+zentrale-jobs.json
+claude_desktop_config*.json
+claude-desktop-mcp-eintrag.txt
+scripts/alte-verknuepfungen/
+*.tmp

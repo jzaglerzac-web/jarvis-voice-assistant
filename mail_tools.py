@@ -73,7 +73,7 @@ def smtp_host(acc: dict) -> str:
     return "smtp.gmail.com" if acc["imap_host"] == "imap.gmail.com" else acc["imap_host"]
 
 
-def send_mail(acc: dict, to: str, subject: str, body: str) -> None:
+def send_mail(acc: dict, to: str, subject: str, body: str, in_reply_to: str = "") -> None:
     """Send a plain-text mail from acc and file a copy in its Sent folder.
     Only call this after the user has confirmed the exact draft."""
     import smtplib
@@ -85,6 +85,9 @@ def send_mail(acc: dict, to: str, subject: str, body: str) -> None:
     msg["Subject"] = subject
     msg["Date"] = email.utils.formatdate(localtime=True)
     msg["Message-ID"] = email.utils.make_msgid()
+    if in_reply_to:
+        msg["In-Reply-To"] = in_reply_to
+        msg["References"] = in_reply_to
     msg.set_content(body)
 
     with smtplib.SMTP_SSL(smtp_host(acc), int(acc.get("smtp_port", 465)), timeout=30) as smtp:

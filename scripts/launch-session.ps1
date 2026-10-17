@@ -1,4 +1,4 @@
-# Jarvis - Launch Session (Windows)
+﻿# Jarvis - Launch Session (Windows)
 # Starts the server and apps, then spreads the windows over all connected monitors.
 # -ArrangeOnly only re-arranges windows that are already open.
 param([switch]$ArrangeOnly)
@@ -90,12 +90,20 @@ function Wait-Window($pattern, $seconds = 25) {
 # Open a new Chrome window and return its handle (the window that was not there before)
 function New-ChromeWindow($chromeArgs, $seconds = 20) {
     $before = @([WinPos]::Windows().Keys)
+    # App windows (--app=URL) have no browser bar and no "Google Chrome" in their title
+    $isApp = [bool]($chromeArgs -match "^--app=")
     Start-Process "chrome" -ArgumentList (@("--new-window") + $chromeArgs)
     $deadline = (Get-Date).AddSeconds($seconds)
     while ((Get-Date) -lt $deadline) {
         Start-Sleep -Milliseconds 500
+        $chromePids = @(Get-Process chrome -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
         foreach ($w in [WinPos]::Windows().GetEnumerator()) {
-            if ($before -notcontains $w.Key -and $w.Value -match "Google Chrome$") { return $w.Key }
+            if ($before -contains $w.Key) { continue }
+            if ($w.Value -match "Google Chrome$") { return $w.Key }
+            if ($isApp) {
+                $procId = [uint32]0; [WinPos]::GetWindowThreadProcessId($w.Key, [ref]$procId) | Out-Null
+                if ($chromePids -contains [int]$procId) { return $w.Key }
+            }
         }
     }
     return [IntPtr]::Zero
@@ -154,8 +162,10 @@ if (-not $serverRunning) {
         -RedirectStandardOutput (Join-Path $WORKSPACE_PATH "server.log") -RedirectStandardError (Join-Path $WORKSPACE_PATH "server.err.log")
 }
 if ($SPOTIFY_URI -and $SPOTIFY_URI -notmatch "YOUR_" -and -not (Get-Process Spotify -ErrorAction SilentlyContinue)) { Start-Process $SPOTIFY_URI }
-if ($config.programs.outlook -and -not (Get-Process olk, OUTLOOK -ErrorAction SilentlyContinue)) { Start-Process "explorer.exe" "shell:AppsFolder\$($config.programs.outlook)" }
-if (Get-Command code -ErrorAction SilentlyContinue) { code $WORKSPACE_PATH }
+# Outlook and the code editor only start when the layout / config asks for them
+$wantsOutlook = @($config.layout | Where-Object { $_.app -eq "outlook" }).Count -gt 0
+if ($wantsOutlook -and $config.programs.outlook -and -not (Get-Process olk, OUTLOOK -ErrorAction SilentlyContinue)) { Start-Process "explorer.exe" "shell:AppsFolder\$($config.programs.outlook)" }
+if ($config.open_editor -and (Get-Command code -ErrorAction SilentlyContinue)) { code $WORKSPACE_PATH }
 foreach ($app in $config.apps) { Start-Process $app }
 
 # Give the server a moment before the UI connects

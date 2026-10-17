@@ -1,0 +1,65 @@
+{
+  "stand": "14.10.2026",
+  "zeitraum": "07.–13.10.2026",
+  "artefakt": "https://claude.ai/artifact/Lx279EhJybGp6dfi8ebkFV",
+  "kpis": [
+    { "label": "Follower Instagram", "wert": "123", "sub": "+2 seit 07.10." },
+    { "label": "Reichweite 7 Tage", "wert": "133", "sub": "Vorwoche: 3" },
+    { "label": "Aufrufe 7 Tage", "wert": "402", "sub": "Vorwoche: 5" },
+    { "label": "Beiträge 7 Tage", "wert": "3", "sub": "Ziel: 3 pro Woche" },
+    { "label": "Interaktionen 7 Tage", "wert": "16", "sub": "Likes, Kommentare, Saves" }
+  ],
+  "phasen": [
+    {
+      "titel": "Phase 1 · Fundament",
+      "zeit": "Woche 1–2",
+      "punkte": [
+        { "id": "p1-region", "text": "Website-Regionalformat auf Deutsch/Deutschland", "info": "Sprache, Region, Zeitzone Berlin, EUR", "wer": "Claude", "done": true },
+        { "id": "p1-alt", "text": "Alte Wix-Seite offline nehmen", "info": "jzagler.wixsite.com am 14.10. offline, Seite bleibt im Konto", "wer": "Claude", "done": true },
+        { "id": "p1-footer", "text": "Instagram und LinkedIn im Footer der Website", "info": "Auf allen Seiten von zac-sicherheit.com", "wer": "Claude", "done": true },
+        { "id": "p1-fb", "text": "Facebook-Link im Footer ergänzen", "info": "Braucht die Adresse der Facebook-Seite", "wer": "Julian", "done": false },
+        { "id": "p1-block", "text": "Block „Folgen Sie unseren Einsätzen“ auf Startseite und Kontakt", "info": "Mit Instagram- und LinkedIn-Link, erst in der Vorschau zeigen", "wer": "Claude", "done": false },
+        { "id": "p1-bio", "text": "Instagram-Bio und Link mit UTM", "info": "zac-sicherheit.com/?utm_source=instagram, Leistungen und Region in die Bio", "wer": "Julian", "done": false },
+        { "id": "p1-highlights", "text": "Story-Highlights anlegen", "info": "Baustelle, Objekt, Event, Technik, Jobs", "wer": "Julian", "done": false },
+        { "id": "p1-mc", "text": "In Metricool Website, LinkedIn und Facebook verbinden", "info": "Dann stehen alle Kanäle und Website-Besuche in einem Bericht", "wer": "Julian", "done": false }
+      ]
+    },
+    {
+      "titel": "Phase 2 · Content-Rhythmus",
+      "zeit": "Woche 3–8",
+      "punkte": [
+        { "id": "p2-rhythmus", "text": "3 Beiträge pro Woche über Metricool einplanen", "info": "Mo Reel, Mi Karussell, Fr Team (siehe Wochenrhythmus)", "wer": "Claude", "done": false },
+        { "id": "p2-projekte", "text": "Jeder Einsatz wird Projekt auf der Website und Reel", "info": "Gleiches Material doppelt nutzen", "wer": "Julian", "done": false },
+        { "id": "p2-lokal", "text": "Standort taggen, Kunden markieren, #zacsicherheit", "info": "Jesteburg, Buchholz, Hamburg, Berlin", "wer": "Claude", "done": false },
+        { "id": "p2-zeiten", "text": "Beste Posting-Zeiten aus Metricool übernehmen", "info": "Nach etwa 4 Wochen Daten", "wer": "Claude", "done": false },
+        { "id": "p2-qr", "text": "QR-Code auf Fahrzeug, Dienstkleidung, Bauzaunbanner", "info": "Führt auf zac-sicherheit.com", "wer": "Julian", "done": false }
+      ]
+    },
+    {
+      "titel": "Phase 3 · Kanäle ausbauen",
+      "zeit": "ab Monat 3",
+      "punkte": [
+        { "id": "p3-li", "text": "LinkedIn: Kunden und Recruiting", "info": "Bauunternehmen, Hausverwaltungen, Gewerbe; Stellenanzeigen", "wer": "Claude", "done": false },
+        { "id": "p3-fb", "text": "Facebook: lokal und Recruiting", "info": "Gruppen im Landkreis, Veranstalter, Stellenanzeigen", "wer": "Claude", "done": false }
+      ]
+    }
+  ],
+  "kanaele": [
+    { "name": "Instagram", "status": "aktiv", "zweck": "Einblicke, Projekte, Vertrauen", "metricool": "verbunden" },
+    { "name": "LinkedIn", "status": "aufbauen", "zweck": "Kunden (B2B) und Recruiting", "metricool": "noch verbinden" },
+    { "name": "Facebook", "status": "aufbauen", "zweck": "Lokal, Veranstalter und Recruiting", "metricool": "noch verbinden" },
+    { "name": "TikTok", "status": "entfällt", "zweck": "Julians Entscheidung vom 14.10.2026", "metricool": "–" }
+  ],
+  "woche": [
+    { "tag": "Montag", "format": "Reel", "inhalt": "Einblick in einen Einsatz: Baustellenrundgang, Schichtbeginn, Kamera-Montage" },
+    { "tag": "Mittwoch", "format": "Karussell", "inhalt": "Fachwissen für Kunden, letzte Folie: Angebot auf der Website anfragen" },
+    { "tag": "Freitag", "format": "Post oder Story", "inhalt": "Team und Vertrauen; Stellenanzeigen zusätzlich auf LinkedIn und Facebook" }
+  ],
+  "ziele": [
+    { "kennzahl": "Instagram-Follower", "start": "122", "ziel": "250" },
+    { "kennzahl": "Reichweite pro Monat", "start": "3", "ziel": "3.000" },
+    { "kennzahl": "Beiträge pro Monat", "start": "0", "ziel": "12" },
+    { "kennzahl": "Website-Besuche von Instagram pro Monat", "start": "–", "ziel": "50" },
+    { "kennzahl": "Anfragen über Social Media pro Monat", "start": "–", "ziel": "2" }
+  ]
+}

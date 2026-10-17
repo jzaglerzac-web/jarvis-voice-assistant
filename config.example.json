@@ -26,6 +26,10 @@
   },
   "telegram_bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
   "telegram_allowed_ids": [],
+  "staffomatic_account": "your-subdomain",
+  "staffomatic_location_id": 0,
+  "staffomatic_user": "",
+  "staffomatic_password": "",
   "mail_accounts": [
     {"email": "info@example.com", "group": "arbeit", "imap_host": "imap.example.com", "user": "info@example.com", "password": "YOUR_PASSWORD"}
   ],

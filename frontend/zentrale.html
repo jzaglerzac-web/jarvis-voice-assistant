@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZAC Zentrale</title>
+<link rel="icon" href="/static/zac-zentrale.ico">
+<link rel="manifest" href="/static/zentrale.webmanifest">
+<link rel="apple-touch-icon" href="/static/zac-app-192.png">
+<meta name="theme-color" content="#141413">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: drei Spalten wie eine Leitstelle. Links Lage + Projektkacheln, Mitte das Obsidian-Zentrum mit Befehlszeile, rechts (25 %) Todoist heute. */
+:root {
+  --ink: #141413;          /* Grund, Anthrazit aus dem ZAC-Logo, abgedunkelt */
+  --panel: #1D1D1B;        /* Logo-Anthrazit */
+  --panel-2: #262624;
+  --line: #3a3936;
+  --text: #F2F0EC;
+  --muted: #A3A09A;
+  --red: #C62828;          /* ZAC-Rot */
+  --red-hot: #FF4B3E;
+  --red-soft: rgba(198, 40, 40, .16);
+  --ok: #6FBF73;
+  --warn: #E0A84A;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--ink); color: var(--text); font-family: var(--f-body); font-size: 15px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px; box-sizing: border-box;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--red-hot); outline-offset: 2px; }
+
+.shell { height: 100%; display: flex; flex-direction: column; gap: 12px; }
+.app {
+  flex: 1; min-height: 0; display: grid; gap: 16px;
+  grid-template-columns: minmax(240px, 22%) 1fr minmax(280px, 25%);
+}
+
+/* Navigationsleiste */
+.nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 0 4px; border-bottom: 1px solid var(--line); flex: none; }
+.brand { display: flex; align-items: center; gap: 8px; padding: 8px 18px 8px 4px; margin-right: 8px; border-right: 1px solid var(--line); font-family: var(--f-display); font-weight: 700; font-size: 18px; letter-spacing: .04em; white-space: nowrap; }
+.jline { margin-left: auto; flex: 0 1 50ch; min-width: 220px; display: flex; align-items: center; gap: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 0 4px 0 10px; margin-right: 6px; }
+.jline:focus-within { border-color: var(--red); }
+.jline label { font-family: var(--f-display); font-weight: 700; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--red-hot); padding-right: 8px; border-right: 1px solid var(--line); }
+.jline input { flex: 1; min-width: 0; background: none; border: 0; color: var(--text); font: inherit; font-size: 14px; padding: 8px 8px; outline: none; }
+.jline button { background: none; border: 0; padding: 4px; display: grid; place-items: center; color: var(--muted); }
+.jline button:hover { color: var(--text); }
+.jline svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.jline-out { position: fixed; top: 52px; right: 16px; width: min(56ch, calc(100vw - 32px)); z-index: 50; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--red); border-radius: 6px; padding: 10px 14px; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.4); cursor: pointer; }
+.jline-out .q { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.brand i { width: 9px; height: 9px; background: var(--red); transform: rotate(45deg); display: inline-block; }
+.tab { background: none; border: 0; border-bottom: 2px solid transparent; padding: 12px 14px 10px; font-family: var(--f-display); font-weight: 600; font-size: 16px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.tab:hover { color: var(--text); }
+.tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--red); }
+.view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+.page { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 16px; }
+.page-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; }
+.page-head h1 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 34px; letter-spacing: .02em; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+.seg button { background: none; border: 0; padding: 6px 12px; font-size: 13px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--red); color: var(--text); }
+
+/* Projekte-Ansicht */
+.pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; align-items: start; }
+.pcard { padding: 14px 6px 8px; }
+.pcard h2 { margin: 0 10px 2px; font-family: var(--f-display); font-size: 22px; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pcard h2 span { font-family: var(--f-mono); font-size: 12px; font-weight: 400; color: var(--muted); }
+.pcard .todo-list { max-height: 360px; padding-top: 4px; }
+
+/* Buchhaltung */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.kpi { padding: 14px 16px; }
+.kpi b { display: block; font-family: var(--f-display); font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.kpi.alert b { color: var(--red-hot); }
+.tablewrap { overflow-x: auto; }
+table.inv { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.inv th { text-align: left; font-family: var(--f-display); font-weight: 600; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.inv td { padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.inv td.num, .inv th.num { text-align: right; }
+.inv td.file { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.st { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); }
+.st.offen { border-color: var(--warn); color: var(--warn); }
+.st.late { border-color: var(--red-hot); color: var(--red-hot); }
+.st.bezahlt { border-color: var(--ok); color: var(--ok); }
+.inv-row { cursor: pointer; }
+.inv-row:hover td { background: var(--panel-2); }
+.inv-row .file a { color: var(--text); }
+.inv-detail td { background: var(--panel-2); padding: 12px 16px 16px; }
+.inv-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 38%); gap: 24px; align-items: start; }
+.inv-pay { border-left: 3px solid var(--red); padding: 2px 0 2px 16px; display: grid; gap: 10px; }
+.inv-pay .f { display: grid; gap: 1px; }
+.inv-pay .l { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.inv-pay .v { background: none; border: 0; padding: 0; text-align: left; color: var(--text); font-family: var(--f-display); font-size: 21px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; cursor: copy; font-variant-numeric: tabular-nums; }
+.inv-pay .v:hover { color: var(--red-hot); }
+@media (max-width: 760px) { .inv-grid { grid-template-columns: 1fr; } .inv-pay { border-left: 0; border-top: 3px solid var(--red); padding: 12px 0 0; } }
+.inv-detail dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 18px; margin: 0; font-size: 14px; }
+.inv-detail dt { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding-top: 3px; }
+.inv-detail dd { margin: 0; overflow-wrap: anywhere; }
+.inv-pos { list-style: none; margin: 12px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line); font-size: 13px; }
+.inv-pos li { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; }
+.inv-pos b { font-weight: 600; white-space: nowrap; }
+.inv .act { background: none; border: 1px solid var(--line); border-radius: 4px; font-size: 12px; padding: 3px 8px; color: var(--muted); }
+.inv .act:hover { border-color: var(--text); color: var(--text); }
+
+/* Arbeitsspace */
+.ws { flex: 1; display: grid; grid-template-columns: 1fr minmax(240px, 30%); gap: 16px; min-height: 420px; }
+.ws textarea { width: 100%; height: 100%; min-height: 400px; resize: none; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 18px; font: 15px/1.6 var(--f-body); }
+.ws textarea:focus { outline: none; border-color: var(--red); }
+.ws aside { padding: 16px; display: flex; flex-direction: column; gap: 10px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.ws aside .btn { align-self: start; background: var(--red); border: 0; border-radius: 5px; padding: 8px 14px; color: var(--text); font-weight: 600; }
+@media (max-width: 720px) { .ws { grid-template-columns: 1fr; } }
+
+/* Ablage per Ziehen */
+.drop { position: fixed; inset: 0; z-index: 80; background: rgba(10,10,10,.82); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; }
+.drop[hidden] { display: none; }
+.drop-zones { display: grid; grid-template-columns: repeat(2, minmax(220px, 380px)); gap: 20px; }
+.dz { border: 2px dashed var(--line); border-radius: 10px; padding: 48px 24px; text-align: center; background: var(--panel); display: grid; gap: 8px; transition: border-color .12s, background .12s; }
+.dz * { pointer-events: none; }
+.dz b { font-family: var(--f-display); font-size: 30px; letter-spacing: .04em; text-transform: uppercase; }
+.dz span { color: var(--muted); font-size: 14px; }
+.dz.on { border-color: var(--red); border-style: solid; background: var(--panel-2); }
+.drop p { color: var(--muted); margin: 0; font-size: 14px; }
+@media (max-width: 600px) { .drop-zones { grid-template-columns: 1fr; } }
+/* Unterlagen im Arbeitsspace */
+.docs { margin-top: 16px; padding: 14px 16px; }
+.docs-head { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; margin-bottom: 6px; }
+.docs-hint { color: var(--muted); font-size: 13px; }
+.doc-list { list-style: none; margin: 0; padding: 0; }
+.doc-list > li { border-top: 1px solid var(--line); }
+.doc-row { width: 100%; display: flex; align-items: center; gap: 12px; background: none; border: 0; color: var(--text); text-align: left; padding: 10px 4px; font: inherit; }
+.doc-row:hover { background: var(--panel-2); }
+.doc-row .n { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+.doc-row .m { font-family: var(--f-mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+.doc-open { padding: 4px 4px 14px; display: grid; gap: 10px; }
+.doc-cmd { display: flex; gap: 8px; align-items: center; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 0 4px 0 10px; }
+.doc-cmd:focus-within { border-color: var(--red); }
+.doc-cmd input { flex: 1; min-width: 0; background: none; border: 0; color: var(--text); font: inherit; padding: 9px 0; outline: none; }
+.doc-cmd button, .doc-actions button { background: var(--red); border: 0; border-radius: 5px; padding: 7px 12px; color: var(--text); font-weight: 600; white-space: nowrap; }
+.doc-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.doc-actions .sec { background: var(--panel-2); border: 1px solid var(--line); }
+.doc-actions input { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; color: var(--text); font: inherit; padding: 6px 8px; min-width: 220px; flex: 1; }
+.doc-links a { color: var(--muted); font-size: 13px; }
+.doc-msg { font-size: 13px; color: var(--muted); }
+.doc-prev { width: 100%; height: 520px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+/* Todoist: Termine und Aufgaben, 5 Tage */
+.tw { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.twcol { padding: 12px 12px 10px; min-width: 0; }
+.tw-head { display: flex; align-items: baseline; gap: 10px; padding: 0 4px 8px; }
+.tw-head h2 { margin: 0; font-family: var(--f-display); font-size: 22px; }
+.tw-head span { color: var(--muted); font-size: 12px; }
+.cal { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.day { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; min-height: 260px; display: flex; flex-direction: column; min-width: 0; }
+.day.today { border-color: var(--red); }
+.day-h { display: flex; justify-content: space-between; align-items: center; padding: 6px 6px 4px 8px; border-bottom: 1px solid var(--line); }
+.day-h b { font-family: var(--f-display); font-size: 15px; letter-spacing: .03em; }
+.day-h small { display: block; font-family: var(--f-mono); font-size: 10px; color: var(--muted); }
+.day-add { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 4px; width: 24px; height: 24px; font-size: 16px; line-height: 1; padding: 0; }
+.day-add:hover { color: var(--text); border-color: var(--red); }
+.day ul { list-style: none; margin: 0; padding: 4px; display: grid; gap: 4px; }
+.ev { display: grid; grid-template-columns: 16px 1fr; gap: 6px; padding: 5px 5px; border-radius: 4px; background: var(--panel); border-left: 3px solid var(--prio, var(--line)); font-size: 13px; line-height: 1.3; }
+.ev[data-p="p1"] { --prio: var(--red-hot); } .ev[data-p="p2"] { --prio: var(--warn); } .ev[data-p="p3"] { --prio: #6b9bd6; }
+.ev .check { width: 15px; height: 15px; border-width: 2px; margin-top: 1px; }
+.ev .tm { font-family: var(--f-mono); font-size: 11px; color: var(--red-hot); }
+.ev .late { color: var(--red-hot); font-family: var(--f-mono); font-size: 10px; }
+.ev .ti { overflow-wrap: anywhere; }
+.ev .pj { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+.ev .lb { font-family: var(--f-mono); font-size: 10px; color: var(--muted); }
+.ev.leaving { opacity: .3; }
+.day .none { color: var(--muted); font-size: 12px; padding: 8px; }
+.tw-line { margin-top: 14px; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; }
+.tw-line:focus-within { border-color: var(--red); }
+.tw-line .lbl { font-family: var(--f-display); font-weight: 700; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--red-hot); white-space: nowrap; padding-right: 8px; border-right: 1px solid var(--line); }
+.tw-line input { flex: 1; min-width: 0; background: none; border: 0; color: var(--text); font: inherit; font-size: 15px; padding: 9px 4px; outline: none; }
+.tw-mic { background: none; border: 1px solid var(--line); border-radius: 50%; width: 38px; height: 38px; display: grid; place-items: center; color: var(--muted); padding: 0; }
+.tw-mic svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.tw-mic[aria-pressed="true"] { color: var(--text); background: var(--red); border-color: var(--red); }
+.tw-send { background: var(--red); border: 0; border-radius: 5px; padding: 9px 14px; color: var(--text); font-weight: 600; white-space: nowrap; }
+#twMsg { padding: 6px 4px; }
+.tw-modal { position: fixed; inset: 0; z-index: 90; background: rgba(10,10,10,.7); display: grid; place-items: center; padding: 16px; }
+.tw-modal[hidden] { display: none; }
+.tw-form { width: min(560px, 100%); padding: 18px; display: grid; gap: 10px; max-height: calc(100vh - 32px); overflow: auto; }
+.tw-form h2 { margin: 0; font-family: var(--f-display); font-size: 24px; }
+.tw-form input, .tw-form select, .tw-form textarea { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; color: var(--text); font: inherit; padding: 8px 10px; width: 100%; box-sizing: border-box; }
+.tw-form input:focus, .tw-form select:focus, .tw-form textarea:focus { outline: none; border-color: var(--red); }
+.tf-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.tf-row label { display: grid; gap: 3px; font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.tf-prio { display: flex; gap: 6px; }
+.tf-prio button { flex: 1; background: var(--panel-2); border: 1px solid var(--line); color: var(--muted); border-radius: 5px; padding: 7px; font-weight: 700; }
+.tf-prio button[data-p="p1"][aria-pressed="true"] { background: var(--red-hot); color: #fff; border-color: var(--red-hot); }
+.tf-prio button[data-p="p2"][aria-pressed="true"] { background: var(--warn); color: #111; border-color: var(--warn); }
+.tf-prio button[data-p="p3"][aria-pressed="true"] { background: #6b9bd6; color: #111; border-color: #6b9bd6; }
+.tf-prio button[data-p="p4"][aria-pressed="true"] { background: var(--line); color: var(--text); }
+.tf-labels { display: flex; flex-wrap: wrap; gap: 6px; }
+.tf-labels button { background: var(--panel-2); border: 1px solid var(--line); color: var(--muted); border-radius: 99px; padding: 4px 10px; font-size: 12px; }
+.tf-labels button[aria-pressed="true"] { border-color: var(--red); color: var(--text); }
+.tf-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.tf-actions .sec { background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 5px; padding: 9px 14px; }
+.tw-nav { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tw-nav button { background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 5px; min-width: 38px; height: 34px; font-size: 20px; line-height: 1; padding: 0 10px; }
+.tw-nav #twToday { font-size: 13px; font-weight: 600; }
+.tw-nav button:hover { border-color: var(--red); }
+.tw-nav .eyebrow { margin-left: 6px; }
+@media (max-width: 1300px) { .tw { grid-template-columns: 1fr; } }
+@media (max-width: 720px) {
+  .cal { grid-template-columns: 1fr; }
+  .day { min-height: 0; }
+  .tw-line { flex-wrap: wrap; }
+  .tw-line .lbl { display: none; }
+}
+/* Offene Schichten */
+.shiftwarn { display: flex; align-items: center; gap: 10px; padding: 6px; margin-top: 10px; border-color: var(--red); }
+.sw-list { display: flex; gap: 8px; overflow-x: auto; flex: 1; min-width: 0; }
+.sw { flex: none; padding: 6px 10px; border-radius: 5px; background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--red-hot); font-size: 13px; }
+.sw b { display: block; font-family: var(--f-display); font-size: 15px; }
+.sw span { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.shiftwarn .linkbtn { text-decoration: none; white-space: nowrap; }
+@media (max-width: 720px) { .shiftwarn { flex-wrap: wrap; } }
+/* Mail beantworten */
+.reply { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; display: grid; gap: 8px; }
+.reply input, .reply textarea { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; color: var(--text); font: inherit; padding: 8px 10px; width: 100%; box-sizing: border-box; }
+.reply textarea { min-height: 220px; resize: vertical; font: 14px/1.5 var(--f-body); }
+.reply input:focus, .reply textarea:focus { outline: none; border-color: var(--red); }
+.reply .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.reply .row input { flex: 1; min-width: 200px; }
+.reply label { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.reply .go { background: var(--red); border: 0; border-radius: 5px; padding: 8px 14px; color: var(--text); font-weight: 600; white-space: nowrap; }
+.reply .sec { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 8px 14px; color: var(--text); }
+/* Zahlungsleiste oben */
+.paybar { display: flex; align-items: stretch; gap: 10px; min-height: 52px; padding: 6px; }
+.paybar-label { flex: none; display: flex; flex-direction: column; justify-content: center; padding: 0 10px 0 8px; border-right: 1px solid var(--line); }
+.paybar-label strong { font-family: var(--f-display); font-size: 17px; font-weight: 600; letter-spacing: .02em; }
+.pay-list { flex: 1; min-width: 0; display: flex; gap: 8px; overflow-x: auto; align-items: stretch; scrollbar-width: thin; }
+.pay { flex: none; display: grid; grid-template-columns: auto auto; column-gap: 14px; align-items: center; padding: 6px 8px 6px 12px; border-radius: 5px; background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--warn); }
+.pay.late { border-left-color: var(--red-hot); background: var(--red-soft); }
+.pay .who { font-weight: 600; white-space: nowrap; }
+.pay .sub { font-family: var(--f-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.pay .sub .d { color: var(--warn); }
+.pay.late .sub .d { color: var(--red-hot); }
+.pay[role="button"] { cursor: pointer; }
+.pay[role="button"]:hover { outline: 1px solid var(--muted); }
+.pay .amt { font-family: var(--f-display); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.pay .paid { grid-row: span 2; background: none; border: 1px solid var(--line); border-radius: 4px; font-size: 12px; padding: 4px 8px; color: var(--muted); }
+.pay .paid:hover { border-color: var(--ok); color: var(--ok); }
+.pay-empty { align-self: center; color: var(--muted); font-size: 13px; padding: 0 6px; }
+.pay-empty code { font-family: var(--f-mono); color: var(--text); }
+.paysum { flex: none; align-self: center; text-align: right; padding: 0 10px; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.paysum b { display: block; font-family: var(--f-display); font-size: 20px; color: var(--text); font-weight: 600; }
+
+/* Posteingang unter Todoist heute */
+.inbox { border-top: 1px solid var(--line); display: flex; flex-direction: column; max-height: 38%; min-height: 0; }
+.inbox-head { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 16px 4px; }
+.inbox-head h3 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 20px; }
+.inbox-head h3 span { font-family: var(--f-mono); font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 6px; }
+.inbox .todo-list { flex: 1; }
+.inbox { max-height: 52%; }
+.seg.sm button { padding: 3px 10px; font-size: 12px; }
+.modal { position: fixed; inset: 0; z-index: 50; background: rgba(10,10,9,.72); display: grid; place-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.mbox { width: min(820px, 100%); max-height: 100%; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--red); border-radius: 6px; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+.mbox-head { padding: 16px 18px 12px; border-bottom: 1px solid var(--line); display: grid; gap: 6px; }
+.mbox-head h2 { margin: 0; font-family: var(--f-display); font-size: 24px; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.mbox-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.mbox-actions .btn { background: var(--red); border: 1px solid var(--red); border-radius: 5px; padding: 7px 14px; font-weight: 600; color: var(--text); }
+.mbox-actions .btn.ghost { background: var(--panel-2); border-color: var(--line); font-weight: 500; text-decoration: none; }
+.mbox-actions .btn:disabled { opacity: .55; cursor: default; }
+.mbox-actions .x { margin-left: auto; }
+.mbox-body { overflow: auto; padding: 4px 18px 18px; }
+.msg { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.msg:last-child { border-bottom: 0; }
+.msg-meta { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+.msg-meta .f { font-weight: 600; }
+.msg-meta .to, .msg-meta .d { color: var(--muted); font-family: var(--f-mono); font-size: 12px; }
+.msg pre { margin: 10px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.55 var(--f-body); color: var(--text); }
+.msg .att { margin-top: 8px; font-size: 12px; color: var(--muted); font-family: var(--f-mono); }
+.btn-open { display: inline-block; background: var(--red); color: var(--text); text-decoration: none; font-weight: 600; border-radius: 5px; padding: 8px 14px; }
+.staffo-cols { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+.shift { display: grid; grid-template-columns: 92px 1fr; gap: 2px 12px; padding: 8px; border-radius: 5px; }
+.shift:hover { background: var(--panel-2); }
+.shift .tm { font-family: var(--f-mono); font-size: 13px; color: var(--text); }
+.shift .who { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.shift .wo { grid-column: 2; font-size: 12px; color: var(--muted); }
+.shift.open .who { color: var(--red-hot); }
+.staffo-frame { flex: 1; min-height: 420px; position: relative; overflow: hidden; display: flex; }
+.staffo-frame iframe { flex: 1; width: 100%; border: 0; background: #fff; }
+.staffo-note { margin: auto; max-width: 520px; padding: 32px; display: grid; gap: 12px; justify-items: start; line-height: 1.5; color: var(--muted); }
+.boxes { display: flex; gap: 6px; padding: 6px 16px 2px; overflow-x: auto; scrollbar-width: none; flex: none; }
+.box { flex: none; background: none; border: 1px solid var(--line); border-radius: 99px; padding: 3px 10px; font-size: 12px; color: var(--muted); }
+.box[aria-pressed="true"] { border-color: var(--red); color: var(--text); background: var(--red-soft); }
+.mail { display: grid; grid-template-columns: 10px 1fr auto; gap: 4px 10px; padding: 8px; border-radius: 5px; text-decoration: none; color: inherit; align-items: baseline; }
+.mail:hover { background: var(--panel-2); }
+.mail .dot { width: 7px; height: 7px; border-radius: 50%; background: transparent; align-self: center; }
+.mail.unread .dot { background: var(--red-hot); }
+.mail .from { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.mail.unread .from { font-weight: 700; }
+.mail .when { font-family: var(--f-mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+.mail .subj { grid-column: 2 / 4; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.mail .snip { grid-column: 2 / 4; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.col { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 16px; }
+
+.eyebrow { font-family: var(--f-display); font-weight: 600; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+
+/* Lage oben links */
+.lage { padding: 16px 18px; display: grid; gap: 6px; }
+.clock { font-family: var(--f-display); font-weight: 600; font-size: 56px; line-height: .95; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+.clock .sec { color: var(--red); font-size: 28px; vertical-align: top; margin-left: 4px; }
+.date { color: var(--muted); font-size: 14px; }
+.wx { display: flex; align-items: baseline; gap: 10px; margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+.wx .temp { font-family: var(--f-display); font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.wx .place { font-weight: 500; }
+.wx .cond { color: var(--muted); font-size: 13px; }
+
+/* Projektkacheln */
+.projects { flex: 1; min-height: 0; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.projects-head { display: flex; justify-content: space-between; align-items: baseline; }
+.linkbtn { background: none; border: 0; color: var(--muted); font-size: 12px; padding: 2px 4px; }
+.linkbtn:hover { color: var(--text); }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; overflow: auto; align-content: start; }
+.tile {
+  position: relative; text-align: left; min-height: 92px; padding: 12px; border-radius: 5px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
+  transition: border-color .2s, transform .15s, background .2s;
+}
+.tile:hover { border-color: var(--red); transform: translateY(-1px); }
+.tile[aria-pressed="true"] { background: var(--red-soft); border-color: var(--red); }
+.tile .name { font-family: var(--f-display); font-weight: 600; font-size: 18px; line-height: 1.1; overflow-wrap: anywhere; }
+.tile .count { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.tile .count b { color: var(--red-hot); font-weight: 500; }
+.tile .mark { position: absolute; top: 12px; right: 12px; width: 7px; height: 7px; transform: rotate(45deg); background: var(--line); }
+.tile.has-today .mark { background: var(--red); }
+.tile.skel { color: transparent; background: linear-gradient(90deg, var(--panel-2), #2e2d2a, var(--panel-2)); background-size: 200% 100%; animation: skel 1.4s infinite linear; }
+@keyframes skel { to { background-position: -200% 0; } }
+
+/* Zentrum */
+.center { position: relative; }
+.hub { position: relative; flex: 1; min-height: 320px; border-radius: 6px; overflow: hidden;
+  background: radial-gradient(ellipse at center, #241312 0%, var(--ink) 62%); border: 1px solid var(--line); }
+.hub canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hub-label { position: absolute; left: 18px; top: 14px; display: flex; gap: 10px; align-items: center; }
+.state-pill { font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+.state-pill[data-s="denkt"], .state-pill[data-s="spricht"] { border-color: var(--red); color: var(--red-hot); }
+.hub-title { position: absolute; left: 0; right: 0; bottom: 16px; text-align: center; pointer-events: none; }
+.hub-title .big { font-family: var(--f-display); font-weight: 700; font-size: 15px; letter-spacing: .5em; text-transform: uppercase; color: var(--muted); }
+.hub-title .focus { font-family: var(--f-display); font-size: 22px; font-weight: 600; margin-top: 2px; min-height: 1.2em; }
+
+.answer { padding: 14px 16px; max-height: 30%; overflow: auto; min-height: 64px; line-height: 1.5; white-space: pre-wrap; }
+.answer .who { font-family: var(--f-display); font-weight: 600; color: var(--red-hot); letter-spacing: .1em; text-transform: uppercase; font-size: 12px; display: block; margin-bottom: 4px; }
+.answer.empty { color: var(--muted); }
+
+.cmd { display: flex; gap: 8px; padding: 8px; align-items: center; }
+.cmd input { flex: 1; min-width: 0; background: transparent; border: 0; padding: 10px 8px; font-size: 16px; outline: none; }
+.cmd input::placeholder { color: #75726c; }
+.cmd:focus-within { border-color: var(--red); }
+.iconbtn { width: 40px; height: 40px; flex: none; border-radius: 5px; border: 1px solid var(--line); background: var(--panel-2); display: grid; place-items: center; }
+.iconbtn:hover { border-color: var(--red); }
+.iconbtn[aria-pressed="true"] { background: var(--red); border-color: var(--red); }
+.iconbtn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.send { background: var(--red); border-color: var(--red); }
+.hint { font-size: 12px; color: var(--muted); padding: 0 4px; }
+.hint code { font-family: var(--f-mono); color: var(--text); }
+
+/* Todoist rechts */
+.todo { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.todo-head { padding: 14px 16px 10px; display: grid; gap: 4px; border-bottom: 1px solid var(--line); }
+.todo-head h2 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 26px; letter-spacing: .02em; display: flex; justify-content: space-between; align-items: baseline; }
+.todo-head h2 span { font-family: var(--f-mono); font-size: 13px; color: var(--muted); font-weight: 400; }
+.filter-chip { justify-self: start; display: inline-flex; gap: 6px; align-items: center; font-size: 12px; background: var(--red-soft); border: 1px solid var(--red); border-radius: 99px; padding: 2px 4px 2px 10px; }
+.filter-chip button { background: none; border: 0; padding: 0 6px; color: var(--text); }
+.todo-list { list-style: none; margin: 0; padding: 6px 8px 12px; overflow: auto; flex: 1; }
+.group-label { padding: 12px 8px 4px; }
+.task { display: grid; grid-template-columns: 22px 1fr; gap: 10px; padding: 9px 8px; border-radius: 5px; align-items: start; }
+.task:hover { background: var(--panel-2); }
+.check { width: 20px; height: 20px; margin-top: 1px; border-radius: 50%; border: 2px solid var(--prio, var(--muted)); background: none; padding: 0; display: grid; place-items: center; }
+.check:hover { background: var(--red-soft); }
+.check.done { background: var(--prio, var(--muted)); }
+.task[data-p="p1"] { --prio: var(--red-hot); }
+.task[data-p="p2"] { --prio: var(--warn); }
+.task[data-p="p3"] { --prio: #6b9bd6; }
+.task .t { min-width: 0; overflow-wrap: anywhere; line-height: 1.35; }
+.task .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--muted); margin-top: 3px; font-family: var(--f-mono); }
+.task .meta .late { color: var(--red-hot); }
+.task.leaving { opacity: .35; text-decoration: line-through; transition: opacity .4s; }
+.todo-foot { padding: 8px 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.notice { margin: 16px; padding: 12px; border: 1px dashed var(--line); border-radius: 5px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+@media (max-width: 1100px) {
+  .shell { height: auto; }
+  .app { grid-template-columns: minmax(220px, 30%) 1fr; height: auto; }
+  .inbox { max-height: none; }
+  .paybar { flex-wrap: wrap; }
+  .paybar-label { border-right: 0; }
+  .col.right { grid-column: 1 / -1; }
+  .todo-list { max-height: 60vh; }
+}
+@media (max-width: 720px) {
+  .app { grid-template-columns: 1fr; }
+  .hub { min-height: 300px; }
+  .clock { font-size: 44px; }
+  .tiles { max-height: none; }
+}
+@media (prefers-reduced-motion: reduce) { .tile, .task.leaving { transition: none; } .tile.skel { animation: none; } }
+
+/* ---- Lokale Zentrale: Ergänzungen zur claude.ai-Vorlage ---- */
+html, body { margin: 0; }
+body { overflow: hidden; }
+@media (max-width: 1100px) { body { overflow: auto; } }
+
+/* Links: Projekte teilen sich die Spalte mit "Heute im Dienst" */
+.projects { flex: 1 1 0; min-height: 190px; }
+.duty { flex: 0 1 auto; max-height: 40%; min-height: 120px; padding: 14px 14px 8px; display: flex; flex-direction: column; gap: 6px; }
+.duty-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.duty-head b { font-family: var(--f-mono); font-size: 12px; font-weight: 400; color: var(--muted); }
+.duty-locs { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.duty .todo-list { padding: 0; margin: 0 -6px; }
+.shift .tm { white-space: nowrap; }
+.shift .loc { color: var(--text); font-weight: 500; }
+
+/* Jarvis im Obsidian-Hub: der Hub leuchtet, wenn Jarvis hört oder spricht */
+.hub { transition: border-color .4s, box-shadow .4s; }
+.hub[data-s="hört"] { border-color: rgba(198,40,40,.7); animation: hub-hear 2.4s ease-in-out infinite; }
+.hub[data-s="denkt"] { border-color: rgba(224,168,74,.6); box-shadow: 0 0 28px rgba(224,168,74,.18), inset 0 0 50px rgba(224,168,74,.07); }
+.hub[data-s="spricht"] { border-color: var(--red-hot); animation: hub-speak 1.1s ease-in-out infinite; }
+@keyframes hub-hear { 0%,100% { box-shadow: 0 0 18px rgba(198,40,40,.18), inset 0 0 40px rgba(198,40,40,.08); } 50% { box-shadow: 0 0 34px rgba(198,40,40,.34), inset 0 0 70px rgba(198,40,40,.16); } }
+@keyframes hub-speak { 0%,100% { box-shadow: 0 0 30px rgba(255,75,62,.32), inset 0 0 70px rgba(198,40,40,.18); } 50% { box-shadow: 0 0 60px rgba(255,75,62,.6), inset 0 0 120px rgba(198,40,40,.34); } }
+.hub::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .5s;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,120,100,.10) 48%, transparent 66%); background-size: 250% 100%; }
+.hub[data-s="spricht"]::after, .hub[data-s="hört"]::after { opacity: 1; animation: shimmer 2.6s linear infinite; }
+@keyframes shimmer { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+#orb { position: absolute; left: 50%; top: calc(50% - 14px); width: 120px; height: 120px; transform: translate(-50%, -50%);
+  border-radius: 50%; cursor: pointer; background: transparent; z-index: 2; }
+#orb:hover { box-shadow: 0 0 0 1px rgba(255,75,62,.35); }
+#status { position: absolute; right: 18px; top: 14px; font-size: 12px; color: var(--muted); max-width: 50%; text-align: right; }
+.hub-off { position: absolute; right: 14px; bottom: 12px; z-index: 3; background: none; border: 1px solid var(--line); border-radius: 4px;
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 3px 8px; }
+.hub-off:hover { border-color: var(--red); color: var(--text); }
+@media (prefers-reduced-motion: reduce) { .hub, .hub::after { animation: none !important; } }
+
+/* Antwortfeld = Gesprächsverlauf mit Jarvis */
+.answer { white-space: normal; }
+.answer .user { color: var(--muted); font-size: 13px; margin: 8px 0 2px; }
+.answer .jarvis { white-space: pre-wrap; margin-bottom: 6px; }
+.answer .jarvis::before { content: "Jarvis"; display: block; font-family: var(--f-display); font-weight: 600; color: var(--red-hot); letter-spacing: .1em; text-transform: uppercase; font-size: 12px; margin-bottom: 2px; }
+.answer .sys { color: var(--muted); font-size: 13px; }
+.iconbtn[aria-pressed="false"]#voice { opacity: .7; }
+/* Social Media */
+.sm-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 1000px) { .sm-grid { grid-template-columns: 1fr; } }
+.sm-col { display: grid; gap: 16px; min-width: 0; }
+.sm-sec { padding: 14px 16px; display: grid; gap: 10px; min-width: 0; }
+.sm-sec h2 { margin: 0; font-family: var(--f-display); font-size: 22px; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sm-sec h2 span { font-family: var(--f-mono); font-size: 12px; font-weight: 400; color: var(--muted); }
+.sm-phase { display: grid; gap: 4px; }
+.sm-phase + .sm-phase { border-top: 1px solid var(--line); padding-top: 10px; }
+.sm-phase h3 { margin: 0; font-family: var(--f-display); font-size: 17px; font-weight: 600; letter-spacing: .02em; display: flex; justify-content: space-between; gap: 8px; }
+.sm-phase h3 span { font-family: var(--f-mono); font-size: 11px; font-weight: 400; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.sm-check { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.sm-check label { display: grid; grid-template-columns: 18px 1fr auto; gap: 2px 10px; padding: 7px 6px; border-radius: 5px; cursor: pointer; align-items: start; }
+.sm-check label:hover { background: var(--panel-2); }
+.sm-check input { accent-color: var(--red); margin: 3px 0 0; }
+.sm-check .t { font-weight: 500; min-width: 0; }
+.sm-check .d { grid-column: 2 / 4; font-size: 12px; color: var(--muted); }
+.sm-check input:checked ~ .t { color: var(--muted); text-decoration: line-through; }
+.sm-check .who { font-family: var(--f-mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+.sm-check .who.j { color: var(--warn); }
+.sm-bar { height: 4px; background: var(--panel-2); border-radius: 2px; overflow: hidden; }
+.sm-bar i { display: block; height: 100%; background: var(--red); width: 0; transition: width .3s; }
+.sm-tbl td { white-space: normal; }
+.sm-tbl .st { white-space: nowrap; }
+.st.aktiv, .st.verbunden { border-color: var(--ok); color: var(--ok); }
+.st.aufbauen { border-color: var(--warn); color: var(--warn); }
+.st.entfällt { color: var(--muted); }
+.sm-day { display: grid; grid-template-columns: 92px 1fr; gap: 2px 12px; padding: 8px 6px; border-radius: 5px; }
+.sm-day:hover { background: var(--panel-2); }
+.sm-day b { font-family: var(--f-display); font-size: 16px; font-weight: 600; }
+.sm-day .f { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--red-hot); }
+.sm-day .i { grid-column: 2; grid-row: 1 / 3; font-size: 13px; color: var(--muted); }
+.kpi small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.hint a { color: var(--text); }
+/* Handy (App): Reiter in einer wischbaren Zeile, Jarvis-Zeile darunter über die volle Breite */
+@media (max-width: 720px) {
+  body { padding-block: 8px; padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); }
+  .nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-top: env(safe-area-inset-top, 0px); }
+  .nav::-webkit-scrollbar { display: none; }
+  .brand { padding-right: 10px; margin-right: 2px; font-size: 16px; }
+  .tab { padding: 12px 10px 10px; font-size: 15px; }
+  .jline { position: fixed; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom, 0px)); margin: 0; z-index: 60; flex: none; min-width: 0; background: var(--panel); box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+  .jline input { font-size: 16px; padding: 11px 8px; }
+  .shell { padding-bottom: 64px; }
+  .jline-out { top: auto !important; bottom: 70px; left: 10px; right: 10px; width: auto; }
+  .page-head h1 { font-size: 28px; }
+  .doc-prev { height: 420px; }
+  .kpis:not(.staffo-cols) { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+  .kpi b { font-size: 22px; }
+  table.inv tr:not(.inv-detail) > :is(th, td):is(:nth-child(3), :nth-child(4), :nth-child(7)) { display: none; }
+  table.inv th, table.inv td { padding-left: 6px; padding-right: 6px; white-space: normal; }
+  .inv-detail dl { grid-template-columns: 1fr; gap: 0 0; }
+  .inv-detail dd { margin-bottom: 6px; }
+  .inv-pay { order: -1; }
+}
+/* Jarvis-Reiter: angeheftete Claude-Projekte */
+.tab-jarvis { color: var(--red-hot); }
+.cp-card { padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 10px; color: var(--text); border-left: 3px solid var(--red); min-height: 170px; }
+.applink { margin-top: 16px; padding: 16px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.applink p { margin: 6px 0 0; color: var(--muted); font-size: 14px; max-width: 60ch; }
+.applink .qr { background: #fff; padding: 10px; border-radius: 6px; line-height: 0; }
+.cp-links { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: auto; }
+.cp-links .btn-open { font-size: 13px; padding: 6px 12px; }
+.cp-links .linkbtn { color: var(--muted); text-decoration: none; font-size: 13px; }
+.cp-links .linkbtn:hover { color: var(--text); }
+.cp-card h2 { margin: 0; font-family: var(--f-display); font-size: 22px; font-weight: 700; }
+.cp-card p { margin: 0; font-size: 14px; color: var(--muted); }
+.cp-card .cp-meta { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--red-hot); }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="nav" role="tablist" aria-label="Bereiche">
+  <span class="brand"><i></i>ZAC · Jarvis</span>
+  <button class="tab" role="tab" data-v="dashboard" type="button">Dashboard</button>
+  <button class="tab" role="tab" data-v="projekte" type="button">Todoist</button>
+  <button class="tab tab-jarvis" role="tab" data-v="jarvis" type="button">Jarvis</button>
+  <button class="tab" role="tab" data-v="buchhaltung" type="button">Buchhaltung</button>
+  <button class="tab" role="tab" data-v="arbeitsspace" type="button">Arbeitsspace</button>
+  <button class="tab" role="tab" data-v="staffo" type="button">Staffo</button>
+  <button class="tab" role="tab" data-v="social" type="button">Social Media</button>
+  <form class="jline" id="jlineForm" autocomplete="off" role="search">
+    <label for="jline">Jarvis</label>
+    <input id="jline" type="text" placeholder="Anweisung, Bemerkung oder Info an Jarvis …" aria-label="Anweisung an Jarvis">
+    <button type="submit" aria-label="An Jarvis senden"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6"/></svg></button>
+  </form>
+</nav>
+<div class="jline-out" id="jlineOut" role="status" aria-live="polite" hidden></div>
+<div class="tw-modal" id="twModal" hidden>
+  <form class="panel tw-form" id="twForm" autocomplete="off">
+    <h2 id="twFormTitle">Neuer Termin</h2>
+    <input id="tfContent" required placeholder="Titel, z. B. Baustellenbegehung" aria-label="Titel">
+    <textarea id="tfDesc" rows="2" placeholder="Beschreibung (optional)" aria-label="Beschreibung"></textarea>
+    <div class="tf-row">
+      <label>Datum<input id="tfDate" type="date" required></label>
+      <label>Uhrzeit<input id="tfTime" type="time"></label>
+      <label>Dauer<select id="tfDur"><option value="">–</option><option>15</option><option>30</option><option selected>60</option><option>90</option><option>120</option><option>180</option><option>240</option><option>480</option></select></label>
+    </div>
+    <div class="tf-row">
+      <label>Projekt<select id="tfProject"></select></label>
+      <label>Abschnitt<select id="tfSection"></select></label>
+    </div>
+    <div class="tf-prio" id="tfPrio" role="radiogroup" aria-label="Priorität">
+      <button type="button" data-p="p1">P1</button><button type="button" data-p="p2">P2</button><button type="button" data-p="p3">P3</button><button type="button" data-p="p4" aria-pressed="true">P4</button>
+    </div>
+    <div class="tf-labels" id="tfLabels"></div>
+    <div class="tf-actions"><button type="submit" class="tw-send">In Todoist eintragen</button><button type="button" class="sec" id="tfCancel">Abbrechen</button><span class="doc-msg" id="tfMsg"></span></div>
+  </form>
+</div>
+
+<div class="drop" id="drop" hidden>
+  <div class="drop-zones">
+    <div class="dz" data-z="rechnung"><b>Rechnung</b><span>landet im Ordner der Buchhaltung und wird ausgelesen</span></div>
+    <div class="dz" data-z="unterlagen"><b>Unterlagen</b><span>landen im Arbeitsspace zur Bearbeitung</span></div>
+  </div>
+  <p>Oder außerhalb der Felder loslassen: Jarvis prüft selbst, ob es eine Rechnung ist.</p>
+</div>
+<div class="view" id="v-dashboard">
+<section class="panel paybar" aria-label="Zahlungen in den nächsten 7 Tagen">
+  <div class="paybar-label"><span class="eyebrow">Zahlungen</span><strong>fällig ≤ 7 Tage</strong></div>
+  <div class="pay-list" id="payList"><span class="pay-empty">Rechnungen werden geladen …</span></div>
+  <div class="paysum" id="paySum" hidden></div>
+</section>
+<section class="panel shiftwarn" id="shiftWarn" hidden aria-label="Offene Schichten">
+  <div class="paybar-label"><span class="eyebrow">Dienstplan</span><strong id="swHead">offene Schichten</strong></div>
+  <div class="sw-list" id="swList"></div>
+  <a class="linkbtn" href="#staffo" id="swGo">Zu Staffo</a>
+</section>
+<div class="app">
+  <!-- LINKS -->
+  <section class="col left" aria-label="Lage, Projekte und Dienste">
+    <div class="panel lage">
+      <div class="clock" id="clock">--:--<span class="sec">--</span></div>
+      <div class="date" id="date">&nbsp;</div>
+      <div class="wx">
+        <span class="temp" id="temp">–°</span>
+        <span>
+          <span class="place" id="place">Jesteburg</span><br>
+          <span class="cond" id="cond">Wetter wird geladen</span>
+        </span>
+      </div>
+    </div>
+    <div class="panel projects">
+      <div class="projects-head">
+        <span class="eyebrow">Projekte</span>
+        <button class="linkbtn" id="allProjects" type="button">Alle anzeigen</button>
+      </div>
+      <div class="tiles" id="tiles">
+        <div class="tile skel"></div><div class="tile skel"></div><div class="tile skel"></div><div class="tile skel"></div>
+      </div>
+    </div>
+    <div class="panel duty" aria-label="Heute im Dienst">
+      <div class="duty-head"><span class="eyebrow">Heute im Dienst</span><b id="dutyN">–</b></div>
+      <div class="duty-locs" id="dutyLocs"></div>
+      <ul class="todo-list" id="duty"><li class="notice">Dienstplan wird geladen …</li></ul>
+    </div>
+  </section>
+
+  <!-- MITTE -->
+  <section class="col center" aria-label="Jarvis">
+    <div class="hub" id="hub" data-s="bereit">
+      <canvas id="core" aria-hidden="true"></canvas>
+      <div id="orb" class="idle" title="Klick: Zuhören pausieren / fortsetzen"></div>
+      <div class="hub-label"><span class="eyebrow">Obsidian · Wissenszentrum</span><span class="state-pill" id="state" data-s="bereit">bereit</span></div>
+      <div id="status">Verbinde mit Jarvis …</div>
+      <div class="hub-title"><div class="big">J · A · R · V · I · S</div><div class="focus" id="focus"></div></div>
+      <button class="hub-off" id="zacAus" type="button" title="Jarvis beenden">ZAC aus</button>
+    </div>
+    <div class="panel answer" id="transcript" aria-live="polite"><div class="sys">Sprich mit Jarvis oder schreib unten einen Befehl, zum Beispiel „Wer hat heute Dienst?“ oder „Neue Aufgabe: Dienstplan prüfen, morgen 9 Uhr“.</div></div>
+    <form class="panel cmd" id="cmdForm" autocomplete="off">
+      <button class="iconbtn" id="mic" type="button" aria-pressed="false" aria-label="Zuhören an/aus" title="Zuhören an/aus"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <input id="cmd" type="text" placeholder="Befehl an Jarvis … Aufgabe anlegen, Dienstplan, Mails, fragen" aria-label="Befehl an Jarvis">
+      <button class="iconbtn" id="voice" type="button" aria-pressed="true" aria-label="Stimme an/aus" title="Stimme an/aus"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+      <button class="iconbtn send" type="submit" aria-label="Senden"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6"/></svg></button>
+    </form>
+  </section>
+
+  <!-- RECHTS -->
+  <section class="col right" aria-label="Todoist heute">
+    <div class="panel todo">
+      <div class="todo-head">
+        <span class="eyebrow">Todoist · alle Projekte</span>
+        <h2>Heute <span id="todoCount">–</span></h2>
+        <div class="filter-chip" id="filterChip" hidden><span id="filterName"></span><button type="button" id="clearFilter" aria-label="Filter entfernen">×</button></div>
+      </div>
+      <ul class="todo-list" id="todoList"><li class="notice">Todoist wird verbunden …</li></ul>
+      <div class="inbox">
+        <div class="inbox-head"><h3>Posteingang<span id="inboxCount">–</span></h3>
+          <div class="seg sm" id="inSeg"><button type="button" data-m="mails" aria-pressed="true">Mails</button><button type="button" data-m="aufgaben" aria-pressed="false">Aufgaben</button></div></div>
+        <div class="boxes" id="boxes"></div>
+        <ul class="todo-list" id="mailList"><li class="notice">Mails werden geladen …</li></ul>
+        <ul class="todo-list" id="inboxList" hidden><li class="notice">Posteingang wird geladen …</li></ul>
+      </div>
+      <div class="todo-foot"><span id="fresh">&nbsp;</span><button class="linkbtn" id="refresh" type="button">Aktualisieren</button></div>
+    </div>
+  </section>
+</div>
+</div>
+
+<div class="view" id="v-projekte" hidden>
+  <div class="page">
+    <div class="page-head"><h1>Todoist</h1>
+      <div class="tw-nav"><button type="button" id="twPrev" aria-label="Einen Tag zurück">‹</button><button type="button" id="twToday">Heute</button><button type="button" id="twNext" aria-label="Einen Tag weiter">›</button><span class="eyebrow" id="twState">Termine und Aufgaben</span></div></div>
+    <div class="tw">
+      <section class="panel twcol" aria-label="Termine">
+        <div class="tw-head"><h2>Termine</h2><span>mit Uhrzeit</span></div>
+        <div class="cal" id="calTermine"></div>
+      </section>
+      <section class="panel twcol" aria-label="Aufgaben">
+        <div class="tw-head"><h2>Aufgaben</h2><span>ohne Uhrzeit · Überfälliges steht bei heute</span></div>
+        <div class="cal" id="calAufgaben"></div>
+      </section>
+    </div>
+    <form class="panel tw-line" id="twLine" autocomplete="off">
+      <span class="lbl">Jarvis · Todoist</span>
+      <input id="twText" type="text" placeholder="Termin oder Aufgabe schreiben oder sprechen, z. B. „Morgen 14 Uhr Baustellenbegehung, Projekt Berlin - Schlosspark“" aria-label="Termin oder Aufgabe für Todoist">
+      <button type="button" class="tw-mic" id="twMic" aria-pressed="false" aria-label="Diktieren" title="Diktieren"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <button type="submit" class="tw-send">Eintragen</button>
+    </form>
+    <div class="doc-msg" id="twMsg"></div>
+    <div class="pgrid" id="pgrid" hidden></div>
+  </div>
+</div>
+
+<div class="view" id="v-jarvis" hidden>
+  <div class="page">
+    <div class="page-head"><h1>Jarvis · Themen und Projekte</h1>
+      <a class="btn-open" href="https://claude.ai/cowork/projects" target="_blank" rel="noopener">Alle Projekte in Claude ↗</a></div>
+    <div class="pgrid" id="cpGrid"><div class="notice">Claude-Projekte werden geladen …</div></div>
+    <section class="panel applink" id="appLink" hidden>
+      <div><span class="eyebrow">ZAC Zentrale aufs Handy</span>
+        <p>Auf dem Handy Tailscale öffnen und verbinden, dann diesen Code mit der Kamera scannen. Die Zentrale öffnet sich; im Chrome-Menü „App installieren“ bzw. „Zum Startbildschirm hinzufügen“ wählen.</p>
+        <p class="doc-msg" id="appLinkMsg"></p></div>
+      <div id="appQr" class="qr"></div>
+    </section>
+    <p class="hint" id="cpFoot">Quelle: Obsidian, Abschnitte „Themen“ und „Projekte“ in <code>Start.md</code>. Neue Notiz dort verlinken, dann erscheint sie hier. Mit einer Zeile <code>Claude: https://claude.ai/…</code> in der Notiz öffnet der rote Knopf direkt das passende Claude-Projekt.</p>
+  </div>
+</div>
+
+<div class="view" id="v-buchhaltung" hidden>
+  <div class="page">
+    <div class="page-head"><h1>Buchhaltung</h1>
+      <button class="linkbtn" type="button" id="invFetch" title="Postfach rechnung@ jetzt nach neuen Rechnungen durchsuchen">rechnung@ jetzt prüfen</button>
+      <div class="seg" id="invSeg"><button type="button" data-f="offen" aria-pressed="true">Offen</button><button type="button" data-f="bezahlt" aria-pressed="false">Bezahlt</button><button type="button" data-f="alle" aria-pressed="false">Alle</button></div>
+    </div>
+    <div class="kpis">
+      <div class="panel kpi"><span class="eyebrow">Offen gesamt</span><b id="kOpen">–</b></div>
+      <div class="panel kpi alert"><span class="eyebrow">Überfällig</span><b id="kLate">–</b></div>
+      <div class="panel kpi"><span class="eyebrow">Fällig ≤ 7 Tage</span><b id="kWeek">–</b></div>
+      <div class="panel kpi"><span class="eyebrow">Bezahlt diesen Monat</span><b id="kPaid">–</b></div>
+    </div>
+    <div class="panel tablewrap">
+      <table class="inv"><thead><tr><th>Status</th><th>Gläubiger</th><th>Rechnungs-Nr.</th><th>Rechnungsdatum</th><th>Fällig</th><th class="num">Betrag</th><th>Datei</th><th></th></tr></thead>
+      <tbody id="invBody"><tr><td colspan="8" class="pay-empty">Rechnungen werden geladen …</td></tr></tbody></table>
+    </div>
+    <p class="hint" id="invHint">Quelle: Ordner <code>Claude_Backup/Unterlagen/Rechnungen für Jarvis</code>. Neue PDFs dort ablegen, Jarvis liest sie beim nächsten Laden aus. Zeile anklicken für alle Rechnungsdaten. „Bezahlt“ benennt die Datei in <code>…_Bezahlt_TTMMJJ</code> um.</p>
+  </div>
+</div>
+
+<div class="view" id="v-staffo" hidden>
+  <div class="page">
+    <div class="page-head"><h1>Staffomatic</h1>
+      <a class="btn-open" id="staffoOpen" href="https://zac-gmbh.staffomatic.app/login" target="_blank" rel="noopener">In neuem Fenster öffnen ↗</a></div>
+    <div class="kpis staffo-cols">
+      <section class="panel pcard"><h2>Dienste heute · alle Standorte<span id="sfTodayN">–</span></h2><ul class="todo-list" id="sfToday"><li class="notice">Wird geladen …</li></ul></section>
+    </div>
+    <div class="panel staffo-frame" id="staffoWrap">
+      <iframe id="staffoFrame" title="Staffomatic" hidden referrerpolicy="no-referrer-when-downgrade" allow="clipboard-write"></iframe>
+      <div class="staffo-note" id="staffoNote">
+        <span class="eyebrow">Dienstplanung · ZAC GmbH</span>
+        <p>Staffomatic lässt sich nicht in diese Seite einbetten. Über den Knopf öffnet es sich in einem eigenen Fenster.</p>
+        <a class="btn-open" href="https://zac-gmbh.staffomatic.app/login" target="_blank" rel="noopener">Staffomatic öffnen ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="view" id="v-social" hidden>
+  <div class="page">
+    <div class="page-head"><h1>Social Media</h1><span class="eyebrow" id="smHead">Reichweitenplan · Instagram @zac_sicherheitsservice</span></div>
+    <div class="kpis" id="smKpis"><div class="notice">Wird geladen …</div></div>
+    <div class="sm-grid">
+      <section class="panel sm-sec" aria-label="Reichweitenplan">
+        <h2>Reichweitenplan<span id="smProg">–</span></h2>
+        <div class="sm-bar"><i id="smBar"></i></div>
+        <div id="smPlan"></div>
+      </section>
+      <div class="sm-col">
+        <section class="panel sm-sec"><h2>Kanäle</h2>
+          <div class="tablewrap"><table class="inv sm-tbl"><thead><tr><th>Kanal</th><th>Status</th><th>Wofür</th><th>Metricool</th></tr></thead><tbody id="smCh"></tbody></table></div>
+        </section>
+        <section class="panel sm-sec"><h2>Wochenrhythmus<span>3 Beiträge</span></h2><div id="smWeek"></div></section>
+        <section class="panel sm-sec"><h2>Ziele nach 90 Tagen<span>bis Anfang Januar</span></h2>
+          <div class="tablewrap"><table class="inv sm-tbl"><thead><tr><th>Kennzahl</th><th class="num">Start 07.10.</th><th class="num">Ziel</th></tr></thead><tbody id="smGoals"></tbody></table></div>
+        </section>
+      </div>
+    </div>
+    <p class="hint" id="smFoot"></p>
+  </div>
+</div>
+
+<div class="view" id="v-arbeitsspace" hidden>
+  <div class="page">
+    <div class="page-head"><h1>Arbeitsspace</h1><span class="eyebrow" id="wsState">Notizblock</span></div>
+    <div class="ws">
+      <textarea id="wsText" placeholder="Gedanken, Gesprächsnotizen, Entwürfe … wird automatisch gespeichert." aria-label="Arbeitsspace Notizen"></textarea>
+      <aside class="panel">
+        <span class="eyebrow">Mit Jarvis weiterarbeiten</span>
+        <p>Markiere Text im Notizblock (oder nichts für alles) und lass Jarvis daraus Aufgaben machen oder es zusammenfassen.</p>
+        <button class="btn" type="button" id="wsTasks">Aufgaben daraus machen</button>
+        <button class="btn" type="button" id="wsSum" style="background:var(--panel-2);border:1px solid var(--line)">Zusammenfassen</button>
+        <div id="wsOut" style="white-space:pre-wrap;color:var(--text)"></div>
+      </aside>
+    </div>
+    <section class="panel docs" aria-label="Unterlagen">
+      <div class="docs-head"><span class="eyebrow">Unterlagen · Eingang</span><span class="docs-hint">Dateien in die Zentrale ziehen und „Unterlagen“ wählen. Dokument anklicken und schreiben, was Jarvis damit machen soll.</span></div>
+      <ul class="doc-list" id="docList"><li class="notice">Unterlagen werden geladen …</li></ul>
+    </section>
+  </div>
+</div>
+</div>
+
+<div class="modal" id="mailModal" hidden role="dialog" aria-modal="true" aria-labelledby="mSubj">
+  <div class="mbox">
+    <div class="mbox-head">
+      <span class="eyebrow" id="mFrom">&nbsp;</span>
+      <h2 id="mSubj">&nbsp;</h2>
+      <div class="mbox-actions">
+        <button class="btn" type="button" id="mReply">Antworten</button>
+        <button class="btn" type="button" id="mRead">Als gelesen markieren</button>
+        <span class="hint" id="mState"></span>
+        <button class="iconbtn x" type="button" id="mClose" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+    </div>
+    <div class="mbox-body" id="mBody"></div>
+  </div>
+</div>
+<script src="/static/main.js?v=3"></script>
+<script>
+// ZAC Zentrale (lokal): Layout der claude.ai-"Jarvis Zentrale", Daten vom Jarvis-Server,
+// Stimme und Gespräch über main.js (Orb, Mikrofon, ElevenLabs, "ZAC aus").
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+  async function api(url, opts) {
+    const r = await fetch(url, opts);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  }
+  const write = (method, body) => ({ method, headers: { "X-Zentrale": "1", ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  function notice(ul, msg) { ul.innerHTML = ""; const li = document.createElement("li"); li.className = "notice"; li.textContent = msg; ul.append(li); }
+  function note(text) {
+    const t = $("transcript"); const d = document.createElement("div"); d.className = "sys"; d.textContent = text;
+    t.append(d); t.scrollTop = t.scrollHeight;
+  }
+
+  /* ---------- Uhr ---------- */
+  const fmtDate = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  function tick() {
+    const d = new Date();
+    const hh = String(d.getHours()).padStart(2, "0"), mm = String(d.getMinutes()).padStart(2, "0"), ss = String(d.getSeconds()).padStart(2, "0");
+    $("clock").innerHTML = `${hh}:${mm}<span class="sec">${ss}</span>`;
+    $("date").textContent = fmtDate.format(d);
+  }
+  tick(); setInterval(tick, 1000);
+
+  /* ---------- Ort + Wetter: vom Jarvis-Server, sonst Open-Meteo für Jesteburg ---------- */
+  const WX = { 0:"klar",1:"überwiegend klar",2:"teils bewölkt",3:"bedeckt",45:"Nebel",48:"Reifnebel",51:"Niesel",53:"Niesel",55:"starker Niesel",61:"leichter Regen",63:"Regen",65:"starker Regen",71:"leichter Schnee",73:"Schnee",75:"starker Schnee",80:"Schauer",81:"Schauer",82:"heftige Schauer",95:"Gewitter",96:"Gewitter mit Hagel",99:"Gewitter mit Hagel" };
+  async function fallbackWeather() {
+    try {
+      const j = await api("https://api.open-meteo.com/v1/forecast?latitude=53.3105&longitude=9.9573&current=temperature_2m,weather_code&timezone=auto");
+      $("temp").textContent = Math.round(j.current.temperature_2m) + "°";
+      $("cond").textContent = WX[j.current.weather_code] || "aktuell";
+      $("place").textContent = "Jesteburg";
+    } catch { $("cond").textContent = "Wetter nicht verfügbar"; }
+  }
+  let info = null;
+  async function loadInfo() {
+    try { info = await api("/api/zentrale/info"); } catch { info = null; }
+    if (info && info.temperatur != null) {
+      $("temp").textContent = info.temperatur + "°";
+      $("cond").textContent = info.wetter || "aktuell";
+      $("place").textContent = info.ort || "Aktueller Standort";
+    } else fallbackWeather();
+    return info;
+  }
+
+  /* ---------- Obsidian-Zentrum (Canvas, wie in der Vorlage) ---------- */
+  const cv = $("core"), ctx = cv.getContext("2d");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let W = 0, H = 0, DPR = 1;
+  let energy = 0.25, target = 0.25, flash = 0, nodes = [], bolts = [];
+  function resize() {
+    DPR = Math.min(2, devicePixelRatio || 1);
+    const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+    cv.width = W * DPR; cv.height = H * DPR; ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  new ResizeObserver(resize).observe(cv);
+  function buildNodes(projects, tasks) {
+    const prev = new Map(nodes.map(n => [n.id, n]));
+    const out = [];
+    projects.forEach((p, i) => {
+      const a = (i / Math.max(1, projects.length)) * Math.PI * 2 - Math.PI / 2;
+      out.push(prev.get(p.id) || { id: p.id, kind: "p", label: p.name, a, r: .62, size: 5, phase: Math.random() * 6 });
+    });
+    tasks.forEach((t) => {
+      const parent = out.find(n => n.id === t.projectId);
+      const base = parent ? parent.a : Math.random() * 6.28;
+      out.push(prev.get(t.id) || { id: t.id, kind: "t", parent: t.projectId, a: base + (Math.random() - .5) * .7, r: .82 + Math.random() * .12, size: 2.2, phase: Math.random() * 6 });
+    });
+    for (let i = 0; i < 46; i++) out.push(prev.get("d" + i) || { id: "d" + i, kind: "d", a: Math.random() * 6.28, r: .25 + Math.random() * .85, size: 1, phase: Math.random() * 6 });
+    nodes = out;
+  }
+  buildNodes([], []);
+  function strike() {
+    const targets = nodes.filter(n => n.kind !== "d");
+    const n = targets[Math.floor(Math.random() * targets.length)] || nodes[0];
+    bolts.push({ n, life: 1 });
+  }
+  let spin = 0, last = performance.now();
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    energy += (target - energy) * Math.min(1, dt * 3);
+    flash = Math.max(0, flash - dt * 1.6);
+    spin += dt * (0.03 + energy * 0.12);
+    const cx = W / 2, cy = H / 2 - 14, R = Math.min(W, H) * 0.42;
+    ctx.clearRect(0, 0, W, H);
+    const t = now / 1000;
+    const pos = (n) => {
+      const wob = Math.sin(t * .6 + n.phase) * .015;
+      const a = n.a + spin * (n.kind === "d" ? .6 : 1);
+      return [cx + Math.cos(a) * R * (n.r + wob), cy + Math.sin(a) * R * (n.r + wob) * .82];
+    };
+    ctx.lineWidth = 1;
+    for (const n of nodes) {
+      if (n.kind === "d") continue;
+      const [x, y] = pos(n);
+      let px = cx, py = cy;
+      if (n.kind === "t") { const p = nodes.find(m => m.id === n.parent); if (p) [px, py] = pos(p); }
+      ctx.strokeStyle = `rgba(198,40,40,${0.12 + energy * .35 + flash * .4})`;
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y); ctx.stroke();
+    }
+    for (const n of nodes) {
+      const [x, y] = pos(n);
+      const tw = .5 + .5 * Math.sin(t * (1.5 + energy * 4) + n.phase);
+      if (n.kind === "d") { ctx.fillStyle = `rgba(242,240,236,${.08 + tw * .18 * (0.4 + energy)})`; ctx.fillRect(x, y, 1.4, 1.4); continue; }
+      ctx.fillStyle = n.kind === "p" ? `rgba(242,240,236,${.75 + tw * .25})` : `rgba(255,75,62,${.55 + tw * .45})`;
+      ctx.beginPath(); ctx.arc(x, y, n.size + (n.kind === "p" ? energy * 2 : 0), 0, 6.283); ctx.fill();
+      if (n.kind === "p" && W > 520) {
+        ctx.fillStyle = "rgba(163,160,154,.9)"; ctx.font = "500 12px Barlow, sans-serif";
+        ctx.textAlign = x < cx ? "right" : "left"; ctx.fillText(n.label, x + (x < cx ? -10 : 10), y + 4);
+      }
+    }
+    if (!reduce && energy > .55 && Math.random() < dt * (energy * 5)) strike();
+    for (const b of bolts) {
+      const [x, y] = pos(b.n);
+      ctx.strokeStyle = `rgba(255,120,100,${b.life})`; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      const steps = 7;
+      for (let i = 1; i < steps; i++) {
+        const k = i / steps;
+        ctx.lineTo(cx + (x - cx) * k + (Math.random() - .5) * 18, cy + (y - cy) * k + (Math.random() - .5) * 18);
+      }
+      ctx.lineTo(x, y); ctx.stroke();
+      b.life -= dt * 3;
+    }
+    bolts = bolts.filter(b => b.life > 0);
+    const pulse = .5 + .5 * Math.sin(t * (1.2 + energy * 6));
+    const coreR = R * (0.13 + energy * .03 + pulse * .015 * (1 + energy * 3) + flash * .04);
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR * 3.2);
+    g.addColorStop(0, `rgba(255,${120 + flash * 100},${100 + flash * 120},${.9})`);
+    g.addColorStop(.25, `rgba(198,40,40,${.55 + energy * .35})`);
+    g.addColorStop(1, "rgba(198,40,40,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, coreR * 3.2, 0, 6.283); ctx.fill();
+    for (let i = 0; i < 3; i++) {
+      const ph = ((t * (0.25 + energy * .9) + i / 3) % 1);
+      ctx.strokeStyle = `rgba(255,75,62,${(1 - ph) * (0.15 + energy * .5)})`; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.ellipse(cx, cy, coreR * (1 + ph * 5), coreR * (1 + ph * 5) * .82, 0, 0, 6.283); ctx.stroke();
+    }
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(spin * .5);
+    ctx.fillStyle = "#1D1D1B"; ctx.strokeStyle = `rgba(255,140,120,${.6 + energy * .4})`; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    const k = coreR * .78;
+    ctx.moveTo(0, -k * 1.15); ctx.lineTo(k * .72, -k * .25); ctx.lineTo(k * .45, k * .95); ctx.lineTo(-k * .5, k * .9); ctx.lineTo(-k * .78, -k * .2); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -k * 1.15); ctx.lineTo(-k * .05, k * .2); ctx.lineTo(k * .45, k * .95); ctx.moveTo(-k * .05, k * .2); ctx.lineTo(-k * .78, -k * .2); ctx.stroke();
+    ctx.restore();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  const STATES = { bereit: .25, hört: .5, denkt: .62, spricht: .9, aktiv: .75, ruht: .15, aus: .1 };
+  let idleTimer, voiceState = "bereit";
+  function setState(s) {
+    $("state").dataset.s = s; $("state").textContent = s; $("hub").dataset.s = s; target = STATES[s] ?? .25;
+    clearTimeout(idleTimer);
+    if (s === "aktiv") idleTimer = setTimeout(() => setState(voiceState), 2600);
+  }
+  function lightUp() { flash = 1; for (let i = 0; i < 5; i++) setTimeout(strike, i * 90); }
+
+  /* ---------- Jarvis (main.js) steuert den Hub ---------- */
+  const ORB_STATE = { idle: "bereit", listening: "hört", thinking: "denkt", speaking: "spricht" };
+  window.onJarvisState = (s) => {
+    voiceState = ORB_STATE[s] || "bereit";
+    if (s === "idle" && typeof asleep !== "undefined" && asleep) voiceState = "ruht";
+    if (typeof shutDown !== "undefined" && shutDown) voiceState = "aus";
+    if (s === "speaking") lightUp();
+    $("mic").setAttribute("aria-pressed", String(s === "listening" || s === "speaking"));
+    setState(voiceState);
+  };
+  let reloadSoon;
+  let jlineWaiting = false, jlineHide;
+  function jlineShow(q, text) {
+    const o = $("jlineOut"); o.innerHTML = "";
+    const qs = document.createElement("span"); qs.className = "q"; qs.textContent = "Du: " + q;
+    const a = document.createElement("div"); a.textContent = text;
+    o.append(qs, a); o.style.top = ($("jlineForm").getBoundingClientRect().bottom + 6) + "px"; o.hidden = false;
+    clearTimeout(jlineHide); jlineHide = setTimeout(() => { o.hidden = true; }, 20000);
+  }
+  $("jlineOut").onclick = () => { $("jlineOut").hidden = true; };
+  let jlineQ = "";
+  $("jlineForm").addEventListener("submit", (e) => {
+    e.preventDefault(); const v = $("jline").value.trim(); if (!v) return;
+    if (sendCommand(v)) { $("jline").value = ""; jlineQ = v; jlineWaiting = true; jlineShow(v, "Jarvis denkt nach …"); }
+    else jlineShow(v, "Jarvis ist nicht verbunden.");
+  });
+  window.onJarvisResponse = (data) => {
+    if (jlineWaiting && data && data.text) { jlineWaiting = false; jlineShow(jlineQ, data.text); }
+    flash = Math.max(flash, .6);
+    // Jarvis may have created a task: refresh Todoist shortly after his answer
+    clearTimeout(reloadSoon); reloadSoon = setTimeout(reloadTodoist, 2500);
+  };
+  $("mic").onclick = () => $("orb").click();
+  let voiceOn = store.get("jz.voice", true);
+  window.jarvisMuted = !voiceOn;
+  $("voice").setAttribute("aria-pressed", String(voiceOn));
+  $("voice").onclick = () => {
+    voiceOn = !voiceOn; store.set("jz.voice", voiceOn); window.jarvisMuted = !voiceOn;
+    $("voice").setAttribute("aria-pressed", String(voiceOn));
+    if (!voiceOn && typeof stopSpeaking === "function" && isPlaying) { audioQueue = []; if (currentAudio) currentAudio.pause(); if (window.speechSynthesis) speechSynthesis.cancel(); finishedSpeaking(); }
+  };
+  function sendCommand(text) {
+    if (typeof ws === "undefined" || !ws || ws.readyState !== WebSocket.OPEN || shutDown) { note("Jarvis ist nicht verbunden."); return false; }
+    unlockAudio();
+    if (asleep) { asleep = false; setMusicVolume("active"); }
+    sendToJarvis(text);
+    return true;
+  }
+  $("cmdForm").addEventListener("submit", (e) => {
+    e.preventDefault(); const v = $("cmd").value.trim(); if (!v) return;
+    if (sendCommand(v)) $("cmd").value = "";
+  });
+  $("cmd").addEventListener("input", () => { if (/\b(jarvis|obsidian)\b/i.test($("cmd").value)) { if (target < .5) setState("aktiv"); flash = Math.max(flash, .5); } });
+  $("zacAus").onclick = () => { if (confirm("Jarvis beenden (ZAC aus)?")) sendCommand("ZAC aus"); };
+
+  /* ---------- Todoist ---------- */
+  let inbox = [], projects = [], tasks = [], filter = store.get("jz.filter", null);
+  const projName = (id) => projects.find(p => p.id === id)?.name || "Inbox";
+  const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+
+  function renderTiles() {
+    const el = $("tiles"); el.innerHTML = "";
+    for (const p of projects.filter(p => !p.inboxProject)) {
+      const n = tasks.filter(t => t.projectId === p.id).length;
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "tile" + (n ? " has-today" : "");
+      b.setAttribute("aria-pressed", String(filter === p.id));
+      b.innerHTML = `<span class="mark"></span><span class="name"></span><span class="count">${n ? `<b>${n}</b> heute` : "nichts fällig"}</span>`;
+      b.querySelector(".name").textContent = p.name;
+      b.onclick = () => setFilter(filter === p.id ? null : p.id);
+      el.append(b);
+    }
+  }
+  function setFilter(id, quiet) {
+    filter = id; store.set("jz.filter", id);
+    $("filterChip").hidden = !id; $("filterName").textContent = id ? projName(id) : "";
+    $("focus").textContent = id ? projName(id) : "";
+    if (id && !quiet) { setState("aktiv"); lightUp(); }
+    renderTiles(); renderTasks();
+  }
+  $("clearFilter").onclick = () => setFilter(null);
+  $("allProjects").onclick = () => setFilter(null);
+
+  function dueLabel(t) {
+    if (!t.dueDate) return "";
+    const day = t.dueDate.slice(0, 10), time = t.dueDate.length > 10 ? t.dueDate.slice(11, 16) : "";
+    if (day < todayISO()) { const d = new Date(day + "T00:00"); return { late: true, txt: "überfällig seit " + d.toLocaleDateString("de-DE", { day: "numeric", month: "short" }) }; }
+    if (day > todayISO()) return { late: false, txt: "" };
+    return { late: false, txt: time ? time + " Uhr" : "heute" };
+  }
+  function taskItem(t, showProject) {
+    const li = document.createElement("li"); li.className = "task"; li.dataset.p = t.priority || "p4";
+    const d = dueLabel(t);
+    const when = d.txt || (t.dueDate && !d.late ? new Date(t.dueDate.slice(0, 10) + "T00:00").toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }) : "");
+    li.innerHTML = `<button class="check" type="button" aria-label="Erledigt"></button><div class="t"><div class="c"></div><div class="meta">${showProject ? '<span class="pj"></span>' : ""}${when ? `<span class="${d.late ? "late" : ""}">${when}</span>` : ""}${t.recurring ? "<span>↻</span>" : ""}</div></div>`;
+    li.querySelector(".c").textContent = t.content;
+    if (showProject) li.querySelector(".pj").textContent = projName(t.projectId);
+    li.querySelector(".check").onclick = (e) => completeTask(t.id, li, e.currentTarget);
+    return li;
+  }
+  function renderInbox() {
+    const list = $("inboxList"); list.innerHTML = "";
+    if (inMode === "aufgaben") $("inboxCount").textContent = inbox.length;
+    if (!inbox.length) { list.innerHTML = '<li class="notice">Posteingang ist leer.</li>'; return; }
+    for (const t of inbox) list.append(taskItem(t, false));
+  }
+  function renderTasks() {
+    const list = $("todoList"); list.innerHTML = "";
+    const shown = tasks.filter(t => !filter || t.projectId === filter)
+      .sort((a, b) => (a.priority || "p4").localeCompare(b.priority || "p4") || (a.dueDate || "").localeCompare(b.dueDate || ""));
+    $("todoCount").textContent = shown.length;
+    if (!shown.length) { list.innerHTML = `<li class="notice">Für heute ist ${filter ? "in diesem Projekt " : ""}nichts offen.</li>`; return; }
+    const late = shown.filter(t => dueLabel(t).late), now = shown.filter(t => !dueLabel(t).late);
+    const group = (label, arr) => {
+      if (!arr.length) return;
+      const h = document.createElement("li"); h.className = "group-label eyebrow"; h.textContent = label; list.append(h);
+      for (const t of arr) list.append(taskItem(t, true));
+    };
+    group("Überfällig", late); group("Heute", now);
+  }
+  let freshAt = 0;
+  function stamp() { freshAt = Date.now(); $("fresh").textContent = "Stand " + new Date(freshAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }); }
+
+  async function loadProjects() {
+    try {
+      const d = await api("/api/zentrale/todoist/projects");
+      if (d.fehler) { if (!projects.length) $("tiles").innerHTML = `<div class="notice">${d.fehler}</div>`; return; }
+      projects = d.projects;
+      if (filter && !projects.some(p => p.id === filter)) setFilter(null, true); else setFilter(filter, true);
+      buildNodes(projects, tasks);
+      if (!$("v-projekte").hidden) initProjectsView();
+    } catch { if (!projects.length) $("tiles").innerHTML = '<div class="notice">Todoist nicht erreichbar.</div>'; }
+  }
+  async function loadToday() {
+    try {
+      const d = await api("/api/zentrale/todoist/today");
+      if (d.fehler) { if (!tasks.length) notice($("todoList"), d.fehler); return; }
+      tasks = d.tasks; stamp();
+      renderTiles(); renderTasks(); buildNodes(projects, tasks);
+    } catch { if (!tasks.length) notice($("todoList"), "Todoist nicht erreichbar."); }
+  }
+  async function loadInbox() {
+    try {
+      const d = await api("/api/zentrale/todoist/project?id=inbox");
+      if (d.fehler) { if (!inbox.length) notice($("inboxList"), d.fehler); return; }
+      inbox = d.tasks; renderInbox();
+    } catch { if (!inbox.length) notice($("inboxList"), "Todoist nicht erreichbar."); }
+  }
+  function reloadTodoist() {
+    loadToday(); loadInbox();
+    if (!$("v-projekte").hidden) { projLoaded.clear(); initProjectsView(); }
+  }
+  async function completeTask(id, li, btn) {
+    btn.classList.add("done"); li.classList.add("leaving"); btn.disabled = true;
+    try {
+      const d = await api("/api/zentrale/todoist/complete?id=" + encodeURIComponent(id), write("POST"));
+      if (d.fehler) throw new Error(d.fehler);
+      tasks = tasks.filter(t => t.id !== id); inbox = inbox.filter(t => t.id !== id); setState("aktiv"); flash = .6;
+      for (const [k, v] of projTasks) projTasks.set(k, v.filter(t => t.id !== id));
+      renderTiles(); renderTasks(); renderInbox(); buildNodes(projects, tasks);
+      if (!$("v-projekte").hidden) renderProjectsView();
+    } catch (e) {
+      btn.classList.remove("done"); li.classList.remove("leaving"); btn.disabled = false;
+      note("Konnte die Aufgabe nicht abhaken: " + e.message);
+    }
+  }
+
+  /* ---------- Heute im Dienst (Staffomatic, alle Standorte) ---------- */
+  const hm = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }); };
+  let shiftsToday = null, shiftError = "";
+  function shiftItem(x, withNote) {
+    const li = document.createElement("li");
+    const names = [].concat(x.mitarbeiter || []).filter(Boolean);
+    li.className = "shift" + (names.length ? "" : " open");
+    li.innerHTML = '<span class="tm"></span><span class="who"></span><span class="wo"><span class="loc"></span><span class="ber"></span></span>';
+    li.querySelector(".tm").textContent = hm(x.beginn) + "–" + (x.ende ? hm(x.ende) : "offen");
+    li.querySelector(".who").textContent = (names.join(", ") || "unbesetzt") + (names.length && x.offen ? ` · ${x.offen} offen` : "");
+    li.querySelector(".loc").textContent = x.standort || "";
+    li.querySelector(".ber").textContent = [x.bereich ? " · " + x.bereich : "", withNote && x.notiz ? " · " + x.notiz : ""].join("");
+    return li;
+  }
+  function renderShifts() {
+    for (const [listId, countId, withNote] of [["duty", "dutyN", false], ["sfToday", "sfTodayN", true]]) {
+      const ul = $(listId);
+      if (shiftError) { notice(ul, "Staffomatic: " + shiftError); $(countId).textContent = "–"; continue; }
+      if (!shiftsToday) continue;
+      ul.innerHTML = ""; $(countId).textContent = shiftsToday.schichten.length;
+      if (!shiftsToday.schichten.length) { notice(ul, "Heute keine Dienste geplant."); continue; }
+      shiftsToday.schichten.slice().sort((a, b) => String(a.beginn).localeCompare(String(b.beginn))).forEach(x => ul.append(shiftItem(x, withNote)));
+    }
+    if (shiftsToday && !shiftError) {
+      $("dutyLocs").textContent = (shiftsToday.standorte || []).map(s => `${s}: ${shiftsToday.schichten.filter(x => x.standort === s).length}`).join(" · ");
+    }
+  }
+  async function loadShifts() {
+    try {
+      const d = await api("/api/zentrale/staffo");
+      if (d.fehler) { shiftError = d.fehler; } else { shiftError = ""; shiftsToday = d; }
+    } catch { shiftError = "nicht erreichbar"; }
+    renderShifts();
+  }
+
+  /* ---------- Zahlungen + Buchhaltung (Quelle: Ordner "Rechnungen für Jarvis") ---------- */
+  const eur = (n, c) => { try { return new Intl.NumberFormat("de-DE", { style: "currency", currency: c || "EUR" }).format(n); } catch { return n + " " + (c || "€"); } };
+  const daysUntil = (iso) => Math.round((new Date(iso + "T00:00") - new Date(todayISO() + "T00:00")) / 864e5);
+  let invoices = [], invLoaded = false;
+  function renderPay() {
+    const el = $("payList"); el.innerHTML = "";
+    if (!invoices.length) {
+      el.innerHTML = '<span class="pay-empty">Noch keine Rechnungen erfasst.</span>';
+      $("paySum").hidden = true; return;
+    }
+    const due = invoices.filter(r => r.status !== "bezahlt" && r.faellig && daysUntil(r.faellig) <= 7)
+      .sort((a, b) => a.faellig.localeCompare(b.faellig));
+    if (!due.length) {
+      el.innerHTML = '<span class="pay-empty">Keine Zahlung in den nächsten 7 Tagen fällig.</span>';
+      $("paySum").hidden = true; return;
+    }
+    for (const r of due) {
+      const d = daysUntil(r.faellig);
+      const box = document.createElement("div"); box.className = "pay" + (d < 0 ? " late" : "");
+      const dTxt = d < 0 ? `${-d} T überfällig` : d === 0 ? "heute fällig" : d === 1 ? "morgen fällig" : `in ${d} Tagen`;
+      box.innerHTML = `<div><div class="who"></div><div class="sub"><span class="nr"></span> · <span class="d">${dTxt}</span></div></div><div class="amt"></div>`;
+      box.querySelector(".who").textContent = r.glaeubiger || "Unbekannt";
+      box.querySelector(".nr").textContent = (r.typ === "ausgang" ? "Ausgang " : "") + (r.nummer || "ohne Nr.");
+      box.querySelector(".amt").textContent = r.betrag != null ? eur(r.betrag, r.waehrung) : "–";
+      box.tabIndex = 0; box.setAttribute("role", "button"); box.title = "Details in der Buchhaltung";
+      box.onclick = box.onkeydown = (e) => { if (e.type === "keydown" && e.key !== "Enter") return; invOpen = r.datei; show("buchhaltung"); try { history.replaceState(null, "", "#buchhaltung"); } catch {} };
+      el.append(box);
+    }
+    const sum = due.filter(r => (r.waehrung || "EUR") === "EUR" && r.typ !== "ausgang").reduce((a, r) => a + (Number(r.betrag) || 0), 0);
+    $("paySum").hidden = false; $("paySum").innerHTML = `<b>${eur(sum)}</b>${due.length} offen`;
+  }
+  async function loadInvoices() {
+    try { const d = await api("/api/zentrale/rechnungen"); invoices = d.rechnungen || []; invLoaded = true; }
+    catch { $("payList").innerHTML = '<span class="pay-empty">Rechnungen konnten nicht geladen werden.</span>'; return; }
+    renderPay(); if (!$("v-buchhaltung").hidden) renderLedger();
+  }
+  let ledgerFilter = "offen";
+  $("invSeg").querySelectorAll("button").forEach(b => b.onclick = () => {
+    ledgerFilter = b.dataset.f; $("invSeg").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderLedger();
+  });
+  function renderLedger() {
+    const open = invoices.filter(r => r.status !== "bezahlt" && r.typ !== "ausgang");
+    const sum = (arr) => eur(arr.filter(r => (r.waehrung || "EUR") === "EUR").reduce((a, r) => a + (Number(r.betrag) || 0), 0));
+    const month = todayISO().slice(0, 7);
+    $("kOpen").textContent = sum(open);
+    $("kLate").textContent = sum(open.filter(r => r.faellig && daysUntil(r.faellig) < 0));
+    $("kWeek").textContent = sum(open.filter(r => r.faellig && daysUntil(r.faellig) >= 0 && daysUntil(r.faellig) <= 7));
+    $("kPaid").textContent = sum(invoices.filter(r => r.status === "bezahlt" && (r.bezahltAm || "").startsWith(month)));
+    const rows = invoices.filter(r => ledgerFilter === "alle" || (ledgerFilter === "bezahlt" ? r.status === "bezahlt" : r.status !== "bezahlt"))
+      .sort((a, b) => (a.faellig || "9").localeCompare(b.faellig || "9"));
+    const body = $("invBody"); body.innerHTML = "";
+    if (!rows.length) { body.innerHTML = `<tr><td colspan="8" class="pay-empty">${!invLoaded ? "Rechnungen werden geladen …" : invoices.length ? "Keine Rechnungen in dieser Ansicht." : "Noch keine Rechnungen erfasst."}</td></tr>`; return; }
+    const dfmt = (iso) => iso ? new Date(iso + "T00:00").toLocaleDateString("de-DE") : "–";
+    for (const r of rows) {
+      const tr = document.createElement("tr");
+      const late = r.status !== "bezahlt" && r.faellig && daysUntil(r.faellig) < 0;
+      const st = r.status === "bezahlt" ? "bezahlt" : late ? "late" : "offen";
+      tr.innerHTML = `<td><span class="st ${st}">${st === "late" ? "überfällig" : st}</span></td><td class="g"></td><td class="n"></td><td>${dfmt(r.rechnungsdatum)}</td><td>${dfmt(r.faellig)}</td><td class="num">${r.betrag != null ? eur(r.betrag, r.waehrung) : "–"}</td><td class="file"></td><td></td>`;
+      tr.querySelector(".g").textContent = r.glaeubiger || "–";
+      tr.querySelector(".n").textContent = r.nummer || "–";
+      const fl = tr.querySelector(".file");
+      if (r.datei) { const a = document.createElement("a"); a.href = "/api/zentrale/rechnungen/datei?name=" + encodeURIComponent(r.datei); a.target = "_blank"; a.rel = "noopener"; a.textContent = "PDF ↗"; a.title = r.datei; a.onclick = e => e.stopPropagation(); fl.append(a); }
+      if (r._fehler) { tr.querySelector(".g").textContent = "Nicht lesbar: " + r.datei; }
+      const pb = document.createElement("button"); pb.type = "button"; pb.className = "linkbtn";
+      pb.textContent = r.status === "bezahlt" ? "Wieder offen" : "Bezahlt";
+      pb.onclick = async e => {
+        e.stopPropagation(); pb.disabled = true;
+        try {
+          const res = await api("/api/zentrale/rechnungen/bezahlt", write("POST", { datei: r.datei, bezahlt: r.status !== "bezahlt" }));
+          if (!res.ok) throw new Error(res.fehler);
+          if (invOpen === r.datei) invOpen = res.datei;
+          await loadInvoices();
+        } catch (err) { pb.disabled = false; pb.textContent = "Fehler"; pb.title = err.message || ""; }
+      };
+      tr.lastElementChild.append(pb);
+      tr.className = "inv-row"; tr.onclick = () => { const o = invOpen === r.datei; invOpen = o ? null : r.datei; renderLedger(); };
+      body.append(tr);
+      if (invOpen === r.datei) body.append(invDetail(r));
+    }
+  }
+  let invOpen = null;
+  function invDetail(r) {
+    const tr = document.createElement("tr"); tr.className = "inv-detail";
+    const td = document.createElement("td"); td.colSpan = 8; tr.append(td);
+    const money = v => v != null ? eur(v, r.waehrung) : null;
+    const pay = [["Zahlungsempfänger", r.glaeubiger], ["IBAN", r.iban], ["Betrag brutto", money(r.betrag)], ["Verwendungszweck", r.verwendungszweck || r.nummer]];
+    const rows = [
+      ["Worum es geht", r.beschreibung], ["Rechnungssteller", [r.glaeubiger, r.glaeubiger_adresse].filter(Boolean).join(", ")],
+      ["Empfänger", r.empfaenger], ["Kundennummer", r.kundennummer], ["Leistungszeitraum", r.leistungszeitraum],
+      ["Netto", money(r.netto)], ["USt", [r.ust_satz, money(r.ust_betrag)].filter(Boolean).join(" · ")], ["Brutto", money(r.betrag)],
+      ["Zahlungsziel", r.zahlungsziel], ["Zahlungsart", r.zahlungsart], ["Skonto", r.skonto],
+      ["IBAN", r.iban], ["BIC / Bank", [r.bic, r.bank].filter(Boolean).join(" · ")], ["Verwendungszweck", r.verwendungszweck],
+      ["USt-IdNr. / St.-Nr.", r.ust_id], ["Bezahlt am", r.bezahltAm], ["Datei", r.datei],
+    ];
+    const grid = document.createElement("div"); grid.className = "inv-grid";
+    const left = document.createElement("div");
+    const dl = document.createElement("dl");
+    for (const [k, v] of rows) { if (!v) continue; const dt = document.createElement("dt"); dt.textContent = k; const dd = document.createElement("dd"); dd.textContent = v; dl.append(dt, dd); }
+    left.append(dl);
+    const right = document.createElement("div"); right.className = "inv-pay";
+    const h = document.createElement("span"); h.className = "eyebrow"; h.textContent = "Überweisung"; right.append(h);
+    for (const [k, v] of pay) {
+      const f = document.createElement("div"); f.className = "f";
+      const l = document.createElement("span"); l.className = "l"; l.textContent = k;
+      const b = document.createElement("button"); b.type = "button"; b.className = "v"; b.textContent = v || "–"; b.title = "Kopieren";
+      if (v) b.onclick = (e) => { e.stopPropagation(); navigator.clipboard?.writeText(k === "IBAN" ? v.replace(/\s/g, "") : k === "Betrag brutto" ? String(r.betrag).replace(".", ",") : v).then(() => { l.textContent = k + " · kopiert"; setTimeout(() => l.textContent = k, 1500); }).catch(() => {}); };
+      f.append(l, b); right.append(f);
+    }
+    grid.append(left, right); td.append(grid);
+    if ((r.positionen || []).length) {
+      const ul = document.createElement("ul"); ul.className = "inv-pos";
+      for (const p of r.positionen) { const li = document.createElement("li"); li.textContent = [p.menge, p.text].filter(Boolean).join(" × "); const b = document.createElement("b"); b.textContent = p.betrag != null ? eur(p.betrag, r.waehrung) : ""; li.append(b); ul.append(li); }
+      left.append(ul);
+    }
+    return tr;
+  }
+
+  /* ---------- Navigation ---------- */
+  const VIEWS = ["dashboard", "projekte", "jarvis", "buchhaltung", "arbeitsspace", "staffo", "social"];
+  function show(v) {
+    if (!VIEWS.includes(v)) v = "dashboard";
+    for (const x of VIEWS) $("v-" + x).hidden = x !== v;
+    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === v)));
+    store.set("jz.view", v);
+    if (v === "projekte") initProjectsView();
+    if (v === "jarvis") { initJarvis(); showAppLink(); }
+    if (v === "buchhaltung") renderLedger();
+    if (v === "arbeitsspace") initWorkspace();
+    if (v === "staffo") initStaffo();
+    if (v === "social") initSocial();
+  }
+  document.querySelectorAll(".tab").forEach(t => t.onclick = () => { show(t.dataset.v); try { window.history.replaceState(null, "", "#" + t.dataset.v); } catch {} });
+  addEventListener("hashchange", () => show(location.hash.slice(1)));
+
+  /* ---------- Jarvis: Themen und Projekte aus Obsidian (Start.md) ---------- */
+  async function initJarvis() {
+    const g = $("cpGrid");
+    let d;
+    try { d = await api("/api/zentrale/obsidian-projekte"); }
+    catch { g.innerHTML = '<div class="notice">Obsidian-Projekte konnten nicht geladen werden.</div>'; return; }
+    g.innerHTML = "";
+    const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    for (const p of d.projekte || []) {
+      const c = el("section", "panel cp-card");
+      c.append(el("span", "cp-meta", p.bereich), el("h2", null, p.name), el("p", null, p.beschreibung || ""));
+      const links = el("div", "cp-links");
+      const a1 = el("a", "btn-open", p.claude ? "Mit Claude arbeiten ↗" : "Claude-Projekte ↗");
+      a1.href = p.claude || "https://claude.ai/cowork/projects"; a1.target = "_blank"; a1.rel = "noopener";
+      const a2 = el("a", "linkbtn", "In Obsidian öffnen"); a2.href = p.obsidian;
+      links.append(a1, a2); c.append(links); g.append(c);
+    }
+    if (!g.children.length) g.innerHTML = '<div class="notice">In Obsidian (Start.md) sind keine Themen oder Projekte verlinkt.</div>';
+  }
+  async function showAppLink() {
+    if (!["localhost", "127.0.0.1"].includes(location.hostname)) return;
+    let d; try { d = await api("/api/zentrale/app-link"); } catch { return; }
+    $("appLink").hidden = false;
+    if (!d.ok) { $("appLinkMsg").textContent = d.fehler + " Sobald das erledigt ist, erscheint hier der Code."; $("appQr").hidden = true; return; }
+    $("appQr").hidden = false; $("appLinkMsg").textContent = "Adresse: " + d.adresse;
+    if (!window.QRCode) await new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"; sc.onload = ok; sc.onerror = no; document.head.append(sc); }).catch(() => {});
+    $("appQr").innerHTML = "";
+    if (window.QRCode) new QRCode($("appQr"), { text: d.url, width: 180, height: 180 });
+    else $("appLinkMsg").textContent += " (QR-Code konnte nicht geladen werden)";
+  }
+
+  /* ---------- Social Media (Daten: frontend/social-media.json) ---------- */
+  async function initSocial() {
+    let d;
+    try { d = await api("/static/social-media.json?t=" + Date.now()); }
+    catch { $("smKpis").innerHTML = '<div class="notice">social-media.json konnte nicht geladen werden.</div>'; return; }
+    const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    $("smHead").textContent = "Instagram @zac_sicherheitsservice · Metricool · Stand " + d.stand;
+    const k = $("smKpis"); k.innerHTML = "";
+    for (const x of d.kpis || []) {
+      const c = el("div", "panel kpi"); c.append(el("span", "eyebrow", x.label), el("b", null, x.wert), el("small", null, x.sub || "")); k.append(c);
+    }
+    const done = store.get("jz.sm.done", {});
+    const plan = $("smPlan"); plan.innerHTML = "";
+    const all = [];
+    for (const ph of d.phasen || []) {
+      const s = el("div", "sm-phase"); const h = el("h3", null, ph.titel); h.append(el("span", null, ph.zeit)); s.append(h);
+      const ul = el("ul", "sm-check");
+      for (const p of ph.punkte) {
+        all.push(p);
+        const li = el("li"); const lb = el("label"); const cb = el("input"); cb.type = "checkbox"; cb.id = "sm-" + p.id;
+        cb.checked = p.id in done ? done[p.id] : !!p.done;
+        cb.onchange = () => { const m = store.get("jz.sm.done", {}); m[p.id] = cb.checked; store.set("jz.sm.done", m); progress(); };
+        lb.append(cb, el("span", "t", p.text), el("span", "who" + (p.wer === "Julian" ? " j" : ""), p.wer || ""), el("span", "d", p.info || ""));
+        li.append(lb); ul.append(li);
+      }
+      s.append(ul); plan.append(s);
+    }
+    function progress() {
+      const n = all.filter(p => $("sm-" + p.id).checked).length;
+      $("smProg").textContent = n + " / " + all.length + " erledigt";
+      $("smBar").style.width = (all.length ? 100 * n / all.length : 0) + "%";
+    }
+    progress();
+    const ch = $("smCh"); ch.innerHTML = "";
+    for (const c of d.kanaele || []) {
+      const tr = el("tr"); const st = el("td"); st.append(el("span", "st " + c.status, c.status));
+      const mc = el("td"); mc.append(el("span", "st " + (c.metricool === "verbunden" ? "verbunden" : ""), c.metricool));
+      tr.append(el("td", null, c.name), st, el("td", null, c.zweck), mc); ch.append(tr);
+    }
+    const w = $("smWeek"); w.innerHTML = "";
+    for (const x of d.woche || []) { const r = el("div", "sm-day"); r.append(el("b", null, x.tag), el("span", "i", x.inhalt), el("span", "f", x.format)); w.append(r); }
+    const g = $("smGoals"); g.innerHTML = "";
+    for (const x of d.ziele || []) { const tr = el("tr"); tr.append(el("td", null, x.kennzahl), el("td", "num", x.start), el("td", "num", x.ziel)); g.append(tr); }
+    const f = $("smFoot"); f.textContent = "Zahlen aus Metricool für " + d.zeitraum + ". Häkchen werden in diesem Browser gespeichert. ";
+    if (d.artefakt) { const a = el("a", null, "Ausführlicher Plan ↗"); a.href = d.artefakt; a.target = "_blank"; a.rel = "noopener"; f.append(a); }
+  }
+
+  /* ---------- Staffo-Reiter ---------- */
+  function initStaffo() {
+    renderShifts();
+    const f = $("staffoFrame");
+    if (f.src) return;
+    f.src = "https://zac-gmbh.staffomatic.app/login";
+    f.hidden = false; $("staffoNote").hidden = true;
+  }
+
+  /* ---------- Projekte ---------- */
+  const projTasks = new Map(), projLoaded = new Set();
+  function renderProjectsView() {
+    const g = $("pgrid"); g.innerHTML = "";
+    const list = projects.filter(p => !p.inboxProject);
+    if (!list.length) { g.innerHTML = '<div class="notice">Projekte werden geladen …</div>'; return; }
+    for (const p of list) {
+      const card = document.createElement("section"); card.className = "panel pcard";
+      const ts = projTasks.get(p.id);
+      card.innerHTML = `<h2><span class="n"></span><span>${ts ? ts.length + " offen" : "…"}</span></h2><ul class="todo-list"></ul>`;
+      card.querySelector(".n").textContent = p.name;
+      const ul = card.querySelector("ul");
+      if (ts && !ts.length) ul.innerHTML = '<li class="notice">Keine offenen Aufgaben.</li>';
+      (ts || []).slice().sort((a, b) => (a.dueDate || "9").localeCompare(b.dueDate || "9")).forEach(t => ul.append(taskItem(t, false)));
+      g.append(card);
+    }
+  }
+  /* ---------- Todoist: Termine (mit Uhrzeit) und Aufgaben, heute + 4 Tage ---------- */
+  let tw = { tasks: [], projects: [], sections: [], labels: [] }, twLoading = false;
+  const twEl = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const isoDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  let twStart = null, twSeq = 0;  // null = heute
+  function twDays() { const out = []; const d = twStart ? new Date(twStart + "T00:00") : new Date(); for (let i = 0; i < 5; i++) { out.push(isoDay(d)); d.setDate(d.getDate() + 1); } return out; }
+  async function loadWeek() {
+    const seq = ++twSeq; twLoading = true;
+    try {
+      const d = await api("/api/zentrale/todoist/woche" + (twStart ? "?start=" + twStart : ""));
+      if (seq !== twSeq) return;
+      if (d.fehler) throw new Error(d.fehler);
+      tw = d; renderWeek();
+    } catch (e) { $("twState").textContent = "Todoist: " + e.message; }
+    finally { if (seq === twSeq) twLoading = false; }
+  }
+  function twShift(n) {
+    if (n === 0) twStart = null;
+    else { const d = twStart ? new Date(twStart + "T00:00") : new Date(); d.setDate(d.getDate() + n); twStart = isoDay(d) === todayISO() ? null : isoDay(d); }
+    tw.tasks = []; renderWeek(); $("twState").textContent = "Wird geladen …"; clearTimeout(twShift.t); twShift.t = setTimeout(loadWeek, 350);
+  }
+  $("twPrev").onclick = () => twShift(-1); $("twNext").onclick = () => twShift(1); $("twToday").onclick = () => twShift(0);
+  function twItem(t, withTime) {
+    const li = twEl("li", "ev"); li.dataset.p = t.priority || "p4";
+    const btn = twEl("button", "check"); btn.type = "button"; btn.setAttribute("aria-label", "Erledigt");
+    const box = twEl("div");
+    const day = (t.dueDate || "").slice(0, 10);
+    if (day && day < todayISO()) box.append(twEl("span", "late", "überfällig " + new Date(day + "T00:00").toLocaleDateString("de-DE", { day: "numeric", month: "numeric" }) + " "));
+    if (withTime && t.hasTime) box.append(twEl("span", "tm", t.dueDate.slice(11, 16) + (t.duration ? "–" + endTime(t.dueDate.slice(11, 16), t.duration) : "") + " "));
+    box.append(twEl("span", "ti", t.content));
+    const pj = tw.projects.find(p => p.id === t.projectId); const sec = tw.sections.find(x => x.id === t.sectionId);
+    box.append(twEl("span", "pj", (pj ? pj.name : "Inbox") + (sec ? " · " + sec.name : "") + (t.recurring ? " · ↻" : "")));
+    if ((t.labels || []).length) box.append(twEl("span", "lb", t.labels.map(l => "@" + l).join(" ")));
+    btn.onclick = async () => {
+      btn.classList.add("done"); li.classList.add("leaving"); btn.disabled = true;
+      try { const d = await api("/api/zentrale/todoist/complete?id=" + encodeURIComponent(t.id), write("POST")); if (d.fehler) throw new Error(d.fehler); tw.tasks = tw.tasks.filter(x => x.id !== t.id); renderWeek(); reloadTodoist(); }
+      catch (e) { btn.classList.remove("done"); li.classList.remove("leaving"); btn.disabled = false; $("twMsg").textContent = "Konnte nicht abhaken: " + e.message; }
+    };
+    li.append(btn, box); return li;
+  }
+  function endTime(hhmm, min) { const [h, m] = hhmm.split(":").map(Number); const t = h * 60 + m + Number(min); return String(Math.floor(t / 60) % 24).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); }
+  function renderWeek() {
+    const days = twDays(), today = todayISO();
+    for (const [elId, timed] of [["calTermine", true], ["calAufgaben", false]]) {
+      const cal = $(elId); cal.innerHTML = "";
+      for (const day of days) {
+        const col = twEl("div", "day" + (day === today ? " today" : ""));
+        const h = twEl("div", "day-h"); const dt = new Date(day + "T00:00");
+        const lab = twEl("div"); lab.append(twEl("b", null, day === today ? "Heute" : dt.toLocaleDateString("de-DE", { weekday: "long" })), twEl("small", null, dt.toLocaleDateString("de-DE", { day: "numeric", month: "long" })));
+        const add = twEl("button", "day-add", "+"); add.type = "button"; add.title = (timed ? "Termin" : "Aufgabe") + " eintragen"; add.onclick = () => openTaskForm(day, timed);
+        h.append(lab, add); col.append(h);
+        const ul = twEl("ul");
+        const list = tw.tasks.filter(t => !!t.hasTime === timed).filter(t => { const d = (t.dueDate || "").slice(0, 10); return d === day || (day === today && d && d < today && !days.includes(d)); })
+          .sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "") || (a.priority || "p4").localeCompare(b.priority || "p4"));
+        list.forEach(t => ul.append(twItem(t, timed)));
+        if (!list.length) ul.append(twEl("li", "none", timed ? "Keine Termine" : "Nichts offen"));
+        col.append(ul); cal.append(col);
+      }
+    }
+    const f = (iso) => new Date(iso + "T00:00").toLocaleDateString("de-DE", { day: "numeric", month: "short" });
+    $("twState").textContent = (twStart ? f(days[0]) + " – " + f(days[4]) : "Heute + 4 Tage") + " · " + tw.tasks.length + " offen";
+    $("twToday").disabled = !twStart;
+  }
+  let tfPrio = "p4", tfLabels = new Set();
+  function openTaskForm(day, timed) {
+    $("twFormTitle").textContent = timed ? "Neuer Termin" : "Neue Aufgabe";
+    $("tfContent").value = ""; $("tfDesc").value = ""; $("tfDate").value = day; $("tfTime").value = timed ? "09:00" : ""; $("tfDur").value = timed ? "60" : ""; $("tfMsg").textContent = "";
+    $("tfTime").closest("label").hidden = false; $("tfDur").closest("label").hidden = !timed;
+    const ps = $("tfProject"); ps.innerHTML = "";
+    for (const p of tw.projects) { const o = twEl("option", null, p.inboxProject ? "Inbox" : p.name); o.value = p.id; ps.append(o); }
+    const last = store.get("jz.tfProject", null); if (last && tw.projects.some(p => p.id === last)) ps.value = last;
+    fillSections(); ps.onchange = fillSections;
+    tfPrio = "p4"; $("tfPrio").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.p === tfPrio)));
+    tfLabels = new Set(); const lb = $("tfLabels"); lb.innerHTML = "";
+    for (const l of tw.labels) { const b = twEl("button", null, "@" + l); b.type = "button"; b.setAttribute("aria-pressed", "false"); b.onclick = () => { tfLabels.has(l) ? tfLabels.delete(l) : tfLabels.add(l); b.setAttribute("aria-pressed", String(tfLabels.has(l))); }; lb.append(b); }
+    $("twModal").hidden = false; setTimeout(() => $("tfContent").focus(), 0);
+  }
+  function fillSections() {
+    const ss = $("tfSection"); ss.innerHTML = ""; const o = twEl("option", null, "– ohne –"); o.value = ""; ss.append(o);
+    for (const x of tw.sections.filter(x => x.projectId === $("tfProject").value)) { const op = twEl("option", null, x.name); op.value = x.id; ss.append(op); }
+    ss.disabled = ss.options.length < 2;
+  }
+  $("tfPrio").querySelectorAll("button").forEach(b => b.onclick = () => { tfPrio = b.dataset.p; $("tfPrio").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+  $("tfCancel").onclick = () => { $("twModal").hidden = true; };
+  $("twModal").addEventListener("click", (e) => { if (e.target === $("twModal")) $("twModal").hidden = true; });
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("twModal").hidden) $("twModal").hidden = true; });
+  $("twForm").addEventListener("submit", async (e) => {
+    e.preventDefault(); const btn = e.submitter; btn.disabled = true; $("tfMsg").textContent = "Wird eingetragen …";
+    store.set("jz.tfProject", $("tfProject").value);
+    try {
+      const d = await api("/api/zentrale/todoist/neu", write("POST", { content: $("tfContent").value, description: $("tfDesc").value, date: $("tfDate").value, time: $("tfTime").value,
+        duration: $("tfTime").value ? $("tfDur").value : "", projectId: $("tfProject").value, sectionId: $("tfSection").value, priority: tfPrio, labels: [...tfLabels] }));
+      if (d.fehler) throw new Error(d.fehler);
+      $("twModal").hidden = true; $("twMsg").textContent = "Eingetragen: " + d.task.content; loadWeek(); reloadTodoist();
+    } catch (err) { $("tfMsg").textContent = "Nicht eingetragen: " + err.message; }
+    finally { btn.disabled = false; }
+  });
+  $("twLine").addEventListener("submit", async (e) => {
+    e.preventDefault(); const v = $("twText").value.trim(); if (!v) return;
+    $("twMsg").textContent = "Jarvis trägt ein …"; setState("denkt");
+    try {
+      const d = await api("/api/zentrale/todoist/sprache", write("POST", { text: v }));
+      if (d.fehler) throw new Error(d.fehler);
+      $("twText").value = ""; setState("aktiv"); lightUp();
+      $("twMsg").textContent = "In Todoist eingetragen: " + d.tasks.map(t => t.content + (t.dueDate ? " (" + new Date(t.dueDate.length > 10 ? t.dueDate : t.dueDate + "T00:00").toLocaleString("de-DE", t.hasTime ? { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" } : { weekday: "short", day: "numeric", month: "numeric" }) + ")" : "")).join(", ");
+      loadWeek(); reloadTodoist();
+    } catch (err) { setState(voiceState); $("twMsg").textContent = "Nicht eingetragen: " + err.message; }
+  });
+  (() => {
+    const mic = $("twMic");
+    if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) { mic.hidden = true; return; }
+    const stop = (msg) => { window.onJarvisDictation = null; mic.setAttribute("aria-pressed", "false"); if (msg) $("twMsg").textContent = msg; };
+    mic.onclick = () => {
+      if (window.onJarvisDictation) { stop("Diktat beendet."); return; }
+      const before = $("twText").value ? $("twText").value + " " : "";
+      mic.setAttribute("aria-pressed", "true"); $("twMsg").textContent = "Ich höre zu … sprich den Termin oder die Aufgabe.";
+      window.onJarvisDictation = (heard, final) => { $("twText").value = before + heard; if (final) stop("Prüfen und mit „Eintragen“ abschicken."); return true; };
+      if (typeof isListening !== "undefined" && !isListening && typeof startListening === "function") startListening();
+    };
+  })();
+
+  function initProjectsView() {
+    loadWeek();
+    return;
+    renderProjectsView();
+    for (const p of projects.filter(p => !p.inboxProject)) {
+      if (projLoaded.has(p.id)) continue;
+      projLoaded.add(p.id);
+      api("/api/zentrale/todoist/project?id=" + encodeURIComponent(p.id)).then(d => {
+        if (d.fehler) return;
+        projTasks.set(p.id, d.tasks);
+        if (!$("v-projekte").hidden) renderProjectsView();
+      }).catch(() => projLoaded.delete(p.id));
+    }
+  }
+  setInterval(() => { projLoaded.clear(); if (!$("v-projekte").hidden) initProjectsView(); }, 5 * 60 * 1000);
+
+  /* ---------- Arbeitsspace (lokal in arbeitsspace.json) ---------- */
+  let wsInit = false, wsTimer = null;
+  async function initWorkspace() {
+    loadDocs();
+    if (wsInit) return; wsInit = true;
+    const ta = $("wsText");
+    ta.value = store.get("jz.ws", "");
+    try {
+      const d = await api("/api/zentrale/arbeitsspace");
+      if (document.activeElement !== ta) { ta.value = d.text || ""; store.set("jz.ws", ta.value); }
+      $("wsState").textContent = d.updatedAt ? "Gespeichert " + new Date(d.updatedAt).toLocaleString("de-DE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Notizblock";
+    } catch { $("wsState").textContent = "Nur im Browser gespeichert"; }
+    ta.addEventListener("input", () => {
+      $("wsState").textContent = "Ungespeichert …"; store.set("jz.ws", ta.value);
+      clearTimeout(wsTimer);
+      wsTimer = setTimeout(async () => {
+        try { await api("/api/zentrale/arbeitsspace", write("PUT", { text: ta.value })); $("wsState").textContent = "Gespeichert"; }
+        catch { $("wsState").textContent = "Speichern fehlgeschlagen"; }
+      }, 1200);
+    });
+  }
+  function wsSelection() { const ta = $("wsText"); const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd).trim(); return sel || ta.value.trim(); }
+  async function wsRun(modus) {
+    const out = $("wsOut");
+    const text = wsSelection(); if (!text) { out.textContent = "Der Notizblock ist leer."; return; }
+    out.textContent = "Jarvis denkt …"; setState("denkt");
+    try {
+      const d = await api("/api/zentrale/arbeitsspace/ki", write("POST", { modus, text }));
+      out.textContent = d.text; setState("aktiv"); lightUp();
+      if (modus === "tasks") reloadTodoist();
+    } catch { setState(voiceState); out.textContent = "Das hat nicht geklappt. Bitte noch einmal."; }
+  }
+  $("wsTasks").onclick = () => wsRun("tasks");
+  $("wsSum").onclick = () => wsRun("summary");
+
+  /* ---------- App (Android): Service Worker, damit sich die Zentrale installieren lässt ---------- */
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
+
+  /* ---------- Ablage per Ziehen (Rechnung / Unterlagen / automatisch) ---------- */
+  const drop = $("drop"); let dragDepth = 0;
+  const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
+  addEventListener("dragenter", (e) => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth++; drop.hidden = false; });
+  addEventListener("dragleave", (e) => { if (!hasFiles(e)) return; dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) drop.hidden = true; });
+  addEventListener("dragover", (e) => {
+    if (!hasFiles(e)) return; e.preventDefault();
+    drop.querySelectorAll(".dz").forEach(z => z.classList.toggle("on", z === e.target));
+  });
+  addEventListener("drop", async (e) => {
+    if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; drop.hidden = true;
+    const zone = e.target.closest?.(".dz"); const ziel = zone ? zone.dataset.z : "auto";
+    drop.querySelectorAll(".dz").forEach(z => z.classList.remove("on"));
+    for (const f of [...e.dataTransfer.files]) await uploadFile(f, ziel);
+  });
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && !drop.hidden) { drop.hidden = true; dragDepth = 0; } });
+  async function uploadFile(f, ziel) {
+    jlineShow(f.name, ziel === "auto" ? "Jarvis prüft, ob das eine Rechnung ist …" : "Wird abgelegt …");
+    const fd = new FormData(); fd.append("datei", f); fd.append("ziel", ziel);
+    try {
+      const r = await fetch("/api/zentrale/ablage", { method: "POST", headers: { "X-Zentrale": "1" }, body: fd });
+      const d = await r.json();
+      if (!r.ok || !d.ok) throw new Error(d.fehler || "HTTP " + r.status);
+      const why = d.grund ? " (" + d.grund + ")" : "";
+      if (d.ziel === "rechnung") {
+        jlineShow(f.name, "Als Rechnung in der Buchhaltung abgelegt" + why + ". Jarvis liest sie jetzt aus.");
+        loadInvoices();
+      } else {
+        jlineShow(f.name, "Im Arbeitsspace unter Unterlagen abgelegt" + why + ".");
+        loadDocs();
+      }
+    } catch (err) { jlineShow(f.name, "Ablegen fehlgeschlagen: " + err.message); }
+  }
+
+  /* ---------- Unterlagen im Arbeitsspace: Anweisung, Vorschau, Speichern ---------- */
+  let docs = [], docOpen = null; const docState = {};
+  async function loadDocs() {
+    try { const d = await api("/api/zentrale/unterlagen"); docs = d.unterlagen || []; }
+    catch { notice($("docList"), "Unterlagen konnten nicht geladen werden."); return; }
+    renderDocs();
+  }
+  const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  function renderDocs() {
+    const ul = $("docList"); ul.innerHTML = "";
+    if (!docs.length) { notice(ul, "Noch keine Unterlagen. Zieh eine Datei in die Zentrale und wähle „Unterlagen“."); return; }
+    for (const x of docs) {
+      const li = mk("li");
+      const row = mk("button", "doc-row"); row.type = "button";
+      const kb = x.groesse > 1048576 ? (x.groesse / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(x.groesse / 1024)) + " KB";
+      row.append(mk("span", "n", x.datei), mk("span", "m", new Date(x.geaendert).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + " · " + kb));
+      row.onclick = () => { docOpen = docOpen === x.datei ? null : x.datei; renderDocs(); };
+      li.append(row);
+      if (docOpen === x.datei) { li.append(docPanel(x)); setTimeout(() => li.querySelector(".doc-cmd input")?.focus(), 0); }
+      ul.append(li);
+    }
+  }
+  function docPanel(x) {
+    const st = docState[x.datei] || (docState[x.datei] = {});
+    const box = mk("div", "doc-open");
+    const links = mk("div", "doc-links"); const a = mk("a", null, "Original öffnen ↗");
+    a.href = "/api/zentrale/unterlagen/datei?name=" + encodeURIComponent(x.datei); a.target = "_blank"; a.rel = "noopener"; links.append(a); box.append(links);
+    if (!x.lesbar) box.append(mk("div", "doc-msg", "Diesen Dateityp kann Jarvis nicht lesen (geht: PDF, Bilder, Word, Text)."));
+    const form = mk("form", "doc-cmd"); form.autocomplete = "off";
+    const inp = mk("input"); inp.placeholder = st.entwurf ? "Änderungswunsch zum Entwurf …" : "Was soll Jarvis damit machen? z. B. Antwortschreiben entwerfen";
+    const go = mk("button", null, st.entwurf ? "Überarbeiten" : "Los"); go.type = "submit";
+    form.append(inp, go); box.append(form);
+    const msg = mk("div", "doc-msg", st.msg || ""); box.append(msg);
+    form.onsubmit = async (e) => {
+      e.preventDefault(); const v = inp.value.trim(); if (!v) return;
+      go.disabled = true; msg.textContent = "Jarvis arbeitet am Dokument …"; setState("denkt");
+      try {
+        const d = await api("/api/zentrale/unterlagen/bearbeiten", write("POST", { datei: x.datei, anweisung: v, entwurf: st.entwurf?.id }));
+        if (!d.ok) throw new Error(d.fehler);
+        st.entwurf = d; st.msg = d.hinweis || "Vorschau unten. Passt es, speichere es.";
+        setState("aktiv"); lightUp(); renderDocs();
+      } catch (err) { go.disabled = false; setState(voiceState); msg.textContent = err.message || "Das hat nicht geklappt."; }
+    };
+    if (st.entwurf) {
+      const ifr = mk("iframe", "doc-prev"); ifr.setAttribute("sandbox", ""); ifr.title = "Vorschau";
+      ifr.srcdoc = '<!doctype html><meta charset="utf-8"><style>body{font:15px/1.55 "Segoe UI",Arial,sans-serif;color:#1a1a1a;margin:28px 34px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:4px 6px;text-align:left}th{background:#f0f0f0}blockquote{border-left:3px solid #C8102E;margin:8px 0;padding:2px 10px;color:#444}</style>' + st.entwurf.html;
+      const act = mk("div", "doc-actions");
+      const nm = mk("input"); nm.value = st.entwurf.dateiname; nm.setAttribute("aria-label", "Dateiname");
+      const ok = mk("button", null, "In Ordnung, als PDF speichern"); ok.type = "button";
+      const no = mk("button", "sec", "Verwerfen"); no.type = "button";
+      ok.onclick = async () => {
+        ok.disabled = true; msg.textContent = "Wird gespeichert …";
+        try {
+          const d = await api("/api/zentrale/unterlagen/speichern", write("POST", { entwurf: st.entwurf.id, dateiname: nm.value }));
+          if (!d.ok) throw new Error(d.fehler);
+          docState[x.datei] = { msg: "Gespeichert in Unterlagen/Dokumente: " + d.datei };
+          renderDocs();
+        } catch (err) { ok.disabled = false; msg.textContent = "Speichern fehlgeschlagen: " + err.message; }
+      };
+      no.onclick = () => { docState[x.datei] = { msg: "Entwurf verworfen." }; renderDocs(); };
+      act.append(nm, ok, no); box.append(ifr, act);
+    }
+    return box;
+  }
+
+  /* ---------- Mails (alle ZAC-Postfächer über mail_tools / zac_mail) ---------- */
+  let inMode = store.get("jz.inMode", "mails"), box = store.get("jz.box", "alle"), mails = [], mailNote = "", mailSeq = 0, mailLoaded = false;
+  let BOXES = [["alle", "Alle"]];
+  function setInMode(m) {
+    inMode = m; store.set("jz.inMode", m);
+    $("inSeg").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === m)));
+    $("mailList").hidden = m !== "mails"; $("boxes").hidden = m !== "mails"; $("inboxList").hidden = m !== "aufgaben";
+    if (m === "aufgaben") renderInbox(); else renderMails();
+  }
+  $("inSeg").querySelectorAll("button").forEach(b => b.onclick = () => setInMode(b.dataset.m));
+  function renderBoxes() {
+    const el = $("boxes"); el.innerHTML = "";
+    for (const [k, label] of BOXES) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "box"; b.textContent = label;
+      b.setAttribute("aria-pressed", String(k === box));
+      b.onclick = () => { box = k; store.set("jz.box", k); renderBoxes(); mails = []; mailLoaded = false; renderMails(); loadMails(); };
+      el.append(b);
+    }
+  }
+  const senderName = (s) => { const m = /^\s*"?([^"<]+?)"?\s*<[^>]+>\s*$/.exec(s || ""); return m ? m[1] : (s || "Unbekannt"); };
+  function mailWhen(iso) {
+    const d = new Date(iso); if (isNaN(d)) return "";
+    const today = new Date(); const same = d.toDateString() === today.toDateString();
+    return same ? d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString("de-DE", { day: "numeric", month: "short" });
+  }
+  function renderMails() {
+    if (inMode !== "mails") return;
+    const list = $("mailList"); list.innerHTML = "";
+    const unread = mails.filter(m => m.ungelesen).length;
+    $("inboxCount").textContent = unread ? unread + " neu" : mails.length;
+    if (!mailLoaded) { notice(list, "Mails werden geladen …"); return; }
+    if (!mails.length) { notice(list, (box === "alle" ? "Keine Mails der letzten 14 Tage im Posteingang." : "Keine Mails in diesem Postfach in den letzten 14 Tagen.") + (mailNote ? " " + mailNote : "")); return; }
+    if (mailNote) { const n = document.createElement("li"); n.className = "hint"; n.style.padding = "4px 8px"; n.textContent = mailNote; list.append(n); }
+    for (const m of mails) {
+      const li = document.createElement("li");
+      const a = document.createElement("a"); a.className = "mail" + (m.ungelesen ? " unread" : "");
+      a.href = "#"; a.addEventListener("click", (e) => { e.preventDefault(); openMail(m); });
+      a.innerHTML = '<span class="dot"></span><span class="from"></span><span class="when"></span><span class="subj"></span><span class="snip"></span>';
+      a.querySelector(".from").textContent = senderName(m.von);
+      a.querySelector(".when").textContent = (box === "alle" ? (m.konto || "").split("@")[0] + " · " : "") + mailWhen(m.datum);
+      a.querySelector(".subj").textContent = m.betreff || "(ohne Betreff)";
+      a.querySelector(".snip").textContent = m.vorschau || "";
+      li.append(a); list.append(li);
+    }
+  }
+  async function loadMails() {
+    const seq = ++mailSeq, wanted = box;
+    try {
+      const d = await api(`/api/zentrale/mails?postfach=${encodeURIComponent(wanted)}&tage=14&limit=25`);
+      if (seq !== mailSeq) return;
+      mails = d.mails || [];
+      mailNote = (d.fehler || []).length ? "Nicht erreichbar: " + d.fehler.map(f => f.konto).join(", ") : "";
+    } catch { if (seq !== mailSeq) return; mailNote = "Postfächer nicht erreichbar."; }
+    mailLoaded = true;
+    renderMails();
+  }
+
+  /* ---------- Mail-Vorschau ---------- */
+  let openKey = null;
+  function closeMail() { $("mailModal").hidden = true; openKey = null; }
+  $("mClose").onclick = closeMail;
+  $("mailModal").addEventListener("click", (e) => { if (e.target === $("mailModal")) closeMail(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("mailModal").hidden) closeMail(); });
+  const fmtFull = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString("de-DE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); };
+  function setReadBtn(unread) { const b = $("mRead"); b.disabled = !unread; b.textContent = unread ? "Als gelesen markieren" : "Gelesen"; }
+  /* ---------- Antworten: Jarvis entwirft, Julian prüft und sendet ---------- */
+  function replyPanel(m) {
+    const old = $("mBody").querySelector(".reply"); if (old) { old.querySelector("input")?.focus(); return; }
+    const box = document.createElement("div"); box.className = "reply";
+    box.innerHTML = '<label>Was soll die Antwort sagen?</label><div class="row"><input class="wish" placeholder="z. B. Termin Dienstag 10 Uhr bestätigen, Angebot folgt bis Freitag"><button type="button" class="go mk">Entwurf erstellen</button></div><div class="hint st"></div>';
+    $("mBody").append(box); box.scrollIntoView({ block: "nearest" }); box.querySelector(".wish").focus();
+    const st = box.querySelector(".st");
+    const make = async () => {
+      const b = box.querySelector(".mk"); b.disabled = true; st.textContent = "Jarvis schreibt den Entwurf …";
+      try {
+        const d = await api("/api/zentrale/mail/entwurf", write("POST", { konto: m.konto, uid: m.uid, anweisung: box.querySelector(".wish").value }));
+        if (d.fehler) throw new Error(d.fehler);
+        let ed = box.querySelector(".ed");
+        if (!ed) {
+          ed = document.createElement("div"); ed.className = "ed"; ed.style.display = "grid"; ed.style.gap = "8px";
+          ed.innerHTML = '<div class="row"><label style="width:60px">An</label><input class="to"></div><div class="row"><label style="width:60px">Betreff</label><input class="sub"></div><textarea class="txt"></textarea><div class="row"><button type="button" class="go send">Senden</button><button type="button" class="sec cancel">Verwerfen</button><span class="hint from"></span></div>';
+          box.append(ed);
+          ed.querySelector(".cancel").onclick = () => box.remove();
+          ed.querySelector(".send").onclick = async () => {
+            const to = ed.querySelector(".to").value.trim();
+            if (!confirm("Diese Antwort jetzt von " + d.von + " an " + to + " senden?")) return;
+            const sb = ed.querySelector(".send"); sb.disabled = true; st.textContent = "Wird gesendet …";
+            try {
+              const r = await api("/api/zentrale/mail/senden", write("POST", { von: d.von, an: to, betreff: ed.querySelector(".sub").value, text: ed.querySelector(".txt").value, message_id: d.message_id }));
+              if (!r.ok) throw new Error(r.fehler);
+              st.textContent = "Gesendet."; ed.remove(); box.querySelector(".row").remove(); box.querySelector("label").remove();
+            } catch (e) { sb.disabled = false; st.textContent = "Nicht gesendet: " + e.message; }
+          };
+        }
+        ed.querySelector(".to").value = d.an || ""; ed.querySelector(".sub").value = d.betreff || ""; ed.querySelector(".txt").value = d.text || "";
+        ed.querySelector(".from").textContent = "Absender: " + d.von;
+        b.textContent = "Neu entwerfen"; st.textContent = "Entwurf prüfen und bei Bedarf ändern. Gesendet wird erst mit „Senden“.";
+      } catch (e) { st.textContent = "Kein Entwurf: " + e.message; }
+      finally { b.disabled = false; }
+    };
+    box.querySelector(".mk").onclick = make;
+    box.querySelector(".wish").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); make(); } });
+  }
+
+  /* ---------- Offene Schichten (nächste 7 Tage) ---------- */
+  async function loadOpenShifts() {
+    let d; try { d = await api("/api/zentrale/staffo/offen"); } catch { return; }
+    const list = (d && d.schichten) || [];
+    $("shiftWarn").hidden = !list.length; if (!list.length) return;
+    $("swHead").textContent = list.length + " offene Schicht" + (list.length === 1 ? "" : "en") + " · 7 Tage";
+    const el = $("swList"); el.innerHTML = "";
+    for (const x of list) {
+      const b = new Date(x.beginn), e = x.ende ? new Date(x.ende) : null;
+      const c = document.createElement("div"); c.className = "sw";
+      const t = document.createElement("b"); t.textContent = b.toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "numeric" }) + " " + b.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + (e ? "–" + e.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "");
+      const s = document.createElement("span"); s.textContent = [x.standort, x.bereich].filter(Boolean).join(" · ") + " · " + x.offen + " offen";
+      c.append(t, s); el.append(c);
+    }
+  }
+
+  async function openMail(m) {
+    const key = m.konto + ":" + m.uid; openKey = key;
+    $("mFrom").textContent = senderName(m.von) + " · " + (m.konto || "") + " · " + fmtFull(m.datum);
+    $("mSubj").textContent = m.betreff || "(ohne Betreff)";
+    $("mState").textContent = "";
+    setReadBtn(m.ungelesen);
+    $("mBody").innerHTML = '<div class="notice">Mail wird geladen …</div>';
+    $("mailModal").hidden = false; $("mClose").focus();
+    $("mRead").onclick = () => markRead(m);
+    $("mReply").onclick = () => replyPanel(m);
+    try {
+      const x = await api(`/api/zentrale/mail?konto=${encodeURIComponent(m.konto)}&uid=${encodeURIComponent(m.uid)}`);
+      if (openKey !== key) return;
+      if (x.fehler) throw new Error(x.fehler);
+      const body = $("mBody"); body.innerHTML = "";
+      const el = document.createElement("article"); el.className = "msg";
+      el.innerHTML = '<div class="msg-meta"><div><div class="f"></div><div class="to"></div></div><div class="d"></div></div><pre></pre>';
+      el.querySelector(".f").textContent = x.von || "";
+      el.querySelector(".to").textContent = "an " + [x.an, x.cc].filter(Boolean).join(", ");
+      el.querySelector(".d").textContent = fmtFull(x.datum);
+      el.querySelector("pre").textContent = (x.text || "").trim() || "(kein Text)";
+      if ((x.anhaenge || []).length) { const a = document.createElement("div"); a.className = "att"; a.textContent = "📎 " + x.anhaenge.join(", "); el.append(a); }
+      body.append(el);
+    } catch (e) {
+      if (openKey !== key) return;
+      notice($("mBody"), "Mail konnte nicht geladen werden: " + e.message);
+    }
+  }
+  async function markRead(m) {
+    const b = $("mRead"); b.disabled = true; $("mState").textContent = "";
+    try {
+      const r = await api(`/api/zentrale/mark-read?konto=${encodeURIComponent(m.konto)}&uid=${encodeURIComponent(m.uid)}`, write("POST"));
+      if (!r.ok) throw new Error(r.fehler || "abgelehnt");
+      m.ungelesen = false; setReadBtn(false); renderMails(); flash = .4;
+    } catch (e) { b.disabled = false; $("mState").textContent = "Nicht gespeichert: " + e.message; }
+  }
+
+  $("refresh").onclick = () => { loadProjects(); reloadTodoist(); loadMails(); loadShifts(); };
+
+  /* ---------- Start ---------- */
+  (async () => {
+    renderBoxes(); setInMode(inMode);
+    const i = await loadInfo();
+    BOXES = [["alle", "Alle"], ...((i && i.postfaecher) || []).map(b => [b.postfach, b.label])];
+    if (!BOXES.some(b => b[0] === box)) { box = "alle"; store.set("jz.box", box); }
+    renderBoxes();
+    if (i && !i.todoist) { notice($("todoList"), "Kein Todoist-Zugang in der Jarvis-config.json."); $("tiles").innerHTML = ""; }
+    else { loadProjects(); loadToday(); loadInbox(); }
+    loadMails(); loadShifts(); loadInvoices(); loadOpenShifts();
+    setInterval(loadOpenShifts, 30 * 60 * 1000);
+    $("invFetch").onclick = async () => {
+      const b = $("invFetch"); b.disabled = true; b.textContent = "wird geprüft …";
+      try { const d = await api("/api/zentrale/rechnungen/abrufen", write("POST")); b.textContent = d.ok ? (d.neu.length ? d.neu.length + " neue Rechnung(en)" : "nichts Neues") : "Fehler"; if (d.neu && d.neu.length) loadInvoices(); }
+      catch { b.textContent = "Fehler"; }
+      setTimeout(() => { b.disabled = false; b.textContent = "rechnung@ jetzt prüfen"; }, 4000);
+    };
+  })();
+  setInterval(loadInfo, 10 * 60 * 1000);
+  setInterval(loadProjects, 10 * 60 * 1000);
+  setInterval(loadToday, 60 * 1000);
+  setInterval(loadInbox, 2 * 60 * 1000);
+  setInterval(loadMails, 2 * 60 * 1000);
+  setInterval(loadShifts, 5 * 60 * 1000);
+  setInterval(renderPay, 60 * 60 * 1000);
+  show((location.hash || "").slice(1) || store.get("jz.view", "dashboard"));
+})();
+</script>
+</body>
+</html>
