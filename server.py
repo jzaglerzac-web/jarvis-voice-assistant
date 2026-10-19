@@ -962,6 +962,21 @@ async def zentrale_open_shifts(request: Request, tage: int = 7):
         return {"fehler": str(e)}
 
 
+@app.get("/api/zentrale/staffo/lage")
+async def zentrale_staffo_lage(request: Request):
+    """Objekt-Lagebild im Staffo-Reiter: alle Schichten von gestern (laufende Nachtdienste)
+    bis in 7 Tagen; Ampel und Kennzahlen rechnet die Seite."""
+    check_local(request)
+    today = date.today()
+    try:
+        schichten = await asyncio.to_thread(staffo_tools.shifts, today - timedelta(days=1), today + timedelta(days=7))
+        standorte = await asyncio.to_thread(staffo_tools.locations)
+        return {"schichten": schichten, "standorte": [s["name"] for s in standorte],
+                "stand": datetime.now().astimezone().isoformat(timespec="seconds")}
+    except staffo_tools.StaffoError as e:
+        return {"fehler": str(e)}
+
+
 @app.get("/api/zentrale/briefing")
 async def zentrale_briefing_preview(request: Request):
     """Text of the morning briefing (preview, sends nothing)."""
