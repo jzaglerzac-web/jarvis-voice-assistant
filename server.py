@@ -962,19 +962,32 @@ async def zentrale_open_shifts(request: Request, tage: int = 7):
         return {"fehler": str(e)}
 
 
+_lage_cache: tuple[float, dict] = (0.0, {})
+_lage_lock = asyncio.Lock()
+
+
 @app.get("/api/zentrale/staffo/lage")
-async def zentrale_staffo_lage(request: Request):
+async def zentrale_staffo_lage(request: Request, frisch: bool = False):
     """Objekt-Lagebild im Staffo-Reiter: alle Schichten von gestern (laufende Nachtdienste)
-    bis in 7 Tagen; Ampel und Kennzahlen rechnet die Seite."""
+    bis in 7 Tagen plus alle Bereiche (Objekte ohne Schichten); Ampel und Kennzahlen rechnet die Seite.
+    Eine Minute zwischengespeichert, damit Reiter, Hintergrundabruf und Handy Staffomatic nicht mehrfach abfragen;
+    frisch=1 (Knopf „Aktualisieren") holt sofort neu."""
+    global _lage_cache
     check_local(request)
-    today = date.today()
-    try:
-        schichten = await asyncio.to_thread(staffo_tools.shifts, today - timedelta(days=1), today + timedelta(days=7))
-        standorte = await asyncio.to_thread(staffo_tools.locations)
-        return {"schichten": schichten, "standorte": [s["name"] for s in standorte],
-                "stand": datetime.now().astimezone().isoformat(timespec="seconds")}
-    except staffo_tools.StaffoError as e:
-        return {"fehler": str(e)}
+    async with _lage_lock:
+        if not frisch and time.time() - _lage_cache[0] < 60:
+            return _lage_cache[1]
+        today = date.today()
+        try:
+            schichten = await asyncio.to_thread(staffo_tools.shifts, today - timedelta(days=1), today + timedelta(days=7))
+            standorte = await asyncio.to_thread(staffo_tools.locations)
+            bereiche = await asyncio.to_thread(staffo_tools.departments)
+        except staffo_tools.StaffoError as e:
+            return {"fehler": str(e)}
+        d = {"schichten": schichten, "standorte": [s["name"] for s in standorte], "bereiche": bereiche,
+             "stand": datetime.now().astimezone().isoformat(timespec="seconds")}
+        _lage_cache = (time.time(), d)
+        return d
 
 
 @app.get("/api/zentrale/briefing")

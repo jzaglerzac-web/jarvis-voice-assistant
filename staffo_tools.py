@@ -82,13 +82,24 @@ def locations() -> list:
     return _locations_cache[1]
 
 
+_departments_cache: tuple[float, list] = (0.0, [])
+
+
 def _departments() -> list:
-    """Departments of all locations, each with "standort" and "location_id"."""
-    result = []
-    for loc in locations():
-        for d in _get_all(f"locations/{loc['id']}/departments.json"):
-            result.append({**d, "location_id": loc["id"], "standort": loc["name"]})
-    return result
+    """Departments of all locations, each with "standort" and "location_id", cached for an hour."""
+    global _departments_cache
+    if time.time() - _departments_cache[0] > 3600 or not _departments_cache[1]:
+        result = []
+        for loc in locations():
+            for d in _get_all(f"locations/{loc['id']}/departments.json"):
+                result.append({**d, "location_id": loc["id"], "standort": loc["name"]})
+        _departments_cache = (time.time(), result)
+    return _departments_cache[1]
+
+
+def departments() -> list:
+    """Bereiche (objects) of all locations: [{name, standort}]."""
+    return [{"name": (d.get("name") or "").strip(), "standort": d["standort"]} for d in _departments()]
 
 
 def _users(state: str) -> dict:
@@ -118,6 +129,17 @@ def _name(u: dict) -> str:
     return f"{u.get('first_name') or ''} {u.get('last_name') or ''}".strip() or u.get("email", "") or f"#{u.get('id')}"
 
 
+_names_cache: tuple[float, dict] = (0.0, {})
+
+
+def _user_names(needed: set) -> dict:
+    """Names of all users by id, cached for 10 minutes; read again when an assigned id is unknown."""
+    global _names_cache
+    if time.time() - _names_cache[0] > 600 or not needed <= _names_cache[1].keys():
+        _names_cache = (time.time(), {i: _name(u) for i, u in _users("all").items()})
+    return _names_cache[1]
+
+
 def users() -> list:
     """Active staff of all locations: [{id, name, rolle, bereiche, standorte}]."""
     deps = {d["id"]: d.get("name", "").strip() for d in _departments()}
@@ -130,10 +152,15 @@ def users() -> list:
 def shifts(von: date, bis: date) -> list:
     """Shifts of all locations from von to bis (inclusive), sorted by start:
     [{id, schedule_id, location_id, standort, beginn, ende, bereich, mitarbeiter, soll, offen, notiz}]."""
-    names = {i: _name(u) for i, u in _users("all").items()}
+    raw = _raw_shifts(von, bis)
+    names = _user_names({i for s in raw for i in s.get("assigned_user_ids") or []})
     deps = {d["id"]: d.get("name", "").strip() for d in _departments()}
+    if any(s.get("department_id") and s["department_id"] not in deps for s in raw):
+        global _departments_cache
+        _departments_cache = (0.0, [])  # neuer Bereich in Staffomatic: Liste sofort neu lesen
+        deps = {d["id"]: d.get("name", "").strip() for d in _departments()}
     result = []
-    for s in _raw_shifts(von, bis):
+    for s in raw:
         assigned = s.get("assigned_user_ids") or []
         want = s.get("desired_coverage") or 0
         result.append({

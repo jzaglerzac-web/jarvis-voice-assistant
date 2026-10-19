@@ -298,37 +298,79 @@ table.inv { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 .staffo-note { margin: auto; max-width: 520px; padding: 32px; display: grid; gap: 12px; justify-items: start; line-height: 1.5; color: var(--muted); }
 /* Objekt-Lagebild im Staffo-Reiter: Ampel je Objekt (Rot unbesetzt jetzt, Gelb offen in 24 h, Grün besetzt, Grau kein Dienst) */
 .lb { display: flex; flex-direction: column; gap: 12px; }
-.lb-head { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-left: 3px solid var(--amp, var(--line)); flex-wrap: wrap; }
-.lb-head > div { flex: 1; min-width: 220px; }
+[data-a="rot"] { --amp: var(--red-hot); } [data-a="gelb"] { --amp: var(--warn); } [data-a="gruen"] { --amp: var(--ok); } [data-a="grau"] { --amp: var(--line); }
+.lb-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 6px 16px; padding: 14px 16px; border-left: 4px solid var(--amp, var(--line)); }
+.lb-head[data-a="rot"] { background: linear-gradient(90deg, var(--red-soft), transparent 60%), var(--panel); }
+.lb-sig { font-family: var(--f-display); font-weight: 700; font-size: 26px; line-height: 1; letter-spacing: .04em; text-transform: uppercase; color: var(--amp, var(--muted)); white-space: nowrap; }
 .lb-head p { margin: 4px 0 0; font-size: 15px; line-height: 1.4; }
+.lb-age.old { color: var(--warn); }
 .lb-head .sec { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 7px 14px; color: var(--text); font-weight: 600; white-space: nowrap; }
 .lb-head .sec:hover { border-color: var(--red); }
 .lb-head .sec:disabled { opacity: .55; cursor: default; }
-.lb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; align-items: start; }
-.lb-tile { padding: 12px 14px 10px; border-left: 4px solid var(--amp); display: grid; gap: 8px; }
-[data-a="rot"] { --amp: var(--red-hot); } [data-a="gelb"] { --amp: var(--warn); } [data-a="gruen"] { --amp: var(--ok); } [data-a="grau"] { --amp: var(--line); }
+.lb-bar { display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap; }
+.lb-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.lb-chips .box { display: inline-flex; gap: 6px; align-items: center; }
+.lb-chips .box i { font-style: normal; font-family: var(--f-mono); font-size: 11px; color: var(--red-hot); }
+.lb-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-left: auto; font-size: 12px; color: var(--muted); }
+.lb-legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; background: var(--amp); vertical-align: 0; }
+.lb-legend .open::before { background: var(--red-hot); } .lb-legend .ok::before { background: var(--ok); } .lb-legend .none::before { background: var(--panel-2); outline: 1px solid var(--line); }
+.kpi.okay b { color: var(--ok); }
+.kpi.warn b { color: var(--warn); }
+.lb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; align-items: stretch; }
+.lb-tile { padding: 12px 14px 12px; border-left: 4px solid var(--amp); display: flex; flex-direction: column; gap: 8px; cursor: pointer; text-align: left; color: inherit; font: inherit; }
+.lb-tile:hover { border-color: var(--amp); border-left-color: var(--amp); background-color: var(--panel-2); }
+.lb-tile[aria-pressed="true"] { outline: 2px solid var(--amp); outline-offset: -1px; }
 .lb-tile[data-a="rot"] { background: linear-gradient(var(--red-soft), var(--red-soft)), var(--panel); }
 .lb-tile header { display: flex; justify-content: space-between; align-items: start; gap: 8px; }
 .lb-tile h3 { margin: 0; font-family: var(--f-display); font-size: 21px; font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; }
 .lb-tile h3 small { display: block; font-family: var(--f-mono); font-size: 11px; font-weight: 400; color: var(--muted); margin-top: 2px; }
 .lb-tile .st { border-color: var(--amp); color: var(--amp); white-space: nowrap; }
 .lb-tile[data-a="grau"] .st { color: var(--muted); }
+.lb-tile .alarm { font-size: 13px; font-weight: 600; color: var(--red-hot); }
+.lb-tile .alarm.w { color: var(--warn); }
 .lb-tile dl { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; margin: 0; font-size: 13px; }
 .lb-tile dt { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding-top: 2px; }
 .lb-tile dd { margin: 0; overflow-wrap: anywhere; }
 .lb-tile dd.big { font-family: var(--f-display); font-size: 20px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.lb-tile dd .rel { color: var(--muted); font-family: var(--f-mono); font-size: 11px; white-space: nowrap; }
 .lb-tile .bad { color: var(--red-hot); }
+.lb-tile .muted { color: var(--muted); }
+/* Wochenstreifen: ein Feld je Tag (heute + 6), rot = offene Schicht, grün = alles besetzt, leer = kein Dienst */
+.lb-week { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); display: grid; gap: 4px; }
+.lb-week ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.lb-week li { display: grid; gap: 3px; text-align: center; font-family: var(--f-mono); font-size: 10px; color: var(--muted); text-transform: uppercase; }
+.lb-week li i { height: 8px; border-radius: 2px; background: var(--panel-2); outline: 1px solid var(--line); outline-offset: -1px; }
+.lb-week li.ok i { background: var(--ok); outline: 0; }
+.lb-week li.open i { background: var(--red-hot); outline: 0; }
+.lb-week li.today { color: var(--text); font-weight: 500; }
+.lb-week small { font-size: 11px; color: var(--muted); }
+.lb-week small.bad { color: var(--red-hot); }
+.lb-none { font-size: 13px; color: var(--muted); padding: 2px 4px; }
+.lb-none b { color: var(--text); font-weight: 500; }
+.lb-focus { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.lb-focus button { background: var(--red-soft); border: 1px solid var(--red); border-radius: 99px; padding: 3px 10px; font-size: 12px; color: var(--text); }
 .lb-tbl { padding: 12px 6px 6px; }
 .lb-tbl h2 { margin: 0 10px 6px; font-family: var(--f-display); font-size: 22px; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .lb-tbl h2 span { font-family: var(--f-mono); font-size: 12px; font-weight: 400; color: var(--muted); }
 .lb-tbl td { white-space: normal; }
-.lb-tbl tr.open td { color: var(--red-hot); }
+.lb-tbl tr.lb-day td { padding-top: 14px; font-family: var(--f-display); font-size: 15px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text); border-bottom: 1px solid var(--line); }
+.lb-tbl tr.lb-day td span { font-family: var(--f-mono); font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--muted); margin-left: 10px; }
 .lb-tbl tr.open td:first-child { box-shadow: inset 3px 0 0 var(--red-hot); }
+.lb-tbl td.bad { color: var(--red-hot); font-weight: 600; }
+.lb-tbl td.extra { color: var(--muted); }
 .lb-tbl tr.now td { background: var(--panel-2); }
+.lb-tbl .tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 99px; font-family: var(--f-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; border: 1px solid var(--ok); color: var(--ok); vertical-align: 1px; }
+.lb-tbl tr.open .tag { border-color: var(--red-hot); color: var(--red-hot); }
+.lb-tbl td.rel { font-family: var(--f-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
 .lb-tbl .empty { color: var(--muted); }
+.tab .tab-n { display: inline-block; min-width: 18px; margin-left: 6px; padding: 0 5px; border-radius: 99px; background: var(--red-hot); color: #fff; font-family: var(--f-mono); font-size: 11px; line-height: 18px; text-align: center; letter-spacing: 0; vertical-align: 2px; }
 @media (max-width: 720px) {
+  .lb-head { grid-template-columns: 1fr auto; }
+  .lb-head > div { grid-column: 1 / -1; grid-row: 2; }
+  .lb-legend { margin-left: 0; }
+  .lb-chips { flex-wrap: nowrap; width: 100%; }
   table.inv.lbt tr:not(.inv-detail) > :is(th, td):nth-child(n) { display: table-cell; }
-  table.inv.lbt tr:not(.inv-detail) > :is(th, td):is(:nth-child(4), :nth-child(7)):nth-child(n) { display: none; }
+  table.inv.lbt tr:not(.inv-detail):not(.lb-day) > :is(th, td):is(:nth-child(3), :nth-child(7)):nth-child(n) { display: none; }
 }
 .boxes { display: flex; gap: 6px; padding: 6px 16px 2px; overflow-x: auto; scrollbar-width: none; flex: none; }
 .box { flex: none; background: none; border: 1px solid var(--line); border-radius: 99px; padding: 3px 10px; font-size: 12px; color: var(--muted); }
@@ -755,30 +797,34 @@ body { overflow: hidden; }
       <a class="btn-open" id="staffoOpen" href="https://zac-gmbh.staffomatic.app/login" target="_blank" rel="noopener">In neuem Fenster öffnen ↗</a></div>
     <section class="lb" id="lb" aria-label="Objekt-Lagebild">
       <div class="panel lb-head" id="lbHead">
-        <div><span class="eyebrow">Objekt-Lagebild · Stand <span id="lbStand">–</span></span><p id="lbSatz">Wird geladen …</p></div>
+        <span class="lb-sig" id="lbSig">Lage</span>
+        <div><span class="eyebrow">Objekt-Lagebild · Stand <span id="lbStand">–</span> <span class="lb-age" id="lbAge"></span></span><p id="lbSatz">Wird geladen …</p></div>
         <button class="sec" type="button" id="lbRefresh">Aktualisieren</button>
       </div>
+      <div class="lb-bar">
+        <div class="lb-chips" id="lbChips" role="group" aria-label="Standort"></div>
+        <div class="lb-legend" aria-label="Legende"><span data-a="rot">Jetzt unbesetzt</span><span data-a="gelb">Offen in 24 h / heute offen geblieben</span><span data-a="gruen">Besetzt</span><span data-a="grau">Kein Dienst</span></div>
+      </div>
       <div class="kpis">
-        <div class="panel kpi"><span class="eyebrow">Objekte jetzt im Dienst</span><b id="lbKObj">–</b></div>
-        <div class="panel kpi alert"><span class="eyebrow">Posten jetzt unbesetzt</span><b id="lbKNow">–</b></div>
-        <div class="panel kpi"><span class="eyebrow">Offene Schichten · 7 Tage</span><b id="lbKOpen">–</b><small>ab jetzt</small></div>
-        <div class="panel kpi"><span class="eyebrow">Offene Stunden · 7 Tage</span><b id="lbKHrs">–</b><small>unbesetzte Posten × Dauer ab jetzt</small></div>
+        <div class="panel kpi" id="lbKObjBox"><span class="eyebrow">Objekte jetzt im Dienst</span><b id="lbKObj">–</b><small id="lbKObjS">&nbsp;</small></div>
+        <div class="panel kpi" id="lbKNowBox"><span class="eyebrow">Posten jetzt unbesetzt</span><b id="lbKNow">–</b><small id="lbKNowS">&nbsp;</small></div>
+        <div class="panel kpi" id="lbKOpenBox"><span class="eyebrow">Offene Schichten · 7 Tage</span><b id="lbKOpen">–</b><small id="lbKOpenS">ab jetzt</small></div>
+        <div class="panel kpi" id="lbKHrsBox"><span class="eyebrow">Offene Stunden · 7 Tage</span><b id="lbKHrs">–</b><small id="lbKHrsS">unbesetzte Posten × Dauer ab jetzt</small></div>
       </div>
       <div class="lb-grid" id="lbGrid"></div>
+      <div class="lb-none" id="lbNone" hidden></div>
+      <div class="lb-focus" id="lbFocus" hidden>Tabellen zeigen nur <button type="button" id="lbFocusX"></button></div>
       <div class="panel tablewrap lb-tbl">
         <h2>Offene Schichten · 7 Tage<span id="lbOpenN">–</span></h2>
-        <table class="inv lbt"><thead><tr><th>Tag</th><th>Zeit</th><th>Objekt</th><th>Standort</th><th class="num">Offen</th><th class="num">Stunden</th><th>Notiz</th></tr></thead>
+        <table class="inv lbt"><thead><tr><th>Zeit</th><th>Objekt</th><th>Standort</th><th class="num">Offen</th><th class="num">Stunden</th><th>Beginnt</th><th>Notiz</th></tr></thead>
         <tbody id="lbOpenBody"><tr><td colspan="7" class="empty">Wird geladen …</td></tr></tbody></table>
       </div>
       <div class="panel tablewrap lb-tbl">
         <h2>Alle Schichten heute und morgen<span id="lbAllN">–</span></h2>
-        <table class="inv lbt"><thead><tr><th>Tag</th><th>Zeit</th><th>Objekt</th><th>Standort</th><th>Besetzt durch</th><th class="num">Ist/Soll</th></tr></thead>
-        <tbody id="lbAllBody"><tr><td colspan="6" class="empty">Wird geladen …</td></tr></tbody></table>
+        <table class="inv lbt"><thead><tr><th>Zeit</th><th>Objekt</th><th>Standort</th><th>Besetzt durch</th><th class="num">Ist/Soll</th></tr></thead>
+        <tbody id="lbAllBody"><tr><td colspan="5" class="empty">Wird geladen …</td></tr></tbody></table>
       </div>
     </section>
-    <div class="kpis staffo-cols">
-      <section class="panel pcard"><h2>Dienste heute · alle Standorte<span id="sfTodayN">–</span></h2><ul class="todo-list" id="sfToday"><li class="notice">Wird geladen …</li></ul></section>
-    </div>
     <div class="panel staffo-frame" id="staffoWrap">
       <iframe id="staffoFrame" title="Staffomatic" hidden referrerpolicy="no-referrer-when-downgrade" allow="clipboard-write"></iframe>
       <div class="staffo-note" id="staffoNote">
@@ -1200,6 +1246,7 @@ body { overflow: hidden; }
   function renderShifts() {
     for (const [listId, countId, withNote] of [["duty", "dutyN", false], ["sfToday", "sfTodayN", true]]) {
       const ul = $(listId);
+      if (!ul) continue;
       if (shiftError) { notice(ul, "Staffomatic: " + shiftError); $(countId).textContent = "–"; continue; }
       if (!shiftsToday) continue;
       ul.innerHTML = ""; $(countId).textContent = shiftsToday.schichten.length;
@@ -1434,129 +1481,281 @@ body { overflow: hidden; }
   // Objekt = Bereich ohne "Nacht" ("Schlosspark Nacht" zählt zu "Schlosspark"), je Standort.
   // Ampel: Rot = laufende Schicht unbesetzt · Gelb = offen in den nächsten 24 h oder heute unbesetzt geblieben
   //        · Grün = besetzt · Grau = gerade kein Dienst.
-  let lage = null, lageAt = 0, lageError = "", lageBusy = false;
+  // Geladen wird auch bei geschlossenem Reiter (alle 5 Minuten, der Server puffert eine Minute), damit der Reiter
+  // „Staffo" und der Fenstertitel einen unbesetzten Posten sofort zeigen.
+  let lage = null, lageAt = 0, lageError = "", lageBusy = false, lageFocus = "";
+  let lageOrt = store.get("jz.lageOrt", "");
   const AMP = { rot: "Unbesetzt", gelb: "Achtung", gruen: "Besetzt", grau: "Kein Dienst" };
+  const SIG = { rot: "Lage rot", gelb: "Lage gelb", gruen: "Lage grün", grau: "Keine Daten" };
   const RANK = { rot: 0, gelb: 1, gruen: 2, grau: 3 };
+  const BASE_TITLE = document.title;
   const fmtDay = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+  const fmtWd = new Intl.DateTimeFormat("de-DE", { weekday: "short" });
   const dayKey = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
   const objName = (b) => String(b || "").replace(/\s+nacht$/i, "").trim() || "Ohne Bereich";
   const hrs = (h) => (Math.round(h * 10) / 10).toLocaleString("de-DE");
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  function dur(ms) {
+    const m = Math.max(0, Math.round(ms / 6e4));
+    if (m < 60) return m + " min";
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + " h" + (m % 60 ? " " + (m % 60) + " min" : "");
+    return Math.floor(h / 24) + " T" + (h % 24 ? " " + (h % 24) + " h" : "");
+  }
+  const rel = (d, now) => d > now ? "in " + dur(d - now) : "seit " + dur(now - d);
+  function dayLabel(d, now) {
+    const k = dayKey(d);
+    if (k === dayKey(now)) return "Heute";
+    if (k === dayKey(addDays(now, 1))) return "Morgen";
+    if (k === dayKey(addDays(now, -1))) return "Gestern";
+    return fmtDay.format(d);
+  }
+  const span = (x) => `${hm(x.b)}–${x.openEnd ? "Ende offen" : hm(x.e)}`;
   function lageShifts() {
     return (lage?.schichten || []).map(x => {
       const b = new Date(x.beginn);
-      let e = x.ende ? new Date(x.ende) : new Date(b.getTime() + 8 * 36e5);  // offenes Ende: 8 h annehmen
+      const e = x.ende ? new Date(x.ende) : new Date(b.getTime() + 8 * 36e5);  // offenes Ende: 8 h annehmen
       const names = [].concat(x.mitarbeiter || []).filter(Boolean);
-      return { ...x, b, e, names, ist: names.length, obj: objName(x.bereich), key: (x.standort || "") + "|" + objName(x.bereich) };
+      return { ...x, b, e, openEnd: !x.ende, names, ist: names.length, obj: objName(x.bereich), key: (x.standort || "") + "|" + objName(x.bereich) };
     }).filter(x => !isNaN(x.b)).sort((p, q) => p.b - q.b);
   }
   function lageRow(cells, cls) {
     const tr = document.createElement("tr"); if (cls) tr.className = cls;
-    for (const [text, c] of cells) { const td = document.createElement("td"); if (c) td.className = c; td.textContent = text; tr.append(td); }
+    for (const [text, c, tag] of cells) {
+      const td = document.createElement("td"); if (c) td.className = c; td.textContent = text;
+      if (tag) { const t = document.createElement("span"); t.className = "tag"; t.textContent = tag; td.append(t); }
+      tr.append(td);
+    }
     return tr;
   }
-  function renderLage() {
-    const satz = $("lbSatz"), head = $("lbHead");
-    if (lageError && !lage) {
-      satz.textContent = "Staffomatic: " + lageError; head.dataset.a = "grau";
-      for (const id of ["lbKObj", "lbKNow", "lbKOpen", "lbKHrs", "lbOpenN", "lbAllN"]) $(id).textContent = "–";
-      $("lbGrid").innerHTML = "";
-      for (const [id, n] of [["lbOpenBody", 7], ["lbAllBody", 6]]) { const b = $(id); b.innerHTML = ""; b.append(lageRow([["Keine Daten.", "empty"]])); b.firstChild.firstChild.colSpan = n; }
-      return;
-    }
-    if (!lage) return;
-    const now = new Date(), in24 = new Date(now.getTime() + 24 * 36e5), in7 = new Date(now.getTime() + 7 * 24 * 36e5);
-    const today = dayKey(now), tomorrow = dayKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
-    const all = lageShifts();
-    const running = all.filter(x => x.b <= now && x.e > now);
-
-    // Kacheln je Objekt
+  function emptyRow(body, n, text) { body.append(lageRow([[text, "empty"]])); body.lastChild.firstChild.colSpan = n; }
+  function dayRow(body, n, title, info) {
+    const tr = document.createElement("tr"); tr.className = "lb-day";
+    const td = document.createElement("td"); td.colSpan = n; td.textContent = title;
+    if (info) { const s = document.createElement("span"); s.textContent = info; td.append(s); }
+    tr.append(td); body.append(tr);
+  }
+  function objTiles(all, now) {
+    const in24 = new Date(now.getTime() + 24 * 36e5), today = dayKey(now);
     const objs = new Map();
     for (const x of all) {
-      if (!objs.has(x.key)) objs.set(x.key, { name: x.obj, standort: x.standort, list: [] });
+      if (!objs.has(x.key)) objs.set(x.key, { key: x.key, name: x.obj, standort: x.standort, list: [] });
       objs.get(x.key).list.push(x);
     }
     const tiles = [];
     for (const o of objs.values()) {
       const run = o.list.filter(x => x.b <= now && x.e > now);
       const next = o.list.find(x => x.b > now);
-      const soon = o.list.some(x => x.offen > 0 && x.b > now && x.b <= in24);
-      const leftOpen = o.list.some(x => x.offen > 0 && x.e <= now && dayKey(x.b) === today);
+      const soon = o.list.find(x => x.offen > 0 && x.b > now && x.b <= in24);
+      const leftOpen = o.list.find(x => x.offen > 0 && x.e <= now && dayKey(x.b) === today);
       const ist = run.reduce((s, x) => s + x.ist, 0), soll = run.reduce((s, x) => s + (x.soll || 0), 0);
-      const a = run.some(x => x.offen > 0) ? "rot" : (soon || leftOpen) ? "gelb" : run.length ? "gruen" : "grau";
-      tiles.push({ ...o, run, next, ist, soll, a, leftOpen, soon });
+      const openRun = run.filter(x => x.offen > 0);
+      const a = openRun.length ? "rot" : (soon || leftOpen) ? "gelb" : run.length ? "gruen" : "grau";
+      tiles.push({ ...o, run, openRun, next, ist, soll, a, leftOpen, soon });
     }
-    tiles.sort((p, q) => RANK[p.a] - RANK[q.a] || p.name.localeCompare(q.name, "de"));
+    return tiles.sort((p, q) => RANK[p.a] - RANK[q.a] || p.name.localeCompare(q.name, "de"));
+  }
+  function weekStrip(t, now) {
+    const box = document.createElement("div"); box.className = "lb-week";
+    const ol = document.createElement("ol"); let openDays = 0, workDays = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(now, i), k = dayKey(d);
+      const day = t.list.filter(x => dayKey(x.b) === k);
+      const open = day.filter(x => x.offen > 0);
+      const li = document.createElement("li");
+      li.className = (open.length ? "open" : day.length ? "ok" : "none") + (i === 0 ? " today" : "");
+      if (open.length) openDays++; if (day.length) workDays++;
+      li.title = fmtDay.format(d) + ": " + (day.length ? day.map(x => `${span(x)} ${x.names.join(", ") || "unbesetzt"}`).join(" · ") : "kein Dienst");
+      li.append(document.createElement("i"), i === 0 ? "heute" : fmtWd.format(d).replace(".", ""));
+      ol.append(li);
+    }
+    const s = document.createElement("small");
+    if (openDays) { s.className = "bad"; s.textContent = `An ${openDays} von ${workDays} Diensttagen offen`; }
+    else s.textContent = workDays ? `${plural(workDays, "Diensttag", "Diensttage")}, alle besetzt` : "Keine Schichten in 7 Tagen";
+    box.append(ol, s);
+    return box;
+  }
+  function renderChips(tiles) {
+    const box = $("lbChips"); box.innerHTML = "";
+    const orte = [...new Set([...(lage?.standorte || []), ...tiles.map(t => t.standort).filter(Boolean)])];
+    if (lageOrt && !orte.includes(lageOrt)) lageOrt = "";
+    for (const o of ["", ...orte]) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "box";
+      b.setAttribute("aria-pressed", String(o === lageOrt));
+      b.textContent = o || "Alle Standorte";
+      const red = tiles.filter(t => t.a === "rot" && (!o || t.standort === o)).length;
+      if (red) { const i = document.createElement("i"); i.textContent = red; i.title = plural(red, "Objekt", "Objekte") + " jetzt unbesetzt"; b.append(i); }
+      b.onclick = () => { lageOrt = o; lageFocus = ""; store.set("jz.lageOrt", o); renderLage(); };
+      box.append(b);
+    }
+  }
+  function markNav(n) {
+    const tab = document.querySelector('.tab[data-v="staffo"]');
+    let badge = tab.querySelector(".tab-n");
+    if (n && !badge) { badge = document.createElement("span"); badge.className = "tab-n"; tab.append(badge); }
+    if (badge) { if (n) { badge.textContent = n; badge.title = plural(n, "Posten", "Posten") + " jetzt unbesetzt"; } else badge.remove(); }
+    document.title = (n ? `(${n}) ` : "") + BASE_TITLE;
+  }
+  function renderLage() {
+    const satz = $("lbSatz"), head = $("lbHead");
+    if (lageError && !lage) {
+      satz.textContent = "Staffomatic: " + lageError; head.dataset.a = "grau"; $("lbSig").textContent = SIG.grau;
+      for (const id of ["lbKObj", "lbKNow", "lbKOpen", "lbKHrs", "lbOpenN", "lbAllN"]) $(id).textContent = "–";
+      $("lbGrid").innerHTML = "";
+      for (const [id, n] of [["lbOpenBody", 7], ["lbAllBody", 5]]) { const b = $(id); b.innerHTML = ""; emptyRow(b, n, "Keine Daten."); }
+      return;
+    }
+    if (!lage) return;
+    const now = new Date(), in24 = new Date(now.getTime() + 24 * 36e5), in7 = new Date(now.getTime() + 7 * 24 * 36e5);
+    const today = dayKey(now), tomorrow = dayKey(addDays(now, 1));
+    const every = lageShifts();
+    const allTiles = objTiles(every, now);
+    markNav(every.filter(x => x.b <= now && x.e > now).reduce((s, x) => s + x.offen, 0));
+    renderChips(allTiles);
+    const inOrt = (x) => !lageOrt || x.standort === lageOrt;
+    const all = every.filter(inOrt), tiles = allTiles.filter(inOrt);
+    if (lageFocus && !tiles.some(t => t.key === lageFocus)) lageFocus = "";
+    const running = all.filter(x => x.b <= now && x.e > now);
+
+    // Kacheln je Objekt
     const g = $("lbGrid"); g.innerHTML = "";
     for (const t of tiles) {
       const card = document.createElement("section"); card.className = "panel lb-tile"; card.dataset.a = t.a;
-      card.innerHTML = '<header><h3><span class="n"></span><small></small></h3><span class="st"></span></header><dl></dl>';
+      card.tabIndex = 0; card.setAttribute("role", "button"); card.setAttribute("aria-pressed", String(lageFocus === t.key));
+      card.title = lageFocus === t.key ? "Klicken: wieder alle Objekte in den Tabellen" : "Klicken: Tabellen auf dieses Objekt beschränken";
+      card.innerHTML = '<header><h3><span class="n"></span><small></small></h3><span class="st"></span></header>';
       card.querySelector(".n").textContent = t.name;
       card.querySelector("small").textContent = t.standort || "";
       card.querySelector(".st").textContent = AMP[t.a];
-      const dl = card.querySelector("dl");
-      const add = (label, text, cls) => { const dt = document.createElement("dt"); dt.textContent = label; const dd = document.createElement("dd"); dd.textContent = text; if (cls) dd.className = cls; dl.append(dt, dd); };
-      add("Besetzung jetzt", t.run.length ? `${t.ist}/${t.soll}` : "–", "big" + (t.a === "rot" ? " bad" : ""));
-      add("Im Dienst", t.run.length ? (t.run.flatMap(x => x.names).join(", ") || "niemand") : "kein Dienst", t.a === "rot" ? "bad" : "");
-      if (t.next) {
-        add("Nächste Schicht", `${dayKey(t.next.b) === today ? "heute" : fmtDay.format(t.next.b)} ${hm(t.next.b)}–${hm(t.next.e)}` + (t.next.offen ? ` · ${t.next.offen} offen` : ""), t.next.offen ? "bad" : "");
-        add("Übernimmt", t.next.names.join(", ") || "unbesetzt", t.next.names.length ? "" : "bad");
-      } else {
-        add("Nächste Schicht", "keine in 7 Tagen");
+      if (t.openRun.length) {
+        const since = new Date(Math.min(...t.openRun.map(x => x.b)));
+        const p = document.createElement("div"); p.className = "alarm"; p.textContent = `Unbesetzt seit ${hm(since)} Uhr (${dur(now - since)})`; card.append(p);
+      } else if (t.soon) {
+        const p = document.createElement("div"); p.className = "alarm w"; p.textContent = `Offene Schicht ${dayLabel(t.soon.b, now).toLowerCase()} ${hm(t.soon.b)} Uhr, ${rel(t.soon.b, now)}`; card.append(p);
+      } else if (t.leftOpen) {
+        const p = document.createElement("div"); p.className = "alarm w"; p.textContent = `Heute ${span(t.leftOpen)} blieb unbesetzt`; card.append(p);
       }
-      if (t.leftOpen) add("Heute", "Schicht blieb unbesetzt", "bad");
+      const dl = document.createElement("dl"); card.append(dl);
+      const add = (label, text, cls, extra) => {
+        const dt = document.createElement("dt"); dt.textContent = label;
+        const dd = document.createElement("dd"); dd.textContent = text; if (cls) dd.className = cls;
+        if (extra) { const s = document.createElement("span"); s.className = "rel"; s.textContent = " " + extra; dd.append(s); }
+        dl.append(dt, dd);
+      };
+      add("Besetzung jetzt", t.run.length ? `${t.ist}/${t.soll}` : "–", "big" + (t.a === "rot" ? " bad" : ""), t.ist > t.soll ? `+${t.ist - t.soll} über Soll` : "");
+      add("Im Dienst", t.run.length ? (t.run.flatMap(x => x.names).join(", ") || "niemand") : "kein Dienst", t.a === "rot" ? "bad" : t.run.length ? "" : "muted");
+      if (t.next) {
+        add("Nächste Schicht", `${dayLabel(t.next.b, now)} ${span(t.next)}`, "", rel(t.next.b, now));
+        add("Übernimmt", t.next.names.join(", ") || "unbesetzt", t.next.offen ? "bad" : "");
+      } else {
+        add("Nächste Schicht", "keine in 7 Tagen", "muted");
+      }
+      card.append(weekStrip(t, now));
+      const toggle = () => { lageFocus = lageFocus === t.key ? "" : t.key; renderLage(); };
+      card.onclick = toggle;
+      card.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } };
       g.append(card);
     }
     if (!tiles.length) g.innerHTML = '<div class="notice">Keine Schichten in den nächsten 7 Tagen.</div>';
 
+    // Objekte aus Staffomatic, die im Zeitraum keine einzige Schicht haben
+    const seen = new Set(every.map(x => x.key));
+    const none = [...new Map((lage.bereiche || []).filter(inOrt).map(b => [(b.standort || "") + "|" + objName(b.name), b]))]
+      .filter(([k, b]) => b.name && !seen.has(k)).map(([, b]) => objName(b.name) + (lageOrt ? "" : ` (${b.standort})`));
+    const nb = $("lbNone"); nb.hidden = !none.length;
+    if (none.length) { nb.innerHTML = "<b>Ohne Schichten von gestern bis in 7 Tagen:</b> "; nb.append(none.join(", ")); }
+
+    // Fokus auf ein Objekt (Klick auf die Kachel) für die Tabellen
+    const focusT = tiles.find(t => t.key === lageFocus);
+    $("lbFocus").hidden = !focusT;
+    if (focusT) { $("lbFocusX").textContent = focusT.name + " ×"; $("lbFocusX").onclick = () => { lageFocus = ""; renderLage(); }; }
+    const inFocus = (x) => !lageFocus || x.key === lageFocus;
+
     // Kennzahlen und Kopfzeile
     const open7 = all.filter(x => x.offen > 0 && x.e > now && x.b < in7);
+    const open24 = open7.filter(x => x.b <= in24);
     const openHrs = open7.reduce((s, x) => s + x.offen * Math.max(0, (x.e - Math.max(x.b, now)) / 36e5), 0);
     const nowOpen = running.reduce((s, x) => s + x.offen, 0);
     const redObjs = tiles.filter(t => t.a === "rot").map(t => t.name);
-    $("lbKObj").textContent = tiles.filter(t => t.run.length).length;
+    const active = tiles.filter(t => t.run.length).length;
+    $("lbKObj").textContent = active;
+    $("lbKObjS").textContent = `von ${plural(tiles.length, "Objekt", "Objekten")} mit Schichten`;
     $("lbKNow").textContent = nowOpen;
+    $("lbKNowBox").className = "panel kpi " + (nowOpen ? "alert" : "okay");
+    $("lbKNowS").textContent = nowOpen ? redObjs.join(", ") : "alle laufenden Posten besetzt";
     $("lbKOpen").textContent = open7.length;
+    $("lbKOpenBox").className = "panel kpi" + (open24.length ? " warn" : "");
+    $("lbKOpenS").textContent = open24.length ? `davon ${open24.length} in den nächsten 24 h` : "keine in den nächsten 24 h";
     $("lbKHrs").textContent = hrs(openHrs) + " h";
-    $("lbStand").textContent = new Date(lage.stand || lageAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr" + (lageError ? " · letzter Abruf fehlgeschlagen" : "");
-    $("lbSatz").textContent = (nowOpen
-      ? `${nowOpen} ${nowOpen === 1 ? "laufender Posten" : "laufende Posten"} unbesetzt (${redObjs.join(", ")})`
+    const stand = new Date(lage.stand || lageAt);
+    const age = now - stand;
+    $("lbStand").textContent = stand.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr";
+    $("lbAge").textContent = lageError ? "· letzter Abruf fehlgeschlagen" : age > 9e4 ? "· vor " + dur(age) : "· gerade eben";
+    $("lbAge").className = "lb-age" + (lageError || age > 10 * 6e4 ? " old" : "");
+    const nextOpen = open7.find(x => x.b > now);
+    satz.textContent = (nowOpen
+      ? `${plural(nowOpen, "laufender Posten", "laufende Posten")} unbesetzt (${redObjs.join(", ")})`
       : "Alle laufenden Posten sind besetzt") +
-      ` · ${open7.length} offene ${open7.length === 1 ? "Schicht" : "Schichten"} in den nächsten 7 Tagen.`;
-    head.dataset.a = nowOpen ? "rot" : open7.some(x => x.b <= in24) ? "gelb" : "gruen";
+      ` · ${plural(open7.length, "offene Schicht", "offene Schichten")} in den nächsten 7 Tagen` +
+      (nextOpen ? ` · nächste ${dayLabel(nextOpen.b, now).toLowerCase()} ${hm(nextOpen.b)} Uhr ${nextOpen.obj} (${rel(nextOpen.b, now)})` : "") + ".";
+    head.dataset.a = nowOpen ? "rot" : open24.length || tiles.some(t => t.a === "gelb") ? "gelb" : "gruen";
+    $("lbSig").textContent = SIG[head.dataset.a];
 
-    // Tabelle offene Schichten 7 Tage
-    const ob = $("lbOpenBody"); ob.innerHTML = ""; $("lbOpenN").textContent = open7.length;
-    for (const x of open7) {
-      ob.append(lageRow([[fmtDay.format(x.b)], [`${hm(x.b)}–${hm(x.e)}`], [x.bereich || x.obj], [x.standort || ""],
-        [`${x.offen}/${x.soll}`, "num"], [hrs(x.offen * (x.e - x.b) / 36e5), "num"], [x.notiz || ""]], "open" + (x.b <= now ? " now" : "")));
+    // Tabelle offene Schichten 7 Tage, nach Tagen gruppiert
+    const openList = open7.filter(inFocus);
+    const ob = $("lbOpenBody"); ob.innerHTML = ""; $("lbOpenN").textContent = openList.length + (lageFocus ? " von " + open7.length : "");
+    let lastDay = "";
+    for (const x of openList) {
+      const k = dayKey(x.b);
+      if (k !== lastDay) {
+        lastDay = k;
+        const same = openList.filter(y => dayKey(y.b) === k);
+        dayRow(ob, 7, dayLabel(x.b, now) + (dayLabel(x.b, now).length > 9 ? "" : " · " + fmtDay.format(x.b)),
+          `${plural(same.reduce((s, y) => s + y.offen, 0), "Posten", "Posten")} offen · ${hrs(same.reduce((s, y) => s + y.offen * (y.e - y.b) / 36e5, 0))} h`);
+      }
+      const runs = x.b <= now;
+      ob.append(lageRow([[span(x), "", runs ? "läuft" : ""], [x.bereich || x.obj], [x.standort || ""],
+        [`${x.offen}/${x.soll}`, "num bad"], [hrs(x.offen * (x.e - x.b) / 36e5), "num"],
+        [runs ? "seit " + dur(now - x.b) : "in " + dur(x.b - now), "rel"], [x.notiz || ""]], "open" + (runs ? " now" : "")));
     }
-    if (!open7.length) { ob.append(lageRow([["Keine offenen Schichten in den nächsten 7 Tagen.", "empty"]])); ob.firstChild.firstChild.colSpan = 7; }
+    if (!openList.length) emptyRow(ob, 7, "Keine offenen Schichten in den nächsten 7 Tagen.");
 
-    // Tabelle alle Schichten heute und morgen
-    const two = all.filter(x => dayKey(x.b) === today || dayKey(x.b) === tomorrow || (x.b <= now && x.e > now));
+    // Tabelle alle Schichten heute und morgen (plus Nachtdienste von gestern, die noch laufen)
+    const two = all.filter(x => (dayKey(x.b) === today || dayKey(x.b) === tomorrow || (x.b <= now && x.e > now)) && inFocus(x));
     const ab = $("lbAllBody"); ab.innerHTML = ""; $("lbAllN").textContent = two.length;
+    lastDay = "";
     for (const x of two) {
-      const day = dayKey(x.b) === today ? "heute" : dayKey(x.b) === tomorrow ? "morgen" : fmtDay.format(x.b);
-      ab.append(lageRow([[day], [`${hm(x.b)}–${hm(x.e)}`], [x.bereich || x.obj], [x.standort || ""],
-        [x.names.join(", ") || "unbesetzt"], [`${x.ist}/${x.soll}`, "num"]],
-        [x.offen > 0 ? "open" : "", x.b <= now && x.e > now ? "now" : ""].filter(Boolean).join(" ")));
+      const k = dayKey(x.b);
+      if (k !== lastDay) {
+        lastDay = k;
+        const same = two.filter(y => dayKey(y.b) === k), gaps = same.filter(y => y.offen > 0).length;
+        dayRow(ab, 5, dayLabel(x.b, now) + " · " + fmtDay.format(x.b), plural(same.length, "Schicht", "Schichten") + (gaps ? ` · ${gaps} mit offenem Platz` : ""));
+      }
+      const runs = x.b <= now && x.e > now;
+      ab.append(lageRow([[span(x), "", runs ? "läuft" : x.e <= now ? "" : ""], [x.bereich || x.obj], [x.standort || ""],
+        [x.names.join(", ") + (x.offen ? (x.names.length ? ` · ${x.offen} offen` : "unbesetzt") : ""), x.offen ? "bad" : ""],
+        [`${x.ist}/${x.soll}`, "num" + (x.ist > x.soll ? " extra" : x.offen ? " bad" : "")]],
+        [x.offen > 0 ? "open" : "", runs ? "now" : ""].filter(Boolean).join(" ")));
     }
-    if (!two.length) { ab.append(lageRow([["Heute und morgen keine Schichten.", "empty"]])); ab.firstChild.firstChild.colSpan = 6; }
+    if (!two.length) emptyRow(ab, 5, "Heute und morgen keine Schichten.");
   }
-  async function loadLage() {
+  async function loadLage(frisch) {
     if (lageBusy) return;
     lageBusy = true; const btn = $("lbRefresh"); btn.disabled = true; btn.textContent = "Lädt …";
     try {
-      const d = await api("/api/zentrale/staffo/lage");
+      const d = await api("/api/zentrale/staffo/lage" + (frisch === true ? "?frisch=1" : ""));
       if (d.fehler) lageError = d.fehler; else { lageError = ""; lage = d; lageAt = Date.now(); }
     } catch { lageError = "nicht erreichbar"; }
     lageBusy = false; btn.disabled = false; btn.textContent = "Aktualisieren";
     renderLage();
   }
-  $("lbRefresh").onclick = loadLage;
-  // Alle 5 Minuten neu abrufen, jede Minute neu bewerten (Ampel hängt an der Uhrzeit) – nur bei offenem Staffo-Reiter.
-  setInterval(() => { if (!$("v-staffo").hidden) loadLage(); }, 5 * 60 * 1000);
-  setInterval(() => { if (!$("v-staffo").hidden && lage) renderLage(); }, 60 * 1000);
+  $("lbRefresh").onclick = () => loadLage(true);
+  // Alle 5 Minuten neu abrufen (auch bei geschlossenem Reiter, für Reiter-Zähler und Fenstertitel),
+  // jede Minute neu bewerten, weil die Ampel an der Uhrzeit hängt.
+  loadLage();
+  setInterval(loadLage, 5 * 60 * 1000);
+  setInterval(() => { if (lage) renderLage(); }, 60 * 1000);
 
   /* ---------- Staffo-Reiter ---------- */
   function initStaffo() {
