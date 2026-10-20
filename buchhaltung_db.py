@@ -266,7 +266,7 @@ async def assign(ai, config: dict, buchung_id: int, datei: str, art: str) -> dic
     return {"ok": True, "zuordnung": await _settle(config, inv, b, "von Julian zugeordnet", True)}
 
 
-def overview(limit: int = 300) -> dict:
+def overview(limit: int = 3000) -> dict:
     con = db()
     auszuege = [dict(r) for r in con.execute(
         "SELECT a.id, a.datei, a.bank, a.von, a.bis, a.endsaldo, a.importiert, COUNT(b.id) AS anzahl "
