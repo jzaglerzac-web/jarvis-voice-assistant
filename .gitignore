@@ -23,3 +23,5 @@ claude_desktop_config*.json
 claude-desktop-mcp-eintrag.txt
 scripts/alte-verknuepfungen/
 *.tmp
+einnahmen-plan.json
+ausgangsrechnungen-cache.json

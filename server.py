@@ -1118,7 +1118,7 @@ def todoist_meta():
 
 
 @app.get("/api/zentrale/todoist/woche")
-async def zentrale_week(request: Request, start: str = ""):
+async def zentrale_week(request: Request, start: str = "", tage: int = 5):
     """5 days from start (default today; overdue tasks too when the window starts today or earlier),
     plus projects, sections and labels for the form."""
     check_local(request)
@@ -1127,7 +1127,7 @@ async def zentrale_week(request: Request, start: str = ""):
         first = date.fromisoformat(start) if start else today
     except ValueError:
         first = today
-    last = first + timedelta(days=4)
+    last = first + timedelta(days=max(1, min(int(tage), 21)) - 1)
 
     def in_window(t):
         d = ((t.get("due") or {}).get("date") or "")[:10]
@@ -1289,20 +1289,24 @@ async def zentrale_obsidian_projects(request: Request):
     return {"projekte": obsidian_projects()}
 
 
+def _art(art: str) -> str:
+    return "ausgang" if art == "ausgang" else "eingang"
+
+
 @app.get("/api/zentrale/rechnungen")
-async def zentrale_rechnungen(request: Request):
-    """Invoices from the folder "Rechnungen fuer Jarvis"; Claude reads each new file once."""
+async def zentrale_rechnungen(request: Request, art: str = "eingang"):
+    """Invoices from the folder "Rechnungen fuer Jarvis" (art=ausgang: own invoices to customers); Claude reads each new file once."""
     check_local(request)
     try:
-        return await rechnungen_tools.invoices(ai, config)
+        return await rechnungen_tools.invoices(ai, config, _art(art))
     except Exception as e:
         return {"rechnungen": [], "quelle": None, "fehler": str(e)[:200]}
 
 
 @app.get("/api/zentrale/rechnungen/datei")
-async def zentrale_rechnung_datei(request: Request, name: str):
+async def zentrale_rechnung_datei(request: Request, name: str, art: str = "eingang"):
     check_local(request)
-    path = rechnungen_tools.file_path(config, name)
+    path = rechnungen_tools.file_path(config, name, _art(art))
     if not path:
         raise HTTPException(404)
     return FileResponse(path, content_disposition_type="inline")
@@ -1313,7 +1317,8 @@ async def zentrale_rechnung_bezahlt(request: Request):
     check_local(request, write=True)
     body = await request.json()
     try:
-        new = await rechnungen_tools.set_paid(config, str(body.get("datei", "")), bool(body.get("bezahlt")))
+        new = await rechnungen_tools.set_paid(config, str(body.get("datei", "")), bool(body.get("bezahlt")),
+                                              _art(str(body.get("art", ""))))
     except OSError as e:
         return {"ok": False, "fehler": f"Datei konnte nicht umbenannt werden: {e}"}
     if not new:
@@ -1321,11 +1326,61 @@ async def zentrale_rechnung_bezahlt(request: Request):
     return {"ok": True, "datei": new}
 
 
+PLAN_FILE = os.path.join(os.path.dirname(__file__), "einnahmen-plan.json")
+
+
+def _plan_load() -> list:
+    try:
+        with open(PLAN_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return []
+
+
+@app.get("/api/zentrale/einnahmen")
+async def zentrale_income(request: Request):
+    """Expected income: outgoing invoices (folder) plus planned income Julian entered."""
+    check_local(request)
+    try:
+        out = await rechnungen_tools.invoices(ai, config, "ausgang")
+    except Exception as e:
+        out = {"rechnungen": [], "fehler": str(e)[:200]}
+    return {"rechnungen": out.get("rechnungen", []), "quelle": rechnungen_tools.folder(config, "ausgang"),
+            "geplant": _plan_load(), "fehler": out.get("fehler")}
+
+
+@app.post("/api/zentrale/einnahmen/plan")
+async def zentrale_income_plan(request: Request):
+    """Add or remove a planned income (e.g. monthly contract without invoice yet)."""
+    check_local(request, write=True)
+    body = await request.json()
+    plan = _plan_load()
+    if body.get("loeschen"):
+        plan = [x for x in plan if x.get("id") != body.get("id")]
+    else:
+        try:
+            betrag = round(float(str(body.get("betrag", "")).replace(".", "").replace(",", ".") if "," in str(body.get("betrag", "")) else body.get("betrag")), 2)
+            datum = date.fromisoformat(str(body.get("datum", ""))).isoformat()
+        except (TypeError, ValueError):
+            return {"ok": False, "fehler": "Bitte Betrag und Datum angeben."}
+        kunde = str(body.get("kunde", "")).strip()[:120]
+        if not kunde or betrag <= 0:
+            return {"ok": False, "fehler": "Bitte Kunde und einen Betrag größer 0 angeben."}
+        plan.append({"id": secrets.token_hex(6), "kunde": kunde, "betrag": betrag, "datum": datum,
+                     "wiederholung": "monatlich" if body.get("wiederholung") == "monatlich" else "einmalig",
+                     "notiz": str(body.get("notiz", "")).strip()[:200]})
+    tmp = PLAN_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(plan, f, ensure_ascii=False, indent=1)
+    os.replace(tmp, PLAN_FILE)
+    return {"ok": True, "geplant": plan}
+
+
 @app.post("/api/zentrale/ablage")
 async def zentrale_drop(request: Request, datei: UploadFile = File(...), ziel: str = Form("auto")):
     """A file dragged into the Zentrale: invoice folder, workspace inbox, or Claude decides."""
     check_local(request, write=True)
-    if ziel not in ("auto", "rechnung", "unterlagen"):
+    if ziel not in ("auto", "rechnung", "ausgang", "unterlagen"):
         raise HTTPException(400)
     data = await datei.read(dokumente_tools.MAX_BYTES + 1)
     return await dokumente_tools.store(ai, config, datei.filename or "Dokument", data, ziel)

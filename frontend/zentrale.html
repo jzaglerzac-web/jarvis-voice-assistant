@@ -126,7 +126,7 @@ table.inv { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 /* Ablage per Ziehen */
 .drop { position: fixed; inset: 0; z-index: 80; background: rgba(10,10,10,.82); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; }
 .drop[hidden] { display: none; }
-.drop-zones { display: grid; grid-template-columns: repeat(2, minmax(220px, 380px)); gap: 20px; }
+.drop-zones { display: grid; grid-template-columns: repeat(3, minmax(200px, 340px)); gap: 20px; }
 .dz { border: 2px dashed var(--line); border-radius: 10px; padding: 48px 24px; text-align: center; background: var(--panel); display: grid; gap: 8px; transition: border-color .12s, background .12s; }
 .dz * { pointer-events: none; }
 .dz b { font-family: var(--f-display); font-size: 30px; letter-spacing: .04em; text-transform: uppercase; }
@@ -156,13 +156,15 @@ table.inv { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 .doc-msg { font-size: 13px; color: var(--muted); }
 .doc-prev { width: 100%; height: 520px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
 /* Todoist: Termine und Aufgaben, 5 Tage */
-.tw { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.tw { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; }
 .twcol { padding: 12px 12px 10px; min-width: 0; }
 .tw-head { display: flex; align-items: baseline; gap: 10px; padding: 0 4px 8px; }
 .tw-head h2 { margin: 0; font-family: var(--f-display); font-size: 22px; }
 .tw-head span { color: var(--muted); font-size: 12px; }
-.cal { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
-.day { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; min-height: 260px; display: flex; flex-direction: column; min-width: 0; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.day { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; min-height: 120px; max-height: 230px; display: flex; flex-direction: column; min-width: 0; }
+.day ul { overflow-y: auto; min-height: 0; flex: 1; scrollbar-width: thin; }
+.day.weekend { background: #20201e; }
 .day.today { border-color: var(--red); }
 .day-h { display: flex; justify-content: space-between; align-items: center; padding: 6px 6px 4px 8px; border-bottom: 1px solid var(--line); }
 .day-h b { font-family: var(--f-display); font-size: 15px; letter-spacing: .03em; }
@@ -213,7 +215,7 @@ table.inv { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 .tw-nav #twToday { font-size: 13px; font-weight: 600; }
 .tw-nav button:hover { border-color: var(--red); }
 .tw-nav .eyebrow { margin-left: 6px; }
-@media (max-width: 1300px) { .tw { grid-template-columns: 1fr; } }
+@media (max-width: 1300px) { .cal { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 720px) {
   .cal { grid-template-columns: 1fr; }
   .day { min-height: 0; }
@@ -238,6 +240,87 @@ table.inv { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 .reply label { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .reply .go { background: var(--red); border: 0; border-radius: 5px; padding: 8px 14px; color: var(--text); font-weight: 600; white-space: nowrap; }
 .reply .sec { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 8px 14px; color: var(--text); }
+/* Dashboard-Umbau 20.10.2026: Uhr und Obsidian klein nebeneinander, Mitte "Mein Tag", rechts Mails */
+.mini-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: none; }
+.lage.mini { padding: 10px 12px; gap: 2px; align-content: start; }
+.lage.mini .clock { font-size: 28px; }
+.lage.mini .clock .sec { font-size: 14px; }
+.lage.mini .date { font-size: 11px; }
+.lage.mini .wx { margin-top: 4px; padding-top: 5px; gap: 6px; align-items: baseline; font-size: 11px; }
+.lage.mini .wx .temp { font-size: 16px; }
+.lage.mini .wx .place, .lage.mini .wx .cond { font-size: 11px; }
+.hub.mini { flex: none; min-height: 0; height: auto; aspect-ratio: auto; }
+.mini-row > * { min-height: 104px; }
+.hub.mini .hub-label { left: 10px; top: 8px; gap: 6px; }
+.hub.mini .hub-label .eyebrow { font-size: 10px; }
+.hub.mini .state-pill { font-size: 9px; padding: 1px 6px; }
+.hub.mini #status, .hub.mini .hub-title .focus { display: none; }
+.hub.mini .hub-title { bottom: 6px; }
+.hub.mini .hub-title .big { font-size: 9px; letter-spacing: .3em; }
+.hub.mini #orb { width: 54px; height: 54px; top: 50%; }
+.hub.mini .hub-off { right: 6px; bottom: 6px; font-size: 9px; padding: 1px 5px; }
+.col.left .todo { flex: 1 1 0; min-height: 160px; }
+.col.left .duty { max-height: 34%; }
+.mailcol .inbox { border-top: 0; max-height: none; flex: 1; min-height: 0; }
+.day-plan { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 14px 16px; gap: 10px; }
+.dp-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.dp-head h2 { margin: 2px 0 0; font-family: var(--f-display); font-size: 26px; }
+.dp-next { text-align: right; font-size: 13px; color: var(--muted); }
+.dp-next b { display: block; color: var(--text); font-family: var(--f-display); font-size: 18px; }
+.dp-next .cd { color: var(--red-hot); font-family: var(--f-mono); font-size: 12px; }
+.dp-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; }
+.dp-col { min-height: 0; display: flex; flex-direction: column; }
+.dp-sub { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
+.dp-list { list-style: none; margin: 0; padding: 0 2px 0 0; overflow-y: auto; flex: 1; min-height: 0; display: grid; gap: 4px; align-content: start; }
+.dp-day { font-family: var(--f-display); font-size: 14px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 0 2px; }
+.dp-item { display: grid; grid-template-columns: 52px 1fr; gap: 10px; padding: 7px 8px; border-radius: 5px; background: var(--panel-2); border-left: 3px solid var(--prio, var(--line)); }
+.dp-item[data-p="p1"] { --prio: var(--red-hot); } .dp-item[data-p="p2"] { --prio: var(--warn); } .dp-item[data-p="p3"] { --prio: #6b9bd6; }
+.dp-item.past { opacity: .5; }
+.dp-item.now { outline: 1px solid var(--red); }
+.dp-item .t { font-family: var(--f-mono); font-size: 13px; color: var(--red-hot); }
+.dp-item .c { font-size: 14px; overflow-wrap: anywhere; }
+.dp-item .pj { display: block; font-size: 11px; color: var(--muted); }
+.dp-now { height: 0; border-top: 2px solid var(--red-hot); position: relative; margin: 2px 0; }
+.dp-now::before { content: "jetzt"; position: absolute; left: 0; top: -9px; background: var(--panel); padding: 0 6px 0 0; font-family: var(--f-mono); font-size: 10px; color: var(--red-hot); }
+.dp-focus { display: grid; grid-template-columns: 20px 1fr; gap: 8px; padding: 7px 8px; border-radius: 5px; background: var(--panel-2); border-left: 3px solid var(--prio, var(--line)); align-items: start; }
+.dp-focus[data-p="p1"] { --prio: var(--red-hot); } .dp-focus[data-p="p2"] { --prio: var(--warn); } .dp-focus[data-p="p3"] { --prio: #6b9bd6; }
+.dp-focus .check { width: 17px; height: 17px; }
+.dp-focus .late { color: var(--red-hot); font-family: var(--f-mono); font-size: 10px; display: block; }
+.dp-focus.leaving { opacity: .3; }
+.col.center .answer { max-height: 24%; }
+@media (max-width: 1100px) { .day-plan { min-height: 420px; } }
+@media (max-width: 720px) { .dp-grid { grid-template-columns: 1fr; } .mini-row > * { min-height: 96px; } }
+/* Buchhaltung: Einnahmen */
+.inc { padding: 14px 16px 16px; margin-bottom: 18px; display: grid; gap: 12px; }
+.inc-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.inc-head h2 { margin: 2px 0 0; font-family: var(--f-display); font-size: 24px; }
+.inc-kpis .kpi { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; }
+.kpi.ok b { color: var(--ok); }
+.inc-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 20px; }
+.cf { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; align-items: end; height: 190px; padding: 6px 0 0; border-bottom: 1px solid var(--line); }
+.cf-w { display: grid; grid-template-rows: 1fr auto; height: 100%; min-width: 0; }
+.cf-bars { display: flex; gap: 3px; align-items: flex-end; justify-content: center; height: 100%; }
+.cf-bars i { display: block; width: 42%; border-radius: 3px 3px 0 0; min-height: 2px; }
+.cf-bars .in { background: var(--ok); } .cf-bars .out { background: var(--red-hot); }
+.cf-w small { font-family: var(--f-mono); font-size: 10px; color: var(--muted); text-align: center; padding-top: 4px; white-space: nowrap; }
+.cf-w[title] { cursor: default; }
+.cf-legend { display: flex; gap: 16px; font-size: 12px; color: var(--muted); padding-top: 6px; }
+.cf-legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.cf-legend .in::before { background: var(--ok); } .cf-legend .out::before { background: var(--red-hot); }
+.inc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 220px; overflow-y: auto; }
+.inc-row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 7px 10px; border-radius: 5px; background: var(--panel-2); border-left: 3px solid var(--ok); font-size: 14px; }
+.inc-row.late { border-left-color: var(--red-hot); }
+.inc-row .k { min-width: 0; overflow-wrap: anywhere; }
+.inc-row .k small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.inc-row .a { font-family: var(--f-display); font-size: 17px; font-weight: 600; white-space: nowrap; }
+.inc-row button { background: none; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); font-size: 12px; padding: 4px 8px; }
+.inc-row button:hover { color: var(--text); border-color: var(--ok); }
+.inc-form { display: grid; grid-template-columns: 1.4fr .8fr .9fr .8fr auto; gap: 6px; margin-top: 8px; }
+.inc-form input, .inc-form select { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; color: var(--text); font: inherit; font-size: 13px; padding: 7px 8px; min-width: 0; }
+.inc-form button { background: var(--red); border: 0; border-radius: 5px; color: var(--text); font-weight: 600; padding: 7px 12px; }
+.sec-h { font-family: var(--f-display); font-size: 22px; margin: 4px 0 10px; }
+@media (max-width: 1100px) { .inc-grid { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { .inc-form { grid-template-columns: 1fr 1fr; } .drop-zones { grid-template-columns: 1fr; } }
 /* Zahlungsleiste oben */
 .paybar { display: flex; align-items: stretch; gap: 10px; min-height: 52px; padding: 6px; }
 .paybar-label { flex: none; display: flex; flex-direction: column; justify-content: center; padding: 0 10px 0 8px; border-right: 1px solid var(--line); }
@@ -645,6 +728,7 @@ body { overflow: hidden; }
 <div class="drop" id="drop" hidden>
   <div class="drop-zones">
     <div class="dz" data-z="rechnung"><b>Rechnung</b><span>landet im Ordner der Buchhaltung und wird ausgelesen</span></div>
+    <div class="dz" data-z="ausgang"><b>Ausgangsrechnung</b><span>eigene Rechnung an einen Kunden, zählt zu den erwarteten Einnahmen</span></div>
     <div class="dz" data-z="unterlagen"><b>Unterlagen</b><span>landen im Arbeitsspace zur Bearbeitung</span></div>
   </div>
   <p>Oder außerhalb der Felder loslassen: Jarvis prüft selbst, ob es eine Rechnung ist.</p>
@@ -661,44 +745,50 @@ body { overflow: hidden; }
   <a class="linkbtn" href="#staffo" id="swGo">Zu Staffo</a>
 </section>
 <div class="app">
-  <!-- LINKS -->
-  <section class="col left" aria-label="Lage, Projekte und Dienste">
-    <div class="panel lage">
-      <div class="clock" id="clock">--:--<span class="sec">--</span></div>
-      <div class="date" id="date">&nbsp;</div>
-      <div class="wx">
-        <span class="temp" id="temp">–°</span>
-        <span>
-          <span class="place" id="place">Jesteburg</span><br>
-          <span class="cond" id="cond">Wetter wird geladen</span>
-        </span>
+  <!-- LINKS: Uhr + Obsidian klein, Todoist heute, Dienste -->
+  <section class="col left" aria-label="Lage, Todoist und Dienste">
+    <div class="mini-row">
+      <div class="panel lage mini">
+        <div class="clock" id="clock">--:--<span class="sec">--</span></div>
+        <div class="date" id="date">&nbsp;</div>
+        <div class="wx">
+          <span class="temp" id="temp">–°</span>
+          <span><span class="place" id="place">Jesteburg</span> · <span class="cond" id="cond">Wetter wird geladen</span></span>
+        </div>
+      </div>
+      <div class="hub mini" id="hub" data-s="bereit">
+        <canvas id="core" aria-hidden="true"></canvas>
+        <div id="orb" class="idle" title="Klick: Zuhören pausieren / fortsetzen"></div>
+        <div class="hub-label"><span class="eyebrow">Obsidian</span><span class="state-pill" id="state" data-s="bereit">bereit</span></div>
+        <div id="status">Verbinde mit Jarvis …</div>
+        <div class="hub-title"><div class="big">J·A·R·V·I·S</div><div class="focus" id="focus"></div></div>
+        <button class="hub-off" id="zacAus" type="button" title="Jarvis beenden">ZAC aus</button>
       </div>
     </div>
-    <div class="panel projects">
-      <div class="projects-head">
-        <span class="eyebrow">Projekte</span>
-        <button class="linkbtn" id="allProjects" type="button">Alle anzeigen</button>
+    <div class="panel todo">
+      <div class="todo-head">
+        <span class="eyebrow">Todoist · alle Projekte</span>
+        <h2>Heute <span id="todoCount">–</span></h2>
+        <div class="filter-chip" id="filterChip" hidden><span id="filterName"></span><button type="button" id="clearFilter" aria-label="Filter entfernen">×</button></div>
       </div>
-      <div class="tiles" id="tiles">
-        <div class="tile skel"></div><div class="tile skel"></div><div class="tile skel"></div><div class="tile skel"></div>
-      </div>
+      <ul class="todo-list" id="todoList"><li class="notice">Todoist wird verbunden …</li></ul>
     </div>
     <div class="panel duty" aria-label="Heute im Dienst">
       <div class="duty-head"><span class="eyebrow">Heute im Dienst</span><b id="dutyN">–</b></div>
       <div class="duty-locs" id="dutyLocs"></div>
       <ul class="todo-list" id="duty"><li class="notice">Dienstplan wird geladen …</li></ul>
     </div>
+    <div hidden><div id="tiles"></div><button id="allProjects" type="button"></button></div>
   </section>
 
-  <!-- MITTE -->
-  <section class="col center" aria-label="Jarvis">
-    <div class="hub" id="hub" data-s="bereit">
-      <canvas id="core" aria-hidden="true"></canvas>
-      <div id="orb" class="idle" title="Klick: Zuhören pausieren / fortsetzen"></div>
-      <div class="hub-label"><span class="eyebrow">Obsidian · Wissenszentrum</span><span class="state-pill" id="state" data-s="bereit">bereit</span></div>
-      <div id="status">Verbinde mit Jarvis …</div>
-      <div class="hub-title"><div class="big">J · A · R · V · I · S</div><div class="focus" id="focus"></div></div>
-      <button class="hub-off" id="zacAus" type="button" title="Jarvis beenden">ZAC aus</button>
+  <!-- MITTE: Mein Tag (Agenda + Fokus) und Jarvis -->
+  <section class="col center" aria-label="Mein Tag und Jarvis">
+    <div class="panel day-plan">
+      <div class="dp-head"><div><span class="eyebrow">Mein Tag</span><h2 id="dpTitle">Heute</h2></div><div class="dp-next" id="dpNext"></div></div>
+      <div class="dp-grid">
+        <div class="dp-col"><div class="dp-sub">Agenda · heute und morgen</div><ul class="dp-list" id="dpAgenda"><li class="notice">Termine werden geladen …</li></ul></div>
+        <div class="dp-col"><div class="dp-sub">Fokus · das Wichtigste zuerst</div><ul class="dp-list" id="dpFocus"><li class="notice">Aufgaben werden geladen …</li></ul></div>
+      </div>
     </div>
     <div class="panel answer" id="transcript" aria-live="polite"><div class="sys">Sprich mit Jarvis oder schreib unten einen Befehl, zum Beispiel „Wer hat heute Dienst?“ oder „Neue Aufgabe: Dienstplan prüfen, morgen 9 Uhr“.</div></div>
     <form class="panel cmd" id="cmdForm" autocomplete="off">
@@ -709,15 +799,9 @@ body { overflow: hidden; }
     </form>
   </section>
 
-  <!-- RECHTS -->
-  <section class="col right" aria-label="Todoist heute">
-    <div class="panel todo">
-      <div class="todo-head">
-        <span class="eyebrow">Todoist · alle Projekte</span>
-        <h2>Heute <span id="todoCount">–</span></h2>
-        <div class="filter-chip" id="filterChip" hidden><span id="filterName"></span><button type="button" id="clearFilter" aria-label="Filter entfernen">×</button></div>
-      </div>
-      <ul class="todo-list" id="todoList"><li class="notice">Todoist wird verbunden …</li></ul>
+  <!-- RECHTS: Posteingang über die ganze Höhe -->
+  <section class="col right" aria-label="Posteingang">
+    <div class="panel todo mailcol">
       <div class="inbox">
         <div class="inbox-head"><h3>Posteingang<span id="inboxCount">–</span></h3>
           <div class="seg sm" id="inSeg"><button type="button" data-m="mails" aria-pressed="true">Mails</button><button type="button" data-m="aufgaben" aria-pressed="false">Aufgaben</button></div></div>
@@ -741,7 +825,7 @@ body { overflow: hidden; }
         <div class="cal" id="calTermine"></div>
       </section>
       <section class="panel twcol" aria-label="Aufgaben">
-        <div class="tw-head"><h2>Aufgaben</h2><span>ohne Uhrzeit · Überfälliges steht bei heute</span></div>
+        <div class="tw-head"><h2>Aufgaben</h2><span>ohne Uhrzeit · Überfälliges steht bei heute · viele Einträge: im Tag mit dem Mausrad scrollen</span></div>
         <div class="cal" id="calAufgaben"></div>
       </section>
     </div>
@@ -777,6 +861,38 @@ body { overflow: hidden; }
       <button class="linkbtn" type="button" id="invFetch" title="Postfach rechnung@ jetzt nach neuen Rechnungen durchsuchen">rechnung@ jetzt prüfen</button>
       <div class="seg" id="invSeg"><button type="button" data-f="offen" aria-pressed="true">Offen</button><button type="button" data-f="bezahlt" aria-pressed="false">Bezahlt</button><button type="button" data-f="alle" aria-pressed="false">Alle</button></div>
     </div>
+    <section class="panel inc" aria-label="Erwartete Einnahmen">
+      <div class="inc-head"><div><span class="eyebrow">Einnahmen</span><h2>Zu erwartende Einnahmen</h2></div>
+        <span class="hint" id="incSrc">Quelle: Ordner <code>Unterlagen/Ausgangsrechnungen für Jarvis</code> und geplante Einnahmen</span></div>
+      <div class="kpis inc-kpis">
+        <div class="kpi inc-k"><span class="eyebrow">Offene Forderungen</span><b id="iOpen">–</b><small id="iOpenN"></small></div>
+        <div class="kpi inc-k alert"><span class="eyebrow">Davon überfällig</span><b id="iLate">–</b><small id="iLateN"></small></div>
+        <div class="kpi inc-k"><span class="eyebrow">Erwartet · 30 Tage</span><b id="i30">–</b><small>Rechnungen und geplante Einnahmen</small></div>
+        <div class="kpi inc-k ok"><span class="eyebrow">Eingegangen diesen Monat</span><b id="iPaid">–</b><small id="iPaidN"></small></div>
+      </div>
+      <div class="inc-grid">
+        <div>
+          <div class="dp-sub">Vorschau 8 Wochen · Einnahmen gegen fällige Zahlungen</div>
+          <div class="cf" id="cfChart"></div>
+          <div class="cf-legend"><span class="in">Einnahmen</span><span class="out">Zahlungen</span></div>
+        </div>
+        <div>
+          <div class="dp-sub">Offene Ausgangsrechnungen</div>
+          <ul class="inc-list" id="incList"><li class="notice">Wird geladen …</li></ul>
+          <div class="dp-sub" style="margin-top:12px">Geplante Einnahmen (z. B. monatliche Aufträge ohne Rechnung)</div>
+          <ul class="inc-list" id="planList"></ul>
+          <form class="inc-form" id="planForm" autocomplete="off">
+            <input id="pfKunde" placeholder="Kunde / Objekt" aria-label="Kunde">
+            <input id="pfBetrag" placeholder="Betrag €" inputmode="decimal" aria-label="Betrag">
+            <input id="pfDatum" type="date" aria-label="Datum">
+            <select id="pfWdh" aria-label="Wiederholung"><option value="einmalig">einmalig</option><option value="monatlich">monatlich</option></select>
+            <button type="submit">Hinzufügen</button>
+          </form>
+          <div class="doc-msg" id="pfMsg"></div>
+        </div>
+      </div>
+    </section>
+    <h2 class="sec-h">Ausgaben · Eingangsrechnungen</h2>
     <div class="kpis">
       <div class="panel kpi"><span class="eyebrow">Offen gesamt</span><b id="kOpen">–</b></div>
       <div class="panel kpi alert"><span class="eyebrow">Überfällig</span><b id="kLate">–</b></div>
@@ -1391,7 +1507,7 @@ body { overflow: hidden; }
     store.set("jz.view", v);
     if (v === "projekte") initProjectsView();
     if (v === "jarvis") { initJarvis(); showAppLink(); }
-    if (v === "buchhaltung") renderLedger();
+    if (v === "buchhaltung") { renderLedger(); loadIncome(); }
     if (v === "arbeitsspace") initWorkspace();
     if (v === "staffo") initStaffo();
     if (v === "social") initSocial();
@@ -1784,16 +1900,156 @@ body { overflow: hidden; }
       g.append(card);
     }
   }
+  /* ---------- Buchhaltung: erwartete Einnahmen ---------- */
+  let income = { rechnungen: [], geplant: [] };
+  async function loadIncome() {
+    try { income = await api("/api/zentrale/einnahmen"); } catch { $("incList").innerHTML = '<li class="notice">Einnahmen konnten nicht geladen werden.</li>'; return; }
+    renderIncome();
+  }
+  function planDates(p, from, to) {
+    // all dates of a planned income between from and to (ISO strings)
+    const out = []; const d = new Date(p.datum + "T00:00");
+    if (p.wiederholung !== "monatlich") { if (p.datum <= to) out.push(p.datum < from ? from : p.datum); return out; }
+    const day = d.getDate();
+    for (let i = 0; i < 36; i++) {
+      const x = new Date(d.getFullYear(), d.getMonth() + i, Math.min(day, 28));
+      const iso = isoDay(x); if (iso > to) break; if (iso >= from) out.push(iso);
+    }
+    return out;
+  }
+  function renderIncome() {
+    const E = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    const today = todayISO(), month = today.slice(0, 7);
+    const amt = (r) => Number(r.betrag) || 0;
+    const open = (income.rechnungen || []).filter(r => r.status !== "bezahlt" && !r._fehler);
+    const late = open.filter(r => r.faellig && r.faellig < today);
+    const paid = (income.rechnungen || []).filter(r => r.status === "bezahlt" && (r.bezahltAm || "").startsWith(month));
+    const sum = (a) => a.reduce((x, r) => x + amt(r), 0);
+    const in30 = new Date(); in30.setDate(in30.getDate() + 30); const to30 = isoDay(in30);
+    const planned30 = (income.geplant || []).reduce((x, p) => x + planDates(p, today, to30).length * (Number(p.betrag) || 0), 0);
+    $("iOpen").textContent = eur(sum(open)); $("iOpenN").textContent = open.length + " Rechnung" + (open.length === 1 ? "" : "en");
+    $("iLate").textContent = eur(sum(late)); $("iLateN").textContent = late.length ? late.length + " überfällig" : "nichts überfällig";
+    $("i30").textContent = eur(sum(open.filter(r => !r.faellig || r.faellig <= to30)) + planned30);
+    $("iPaid").textContent = eur(sum(paid)); $("iPaidN").textContent = paid.length + " bezahlt";
+    // list of open outgoing invoices
+    const ul = $("incList"); ul.innerHTML = "";
+    if (!open.length) ul.append(E("li", "notice", "Keine offenen Ausgangsrechnungen. Eigene Rechnungen in die Zentrale ziehen und „Ausgangsrechnung“ wählen."));
+    for (const r of open.sort((a, b) => (a.faellig || "9").localeCompare(b.faellig || "9"))) {
+      const li = E("li", "inc-row" + (r.faellig && r.faellig < today ? " late" : ""));
+      const k = E("div", "k", r.empfaenger || "Kunde unbekannt");
+      k.append(E("small", null, [r.nummer, r.faellig ? "fällig " + new Date(r.faellig + "T00:00").toLocaleDateString("de-DE") : "", r.datei].filter(Boolean).join(" · ")));
+      const b = E("button", null, "Geld da"); b.type = "button"; b.title = "Zahlung eingegangen: Datei wird in …_Bezahlt_TTMMJJ umbenannt";
+      b.onclick = async () => { b.disabled = true; try { const d = await api("/api/zentrale/rechnungen/bezahlt", write("POST", { datei: r.datei, bezahlt: true, art: "ausgang" })); if (!d.ok) throw new Error(d.fehler); loadIncome(); } catch { b.disabled = false; b.textContent = "Fehler"; } };
+      li.append(k, E("div", "a", eur(amt(r), r.waehrung)), b); ul.append(li);
+    }
+    // planned income
+    const pl = $("planList"); pl.innerHTML = "";
+    for (const p of income.geplant || []) {
+      const li = E("li", "inc-row");
+      const k = E("div", "k", p.kunde); k.append(E("small", null, (p.wiederholung === "monatlich" ? "monatlich ab " : "am ") + new Date(p.datum + "T00:00").toLocaleDateString("de-DE") + (p.notiz ? " · " + p.notiz : "")));
+      const b = E("button", null, "Entfernen"); b.type = "button";
+      b.onclick = async () => { const d = await api("/api/zentrale/einnahmen/plan", write("POST", { id: p.id, loeschen: true })); income.geplant = d.geplant || []; renderIncome(); };
+      li.append(k, E("div", "a", eur(Number(p.betrag))), b); pl.append(li);
+    }
+    // 8-week cash outlook: income vs. open incoming invoices
+    const weeks = []; const w0 = new Date(today + "T00:00"); w0.setDate(w0.getDate() - ((w0.getDay() + 6) % 7));
+    for (let i = 0; i < 8; i++) { const a = new Date(w0); a.setDate(a.getDate() + 7 * i); const b = new Date(a); b.setDate(b.getDate() + 6); weeks.push({ from: isoDay(a), to: isoDay(b), inn: 0, out: 0 }); }
+    const slot = (iso) => { if (!iso || iso < weeks[0].from) return weeks[0]; return weeks.find(w => iso >= w.from && iso <= w.to); };
+    for (const r of open) { const w = slot(r.faellig); if (w) w.inn += amt(r); }
+    for (const p of income.geplant || []) for (const d of planDates(p, weeks[0].from, weeks[7].to)) { const w = slot(d); if (w) w.inn += Number(p.betrag) || 0; }
+    for (const r of (invoices || []).filter(r => r.status !== "bezahlt" && r.typ !== "ausgang")) { const w = slot(r.faellig); if (w) w.out += amt(r); }
+    const max = Math.max(1, ...weeks.map(w => Math.max(w.inn, w.out)));
+    const cf = $("cfChart"); cf.innerHTML = "";
+    for (const w of weeks) {
+      const col = E("div", "cf-w"); col.title = "KW ab " + new Date(w.from + "T00:00").toLocaleDateString("de-DE") + "\nEinnahmen " + eur(w.inn) + "\nZahlungen " + eur(w.out);
+      const bars = E("div", "cf-bars"); const a = E("i", "in"), b = E("i", "out");
+      a.style.height = (100 * w.inn / max) + "%"; b.style.height = (100 * w.out / max) + "%"; bars.append(a, b);
+      const kw = (() => { const d = new Date(w.from + "T00:00"); d.setDate(d.getDate() + 3); const y = new Date(d.getFullYear(), 0, 4); return 1 + Math.round(((d - y) / 864e5 - 3 + ((y.getDay() + 6) % 7)) / 7); })();
+      col.append(bars, E("small", null, "KW " + kw)); cf.append(col);
+    }
+  }
+  setTimeout(() => { $("pfDatum").value = todayISO(); }, 0);
+  $("planForm").addEventListener("submit", async (e) => {
+    e.preventDefault(); $("pfMsg").textContent = "";
+    try {
+      const d = await api("/api/zentrale/einnahmen/plan", write("POST", { kunde: $("pfKunde").value, betrag: $("pfBetrag").value, datum: $("pfDatum").value, wiederholung: $("pfWdh").value }));
+      if (!d.ok) throw new Error(d.fehler);
+      income.geplant = d.geplant; $("pfKunde").value = ""; $("pfBetrag").value = ""; renderIncome();
+    } catch (err) { $("pfMsg").textContent = err.message || "Nicht gespeichert."; }
+  });
+
+  /* ---------- Dashboard "Mein Tag": Agenda (Termine heute+morgen) und Fokus (wichtigste Aufgaben) ---------- */
+  let dpData = null;
+  async function loadDayPlan() {
+    try { const d = await api("/api/zentrale/todoist/woche?tage=2"); if (d.fehler) throw new Error(d.fehler); dpData = d; renderDayPlan(); }
+    catch (e) { $("dpAgenda").innerHTML = '<li class="notice">Todoist: ' + (e.message || "nicht erreichbar") + "</li>"; }
+  }
+  function renderDayPlan() {
+    if (!dpData) return;
+    const E = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    const pname = (t) => { const p = dpData.projects.find(p => p.id === t.projectId); return p ? (p.inboxProject ? "Inbox" : p.name) : "Inbox"; };
+    const today = todayISO(), tm = new Date(); tm.setDate(tm.getDate() + 1); const tomorrow = `${tm.getFullYear()}-${String(tm.getMonth() + 1).padStart(2, "0")}-${String(tm.getDate()).padStart(2, "0")}`;
+    const now = new Date(), nowHM = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+    const d = new Date(); $("dpTitle").textContent = d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+    // Agenda
+    const ag = $("dpAgenda"); ag.innerHTML = "";
+    const timed = dpData.tasks.filter(t => t.hasTime).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    let next = null;
+    for (const [day, label] of [[today, "Heute"], [tomorrow, "Morgen"]]) {
+      const items = timed.filter(t => t.dueDate.slice(0, 10) === day || (day === today && t.dueDate.slice(0, 10) < today));
+      ag.append(E("li", "dp-day", label));
+      if (!items.length) { ag.append(E("li", "notice", "Keine Termine")); continue; }
+      let markerSet = day !== today;
+      for (const t of items) {
+        const hm = t.dueDate.slice(11, 16), late = t.dueDate.slice(0, 10) < today;
+        const end = t.duration ? endTime(hm, t.duration) : null;
+        const isPast = late || (day === today && (end || hm) < nowHM);
+        const isNow = day === today && !late && hm <= nowHM && end && end > nowHM;
+        if (!markerSet && !isPast && !isNow) { ag.append(E("li", "dp-now")); markerSet = true; }
+        if (!next && !isPast) next = t;
+        const li = E("li", "dp-item" + (isPast ? " past" : "") + (isNow ? " now" : "")); li.dataset.p = t.priority || "p4";
+        const c = E("div", "c", t.content); c.append(E("span", "pj", pname(t) + (late ? " · überfällig seit " + new Date(t.dueDate.slice(0, 10) + "T00:00").toLocaleDateString("de-DE", { day: "numeric", month: "numeric" }) : "") + (end ? " · bis " + end : "")));
+        li.append(E("div", "t", hm), c); ag.append(li);
+      }
+      if (!markerSet) ag.append(E("li", "dp-now"));
+    }
+    const nx = $("dpNext"); nx.innerHTML = "";
+    if (next) {
+      const at = new Date(next.dueDate), mins = Math.round((at - now) / 60000);
+      const cd = mins <= 0 ? "läuft gerade" : mins < 60 ? "in " + mins + " Min." : mins < 24 * 60 ? "in " + Math.floor(mins / 60) + " Std. " + (mins % 60) + " Min." : at.toLocaleDateString("de-DE", { weekday: "long" }) + " " + next.dueDate.slice(11, 16);
+      nx.append(E("span", null, "Als Nächstes"), E("b", null, next.content), E("span", "cd", cd));
+    } else nx.append(E("span", null, "Keine weiteren Termine"));
+    // Fokus: überfällig zuerst, dann nach Priorität, nur heute fällige Aufgaben ohne Uhrzeit
+    const fo = $("dpFocus"); fo.innerHTML = "";
+    const focus = dpData.tasks.filter(t => !t.hasTime && (t.dueDate || "").slice(0, 10) <= today)
+      .sort((a, b) => ((a.dueDate < today) === (b.dueDate < today) ? 0 : a.dueDate < today ? -1 : 1) || (a.priority || "p4").localeCompare(b.priority || "p4"));
+    if (!focus.length) fo.append(E("li", "notice", "Heute keine offenen Aufgaben ohne Termin. Gute Gelegenheit für Liegengebliebenes."));
+    for (const t of focus) {
+      const li = E("li", "dp-focus"); li.dataset.p = t.priority || "p4";
+      const b = E("button", "check"); b.type = "button"; b.setAttribute("aria-label", "Erledigt");
+      const c = E("div"); if (t.dueDate.slice(0, 10) < today) c.append(E("span", "late", "überfällig seit " + new Date(t.dueDate.slice(0, 10) + "T00:00").toLocaleDateString("de-DE", { day: "numeric", month: "numeric" })));
+      c.append(E("span", "c", t.content), E("span", "pj", pname(t)));
+      b.onclick = async () => {
+        b.disabled = true; li.classList.add("leaving");
+        try { const r = await api("/api/zentrale/todoist/complete?id=" + encodeURIComponent(t.id), write("POST")); if (r.fehler) throw new Error(r.fehler); dpData.tasks = dpData.tasks.filter(x => x.id !== t.id); renderDayPlan(); reloadTodoist(); }
+        catch { b.disabled = false; li.classList.remove("leaving"); }
+      };
+      li.append(b, c); fo.append(li);
+    }
+  }
+  setInterval(renderDayPlan, 60 * 1000);
+  setInterval(loadDayPlan, 5 * 60 * 1000);
+
   /* ---------- Todoist: Termine (mit Uhrzeit) und Aufgaben, heute + 4 Tage ---------- */
   let tw = { tasks: [], projects: [], sections: [], labels: [] }, twLoading = false;
   const twEl = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const isoDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   let twStart = null, twSeq = 0;  // null = heute
-  function twDays() { const out = []; const d = twStart ? new Date(twStart + "T00:00") : new Date(); for (let i = 0; i < 5; i++) { out.push(isoDay(d)); d.setDate(d.getDate() + 1); } return out; }
+  function twDays() { const out = []; const d = twStart ? new Date(twStart + "T00:00") : new Date(); for (let i = 0; i < 14; i++) { out.push(isoDay(d)); d.setDate(d.getDate() + 1); } return out; }
   async function loadWeek() {
     const seq = ++twSeq; twLoading = true;
     try {
-      const d = await api("/api/zentrale/todoist/woche" + (twStart ? "?start=" + twStart : ""));
+      const d = await api("/api/zentrale/todoist/woche?tage=14" + (twStart ? "&start=" + twStart : ""));
       if (seq !== twSeq) return;
       if (d.fehler) throw new Error(d.fehler);
       tw = d; renderWeek();
@@ -1830,7 +2086,8 @@ body { overflow: hidden; }
     for (const [elId, timed] of [["calTermine", true], ["calAufgaben", false]]) {
       const cal = $(elId); cal.innerHTML = "";
       for (const day of days) {
-        const col = twEl("div", "day" + (day === today ? " today" : ""));
+        const wd = new Date(day + "T00:00").getDay();
+        const col = twEl("div", "day" + (day === today ? " today" : "") + (wd === 0 || wd === 6 ? " weekend" : ""));
         const h = twEl("div", "day-h"); const dt = new Date(day + "T00:00");
         const lab = twEl("div"); lab.append(twEl("b", null, day === today ? "Heute" : dt.toLocaleDateString("de-DE", { weekday: "long" })), twEl("small", null, dt.toLocaleDateString("de-DE", { day: "numeric", month: "long" })));
         const add = twEl("button", "day-add", "+"); add.type = "button"; add.title = (timed ? "Termin" : "Aufgabe") + " eintragen"; add.onclick = () => openTaskForm(day, timed);
@@ -1844,7 +2101,7 @@ body { overflow: hidden; }
       }
     }
     const f = (iso) => new Date(iso + "T00:00").toLocaleDateString("de-DE", { day: "numeric", month: "short" });
-    $("twState").textContent = (twStart ? f(days[0]) + " – " + f(days[4]) : "Heute + 4 Tage") + " · " + tw.tasks.length + " offen";
+    $("twState").textContent = (twStart ? f(days[0]) + " – " + f(days[13]) : "Heute + 13 Tage") + " · " + tw.tasks.length + " offen";
     $("twToday").disabled = !twStart;
   }
   let tfPrio = "p4", tfLabels = new Set();
@@ -1985,7 +2242,10 @@ body { overflow: hidden; }
       const d = await r.json();
       if (!r.ok || !d.ok) throw new Error(d.fehler || "HTTP " + r.status);
       const why = d.grund ? " (" + d.grund + ")" : "";
-      if (d.ziel === "rechnung") {
+      if (d.ziel === "ausgang") {
+        jlineShow(f.name, "Als Ausgangsrechnung abgelegt" + why + ". Sie zählt jetzt zu den erwarteten Einnahmen.");
+        loadIncome();
+      } else if (d.ziel === "rechnung") {
         jlineShow(f.name, "Als Rechnung in der Buchhaltung abgelegt" + why + ". Jarvis liest sie jetzt aus.");
         loadInvoices();
       } else {
@@ -2228,7 +2488,7 @@ body { overflow: hidden; }
     renderBoxes();
     if (i && !i.todoist) { notice($("todoList"), "Kein Todoist-Zugang in der Jarvis-config.json."); $("tiles").innerHTML = ""; }
     else { loadProjects(); loadToday(); loadInbox(); }
-    loadMails(); loadShifts(); loadInvoices(); loadOpenShifts();
+    loadMails(); loadShifts(); loadInvoices(); loadOpenShifts(); loadDayPlan();
     setInterval(loadOpenShifts, 30 * 60 * 1000);
     $("invFetch").onclick = async () => {
       const b = $("invFetch"); b.disabled = true; b.textContent = "wird geprüft …";
