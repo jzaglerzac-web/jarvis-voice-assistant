@@ -25,3 +25,5 @@ scripts/alte-verknuepfungen/
 *.tmp
 einnahmen-plan.json
 ausgangsrechnungen-cache.json
+buchhaltung.db
+_auszug_test.json

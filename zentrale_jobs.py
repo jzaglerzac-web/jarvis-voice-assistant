@@ -245,6 +245,8 @@ async def run(ai, config: dict, todoist_get, staffo_tools, zac_mail_mcp):
             if now.timestamp() - last_fetch >= every:
                 last_fetch = now.timestamp()
                 await fetch_invoices(ai, config)
+                import buchhaltung_db
+                await buchhaltung_db.match(ai, config)
         except Exception as e:
             print(f"[zentrale] Rechnungsabruf fehlgeschlagen: {e}", flush=True)
         try:

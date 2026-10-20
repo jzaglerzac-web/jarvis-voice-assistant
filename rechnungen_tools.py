@@ -185,13 +185,13 @@ async def invoices(ai, config: dict, kind: str = "eingang") -> dict:
     return {"rechnungen": out, "quelle": folder(config, kind)}
 
 
-async def set_paid(config: dict, name: str, paid: bool, kind: str = "eingang") -> str | None:
+async def set_paid(config: dict, name: str, paid: bool, kind: str = "eingang", paid_on: date | None = None) -> str | None:
     """Marks an invoice as paid by renaming the file to <name>_Bezahlt_TTMMJJ<ext>;
     back to open removes that suffix again. Returns the new file name."""
     if name not in list_files(config, kind):
         return None
     stem, ext = os.path.splitext(PAID_RE.sub("", name))
-    new = f"{stem}_Bezahlt_{date.today():%d%m%y}{ext}" if paid else stem + ext
+    new = f"{stem}_Bezahlt_{(paid_on or date.today()):%d%m%y}{ext}" if paid else stem + ext
     if new == name:
         return name
     d = folder(config, kind)

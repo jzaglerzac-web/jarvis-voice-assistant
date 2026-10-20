@@ -70,6 +70,7 @@ import staffo_tools
 import rechnungen_tools
 import dokumente_tools
 import zentrale_jobs
+import buchhaltung_db
 
 
 LOCATION_PS = (
@@ -1349,6 +1350,36 @@ async def zentrale_income(request: Request):
             "geplant": _plan_load(), "fehler": out.get("fehler")}
 
 
+@app.get("/api/zentrale/buchhaltung/abgleich")
+async def zentrale_bank_overview(request: Request):
+    """Imported bank statements, their bookings and which invoice each one paid."""
+    check_local(request)
+    return await asyncio.to_thread(buchhaltung_db.overview)
+
+
+@app.post("/api/zentrale/buchhaltung/abgleichen")
+async def zentrale_bank_match(request: Request):
+    check_local(request, write=True)
+    try:
+        return {"ok": True, "zuordnungen": await buchhaltung_db.match(ai, config)}
+    except Exception as e:
+        return {"ok": False, "fehler": str(e)[:200]}
+
+
+@app.post("/api/zentrale/buchhaltung/zuordnen")
+async def zentrale_bank_assign(request: Request):
+    """Julian assigns one booking to one open invoice by hand."""
+    check_local(request, write=True)
+    body = await request.json()
+    try:
+        return await buchhaltung_db.assign(ai, config, int(body.get("buchung_id")), str(body.get("datei", "")),
+                                           "ausgang" if body.get("art") == "ausgang" else "eingang")
+    except (TypeError, ValueError):
+        return {"ok": False, "fehler": "Ungültige Angaben."}
+    except OSError as e:
+        return {"ok": False, "fehler": f"Datei konnte nicht abgelegt werden: {e}"}
+
+
 @app.post("/api/zentrale/einnahmen/plan")
 async def zentrale_income_plan(request: Request):
     """Add or remove a planned income (e.g. monthly contract without invoice yet)."""
@@ -1380,9 +1411,30 @@ async def zentrale_income_plan(request: Request):
 async def zentrale_drop(request: Request, datei: UploadFile = File(...), ziel: str = Form("auto")):
     """A file dragged into the Zentrale: invoice folder, workspace inbox, or Claude decides."""
     check_local(request, write=True)
-    if ziel not in ("auto", "rechnung", "ausgang", "unterlagen"):
+    if ziel not in ("auto", "rechnung", "ausgang", "unterlagen", "kontoauszug"):
         raise HTTPException(400)
     data = await datei.read(dokumente_tools.MAX_BYTES + 1)
+    name = datei.filename or "Kontoauszug"
+    grund = ""
+    if ziel == "auto":
+        import tempfile
+        fd, tmp = tempfile.mkstemp(suffix=os.path.splitext(name)[1])
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        try:
+            kind, grund = await dokumente_tools.classify(ai, tmp)
+        except Exception:
+            kind = "auto"
+        finally:
+            os.remove(tmp)
+        if kind != "auto":
+            ziel = kind
+    if ziel == "kontoauszug":
+        try:
+            r = await buchhaltung_db.import_statement(ai, config, name, data)
+        except Exception as e:
+            return {"ok": False, "fehler": f"Kontoauszug nicht lesbar: {str(e)[:200]}"}
+        return {**r, "ziel": "kontoauszug", "datei": name, "grund": grund}
     return await dokumente_tools.store(ai, config, datei.filename or "Dokument", data, ziel)
 
 

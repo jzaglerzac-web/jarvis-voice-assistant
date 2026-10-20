@@ -126,7 +126,7 @@ table.inv { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 /* Ablage per Ziehen */
 .drop { position: fixed; inset: 0; z-index: 80; background: rgba(10,10,10,.82); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; }
 .drop[hidden] { display: none; }
-.drop-zones { display: grid; grid-template-columns: repeat(3, minmax(200px, 340px)); gap: 20px; }
+.drop-zones { display: grid; grid-template-columns: repeat(4, minmax(170px, 300px)); gap: 16px; }
 .dz { border: 2px dashed var(--line); border-radius: 10px; padding: 48px 24px; text-align: center; background: var(--panel); display: grid; gap: 8px; transition: border-color .12s, background .12s; }
 .dz * { pointer-events: none; }
 .dz b { font-family: var(--f-display); font-size: 30px; letter-spacing: .04em; text-transform: uppercase; }
@@ -290,6 +290,19 @@ table.inv { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 .col.center .answer { max-height: 24%; }
 @media (max-width: 1100px) { .day-plan { min-height: 420px; } }
 @media (max-width: 720px) { .dp-grid { grid-template-columns: 1fr; } .mini-row > * { min-height: 96px; } }
+/* Buchhaltung: Bank */
+.bank { padding: 14px 16px 12px; margin-top: 18px; display: grid; gap: 10px; }
+.bank-act { display: flex; gap: 14px; align-items: center; }
+.bank-act input { vertical-align: -2px; }
+.bank-stmts { display: flex; gap: 8px; flex-wrap: wrap; }
+.bank-stmts span { font-family: var(--f-mono); font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 3px 10px; }
+.bank-tbl { max-height: 460px; overflow-y: auto; }
+.bank-tbl td.z small { display: block; color: var(--muted); font-family: var(--f-mono); font-size: 10px; }
+.bank-tbl .plus { color: var(--ok); } .bank-tbl .minus { color: var(--text); }
+.bank-tbl td.vz { max-width: 520px; }
+.bank-tbl td.vz small { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bank-tbl select { background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 4px; font: inherit; font-size: 12px; padding: 3px 4px; max-width: 260px; }
+.st.ausgang { border-color: var(--ok); color: var(--ok); }
 /* Buchhaltung: Einnahmen */
 .inc { padding: 14px 16px 16px; margin-bottom: 18px; display: grid; gap: 12px; }
 .inc-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
@@ -729,6 +742,7 @@ body { overflow: hidden; }
   <div class="drop-zones">
     <div class="dz" data-z="rechnung"><b>Rechnung</b><span>landet im Ordner der Buchhaltung und wird ausgelesen</span></div>
     <div class="dz" data-z="ausgang"><b>Ausgangsrechnung</b><span>eigene Rechnung an einen Kunden, zählt zu den erwarteten Einnahmen</span></div>
+    <div class="dz" data-z="kontoauszug"><b>Kontoauszug</b><span>Jarvis liest die Buchungen, gleicht Rechnungen ab und legt sie bei DATEV ab</span></div>
     <div class="dz" data-z="unterlagen"><b>Unterlagen</b><span>landen im Arbeitsspace zur Bearbeitung</span></div>
   </div>
   <p>Oder außerhalb der Felder loslassen: Jarvis prüft selbst, ob es eine Rechnung ist.</p>
@@ -900,9 +914,17 @@ body { overflow: hidden; }
       <div class="panel kpi"><span class="eyebrow">Bezahlt diesen Monat</span><b id="kPaid">–</b></div>
     </div>
     <div class="panel tablewrap">
-      <table class="inv"><thead><tr><th>Status</th><th>Gläubiger</th><th>Rechnungs-Nr.</th><th>Rechnungsdatum</th><th>Fällig</th><th class="num">Betrag</th><th>Datei</th><th></th></tr></thead>
+      <table class="inv"><thead><tr><th>Status</th><th>Partner</th><th>Rechnungs-Nr.</th><th>Rechnungsdatum</th><th>Fällig</th><th class="num">Betrag</th><th>Datei</th><th></th></tr></thead>
       <tbody id="invBody"><tr><td colspan="8" class="pay-empty">Rechnungen werden geladen …</td></tr></tbody></table>
     </div>
+    <section class="panel bank" aria-label="Kontoauszüge und Abgleich">
+      <div class="inc-head"><div><span class="eyebrow">Bank</span><h2>Kontoauszüge &amp; Abgleich</h2></div>
+        <div class="bank-act"><label class="hint"><input type="checkbox" id="bkOpenOnly"> nur nicht zugeordnete</label><button class="linkbtn" type="button" id="bkMatch">Jetzt abgleichen</button></div></div>
+      <div class="bank-stmts" id="bkStmts"></div>
+      <div class="tablewrap bank-tbl"><table class="inv"><thead><tr><th>Datum</th><th>Gegenpartei · Verwendungszweck</th><th class="num">Betrag</th><th>Rechnung</th></tr></thead>
+        <tbody id="bkBody"><tr><td colspan="4" class="pay-empty">Noch kein Kontoauszug. Kontoauszug als PDF oder CSV in die Zentrale ziehen und „Kontoauszug“ wählen.</td></tr></tbody></table></div>
+      <p class="hint">Erkannt wird eine Rechnung, wenn Betrag und Richtung stimmen und die Rechnungsnummer oder der Partner in der Buchung steht. Dann wird sie mit dem Buchungsdatum als bezahlt markiert und abgelegt: Eingangsrechnungen in <code>DATEV _ Hochladen/JJJJ/MM_JJJJ</code>, Ausgangsrechnungen in <code>…/MM_JJJJ/Rechnungsausgang</code>. Nicht eindeutige Fälle ordnest du hier von Hand zu.</p>
+    </section>
     <p class="hint" id="invHint">Quelle: Ordner <code>Claude_Backup/Unterlagen/Rechnungen für Jarvis</code>. Neue PDFs dort ablegen, Jarvis liest sie beim nächsten Laden aus. Zeile anklicken für alle Rechnungsdaten. „Bezahlt“ benennt die Datei in <code>…_Bezahlt_TTMMJJ</code> um.</p>
   </div>
 </div>
@@ -1415,7 +1437,7 @@ body { overflow: hidden; }
   async function loadInvoices() {
     try { const d = await api("/api/zentrale/rechnungen"); invoices = d.rechnungen || []; invLoaded = true; }
     catch { $("payList").innerHTML = '<span class="pay-empty">Rechnungen konnten nicht geladen werden.</span>'; return; }
-    renderPay(); if (!$("v-buchhaltung").hidden) renderLedger();
+    renderPay(); if (!$("v-buchhaltung").hidden) { renderLedger(); renderBank(); }
   }
   let ledgerFilter = "offen";
   $("invSeg").querySelectorAll("button").forEach(b => b.onclick = () => {
@@ -1428,31 +1450,34 @@ body { overflow: hidden; }
     $("kOpen").textContent = sum(open);
     $("kLate").textContent = sum(open.filter(r => r.faellig && daysUntil(r.faellig) < 0));
     $("kWeek").textContent = sum(open.filter(r => r.faellig && daysUntil(r.faellig) >= 0 && daysUntil(r.faellig) <= 7));
-    $("kPaid").textContent = sum(invoices.filter(r => r.status === "bezahlt" && (r.bezahltAm || "").startsWith(month)));
-    const rows = invoices.filter(r => ledgerFilter === "alle" || (ledgerFilter === "bezahlt" ? r.status === "bezahlt" : r.status !== "bezahlt"))
+    $("kPaid").textContent = sum(invoices.filter(r => r.status === "bezahlt" && r.typ !== "ausgang" && (r.bezahltAm || "").startsWith(month)));
+    const all = invoices.concat(((typeof income !== "undefined" && income.rechnungen) || []).map(r => ({ ...r, typ: "ausgang" })));
+    const rows = all.filter(r => ledgerFilter === "alle" || (ledgerFilter === "bezahlt" ? r.status === "bezahlt" : r.status !== "bezahlt"))
       .sort((a, b) => (a.faellig || "9").localeCompare(b.faellig || "9"));
     const body = $("invBody"); body.innerHTML = "";
-    if (!rows.length) { body.innerHTML = `<tr><td colspan="8" class="pay-empty">${!invLoaded ? "Rechnungen werden geladen …" : invoices.length ? "Keine Rechnungen in dieser Ansicht." : "Noch keine Rechnungen erfasst."}</td></tr>`; return; }
+    if (!rows.length) { body.innerHTML = `<tr><td colspan="8" class="pay-empty">${!invLoaded ? "Rechnungen werden geladen …" : all.length ? "Keine Rechnungen in dieser Ansicht." : "Noch keine Rechnungen erfasst."}</td></tr>`; return; }
     const dfmt = (iso) => iso ? new Date(iso + "T00:00").toLocaleDateString("de-DE") : "–";
     for (const r of rows) {
       const tr = document.createElement("tr");
       const late = r.status !== "bezahlt" && r.faellig && daysUntil(r.faellig) < 0;
       const st = r.status === "bezahlt" ? "bezahlt" : late ? "late" : "offen";
       tr.innerHTML = `<td><span class="st ${st}">${st === "late" ? "überfällig" : st}</span></td><td class="g"></td><td class="n"></td><td>${dfmt(r.rechnungsdatum)}</td><td>${dfmt(r.faellig)}</td><td class="num">${r.betrag != null ? eur(r.betrag, r.waehrung) : "–"}</td><td class="file"></td><td></td>`;
-      tr.querySelector(".g").textContent = r.glaeubiger || "–";
+      const out = r.typ === "ausgang";
+      tr.querySelector(".g").textContent = out ? (r.empfaenger || "Kunde unbekannt") : (r.glaeubiger || "–");
+      if (out) { const t = document.createElement("span"); t.className = "st ausgang"; t.textContent = "Ausgang"; t.title = "Ausgangsrechnung: Einnahme"; tr.querySelector(".g").prepend(t, " "); }
       tr.querySelector(".n").textContent = r.nummer || "–";
       const fl = tr.querySelector(".file");
-      if (r.datei) { const a = document.createElement("a"); a.href = "/api/zentrale/rechnungen/datei?name=" + encodeURIComponent(r.datei); a.target = "_blank"; a.rel = "noopener"; a.textContent = "PDF ↗"; a.title = r.datei; a.onclick = e => e.stopPropagation(); fl.append(a); }
+      if (r.datei) { const a = document.createElement("a"); a.href = "/api/zentrale/rechnungen/datei?name=" + encodeURIComponent(r.datei) + (out ? "&art=ausgang" : ""); a.target = "_blank"; a.rel = "noopener"; a.textContent = "PDF ↗"; a.title = r.datei; a.onclick = e => e.stopPropagation(); fl.append(a); }
       if (r._fehler) { tr.querySelector(".g").textContent = "Nicht lesbar: " + r.datei; }
       const pb = document.createElement("button"); pb.type = "button"; pb.className = "linkbtn";
       pb.textContent = r.status === "bezahlt" ? "Wieder offen" : "Bezahlt";
       pb.onclick = async e => {
         e.stopPropagation(); pb.disabled = true;
         try {
-          const res = await api("/api/zentrale/rechnungen/bezahlt", write("POST", { datei: r.datei, bezahlt: r.status !== "bezahlt" }));
+          const res = await api("/api/zentrale/rechnungen/bezahlt", write("POST", { datei: r.datei, bezahlt: r.status !== "bezahlt", art: out ? "ausgang" : "eingang" }));
           if (!res.ok) throw new Error(res.fehler);
           if (invOpen === r.datei) invOpen = res.datei;
-          await loadInvoices();
+          if (out) await loadIncome(); else await loadInvoices();
         } catch (err) { pb.disabled = false; pb.textContent = "Fehler"; pb.title = err.message || ""; }
       };
       tr.lastElementChild.append(pb);
@@ -1507,7 +1532,7 @@ body { overflow: hidden; }
     store.set("jz.view", v);
     if (v === "projekte") initProjectsView();
     if (v === "jarvis") { initJarvis(); showAppLink(); }
-    if (v === "buchhaltung") { renderLedger(); loadIncome(); }
+    if (v === "buchhaltung") { renderLedger(); loadIncome(); loadBank(); }
     if (v === "arbeitsspace") initWorkspace();
     if (v === "staffo") initStaffo();
     if (v === "social") initSocial();
@@ -1900,6 +1925,59 @@ body { overflow: hidden; }
       g.append(card);
     }
   }
+  /* ---------- Buchhaltung: Kontoauszüge und Abgleich ---------- */
+  let bank = { auszuege: [], buchungen: [] };
+  async function loadBank() {
+    try { bank = await api("/api/zentrale/buchhaltung/abgleich"); } catch { return; }
+    renderBank();
+  }
+  function renderBank() {
+    const E = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    const st = $("bkStmts"); st.innerHTML = "";
+    for (const a of bank.auszuege || []) st.append(E("span", null, (a.von ? new Date(a.von + "T00:00").toLocaleDateString("de-DE") + "–" : "") + (a.bis ? new Date(a.bis + "T00:00").toLocaleDateString("de-DE") : "") + " · " + a.anzahl + " Buchungen"));
+    const body = $("bkBody");
+    const rows = (bank.buchungen || []).filter(b => !$("bkOpenOnly").checked || !b.beleg_datei);
+    if (!rows.length) return;
+    body.innerHTML = "";
+    const openInv = invoices.filter(r => r.status !== "bezahlt" && !r._fehler).map(r => ({ ...r, art: "eingang" }))
+      .concat((income.rechnungen || []).filter(r => r.status !== "bezahlt" && !r._fehler).map(r => ({ ...r, art: "ausgang" })));
+    for (const b of rows) {
+      const tr = E("tr");
+      tr.append(E("td", null, new Date(b.datum + "T00:00").toLocaleDateString("de-DE")));
+      const vz = E("td", "vz", b.gegenpartei || "–"); vz.append(E("small", null, b.verwendungszweck || "")); tr.append(vz);
+      tr.append(E("td", "num " + (b.betrag > 0 ? "plus" : "minus"), (b.betrag > 0 ? "+" : "") + eur(b.betrag)));
+      const z = E("td", "z");
+      if (b.beleg_datei) {
+        z.append(E("span", "st " + (b.beleg_art === "ausgang" ? "ausgang" : "bezahlt"), b.beleg_art === "ausgang" ? "Einnahme" : "bezahlt"), " " + (b.nummer || b.beleg_datei));
+        z.append(E("small", null, (b.wie || "") + (b.ablage ? " · DATEV/" + b.ablage.replace(/\\/g, "/") : "")));
+      } else {
+        const fits = openInv.filter(r => (r.art === "ausgang" ? 1 : -1) * Number(r.betrag || 0) === b.betrag);
+        const cand = fits.concat(openInv.filter(r => !fits.includes(r) && (r.art === "ausgang") === (b.betrag > 0)));
+        if (cand.length) {
+          const sel = E("select"); sel.append(new Option("Rechnung zuordnen …", ""));
+          for (const r of cand) sel.append(new Option(`${fits.includes(r) ? "★ " : ""}${r.art === "ausgang" ? r.empfaenger || "Kunde" : r.glaeubiger || "?"} · ${r.nummer || r.datei} · ${eur(Number(r.betrag || 0))}`, r.art + "|" + r.datei));
+          sel.onchange = async () => {
+            if (!sel.value) return;
+            const [art, datei] = [sel.value.split("|")[0], sel.value.slice(sel.value.indexOf("|") + 1)];
+            if (!confirm("Diese Buchung der Rechnung zuordnen? Die Rechnung wird als bezahlt markiert und in den DATEV-Ordner verschoben.")) { sel.value = ""; return; }
+            sel.disabled = true;
+            try { const d = await api("/api/zentrale/buchhaltung/zuordnen", write("POST", { buchung_id: b.id, datei, art })); if (!d.ok) throw new Error(d.fehler); loadBank(); loadInvoices(); loadIncome(); }
+            catch (e) { sel.disabled = false; alert("Nicht zugeordnet: " + e.message); }
+          };
+          z.append(sel);
+        } else z.append(E("small", null, "keine offene Rechnung"));
+      }
+      tr.append(z); body.append(tr);
+    }
+  }
+  $("bkOpenOnly").onchange = renderBank;
+  $("bkMatch").onclick = async () => {
+    const b = $("bkMatch"); b.disabled = true; b.textContent = "gleicht ab …";
+    try { const d = await api("/api/zentrale/buchhaltung/abgleichen", write("POST")); b.textContent = d.ok ? (d.zuordnungen.length ? d.zuordnungen.length + " zugeordnet" : "nichts Neues") : "Fehler"; loadBank(); loadInvoices(); loadIncome(); }
+    catch { b.textContent = "Fehler"; }
+    setTimeout(() => { b.disabled = false; b.textContent = "Jetzt abgleichen"; }, 4000);
+  };
+
   /* ---------- Buchhaltung: erwartete Einnahmen ---------- */
   let income = { rechnungen: [], geplant: [] };
   async function loadIncome() {
@@ -1918,6 +1996,7 @@ body { overflow: hidden; }
     return out;
   }
   function renderIncome() {
+    if (!$("v-buchhaltung").hidden) setTimeout(() => { renderLedger(); renderBank(); }, 0);
     const E = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
     const today = todayISO(), month = today.slice(0, 7);
     const amt = (r) => Number(r.betrag) || 0;
@@ -2235,14 +2314,20 @@ body { overflow: hidden; }
   });
   addEventListener("keydown", (e) => { if (e.key === "Escape" && !drop.hidden) { drop.hidden = true; dragDepth = 0; } });
   async function uploadFile(f, ziel) {
-    jlineShow(f.name, ziel === "auto" ? "Jarvis prüft, ob das eine Rechnung ist …" : "Wird abgelegt …");
+    jlineShow(f.name, ziel === "kontoauszug" ? "Jarvis liest den Kontoauszug, das dauert etwa eine Minute …" : ziel === "auto" ? "Jarvis prüft die Datei … (Kontoauszüge brauchen etwa eine Minute)" : "Wird abgelegt …");
     const fd = new FormData(); fd.append("datei", f); fd.append("ziel", ziel);
     try {
       const r = await fetch("/api/zentrale/ablage", { method: "POST", headers: { "X-Zentrale": "1" }, body: fd });
       const d = await r.json();
       if (!r.ok || !d.ok) throw new Error(d.fehler || "HTTP " + r.status);
       const why = d.grund ? " (" + d.grund + ")" : "";
-      if (d.ziel === "ausgang") {
+      if (d.ziel === "kontoauszug") {
+        const z = d.zuordnungen || [];
+        jlineShow(f.name, `Kontoauszug gelesen: ${d.buchungen} Buchungen${d.doppelt ? " (" + d.doppelt + " schon bekannt)" : ""}${d.saldo_ok === true ? ", Saldo stimmt" : d.saldo_ok === false ? ", Saldo weicht ab, bitte prüfen" : ""}. `
+          + (z.length ? z.length + " Rechnung(en) als bezahlt erkannt und bei DATEV abgelegt: " + z.map(x => x.partner || x.datei).join(", ") : "Keine offene Rechnung darin gefunden.")
+          + " Auszug abgelegt unter DATEV _ Hochladen.");
+        loadBank(); loadInvoices(); loadIncome();
+      } else if (d.ziel === "ausgang") {
         jlineShow(f.name, "Als Ausgangsrechnung abgelegt" + why + ". Sie zählt jetzt zu den erwarteten Einnahmen.");
         loadIncome();
       } else if (d.ziel === "rechnung") {
