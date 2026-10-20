@@ -67,6 +67,8 @@ button { cursor: pointer; }
 .tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--red); }
 .view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
 .page { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 16px; }
+/* Inhalte einer Seite nie zusammendrücken: die Seite wird länger und scrollt (Buchhaltung, Todoist, …) */
+.page > * { flex-shrink: 0; }
 .page-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; }
 .page-head h1 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 34px; letter-spacing: .02em; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
