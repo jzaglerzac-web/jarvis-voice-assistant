@@ -105,12 +105,22 @@ async def _extract_statement(ai, name: str, data: bytes) -> dict:
     return d
 
 
-async def import_statement(ai, config: dict, name: str, data: bytes, apply: bool = True) -> dict:
-    """Read a bank statement, store its bookings, file it under DATEV _ Hochladen/JJJJ/ and match invoices."""
+async def import_statement(ai, config: dict, name: str, data: bytes, apply: bool = True,
+                           existing_path: str | None = None) -> dict:
+    """Read a bank statement, store its bookings, file it under DATEV _ Hochladen/JJJJ/ and match invoices.
+    existing_path: the statement already lies in the DATEV folder, so it is not copied again."""
     d = await _extract_statement(ai, name, data)
     bis = (d.get("bis") or max((b.get("datum", "") for b in d["buchungen"]), default="") or date.today().isoformat())[:10]
-    ablage = None
-    if apply:
+    if d.get("von"):
+        con = db()
+        known = con.execute("SELECT datei FROM kontoauszuege WHERE von = ? AND bis = ?", (d["von"][:10], bis)).fetchone()
+        con.close()
+        if known:  # same period already imported (e.g. the same statement downloaded twice)
+            return {"ok": True, "auszug": name, "ablage": None, "zeitraum": [d.get("von"), bis], "saldo_ok": None,
+                    "buchungen": len(d["buchungen"]), "neu": 0, "doppelt": len(d["buchungen"]),
+                    "zuordnungen": [], "hinweis": f"Zeitraum schon eingelesen ({known['datei']})"}
+    ablage = existing_path
+    if apply and not existing_path:
         target_dir = os.path.join(datev_root(config), bis[:4])
         os.makedirs(target_dir, exist_ok=True)
         path = dokumente_tools.unique_path(target_dir, dokumente_tools.safe_name(name))

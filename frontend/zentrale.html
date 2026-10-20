@@ -2323,7 +2323,9 @@ body { overflow: hidden; }
       const d = await r.json();
       if (!r.ok || !d.ok) throw new Error(d.fehler || "HTTP " + r.status);
       const why = d.grund ? " (" + d.grund + ")" : "";
-      if (d.ziel === "kontoauszug") {
+      if (d.ziel === "kontoauszug" && d.hinweis) {
+        jlineShow(f.name, "Nicht noch einmal eingelesen: " + d.hinweis + ".");
+      } else if (d.ziel === "kontoauszug") {
         const z = d.zuordnungen || [];
         jlineShow(f.name, `Kontoauszug gelesen: ${d.buchungen} Buchungen${d.doppelt ? " (" + d.doppelt + " schon bekannt)" : ""}${d.saldo_ok === true ? ", Saldo stimmt" : d.saldo_ok === false ? ", Saldo weicht ab, bitte prüfen" : ""}. `
           + (z.length ? z.length + " Rechnung(en) als bezahlt erkannt und bei DATEV abgelegt: " + z.map(x => x.partner || x.datei).join(", ") : "Keine offene Rechnung darin gefunden.")
