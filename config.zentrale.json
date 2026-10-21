@@ -1,0 +1,177 @@
+{
+  "anthropic_api_key": "PLATZHALTER_ANTHROPIC_API_KEY",
+  "elevenlabs_api_key": "PLATZHALTER_ELEVENLABS_API_KEY",
+  "elevenlabs_voice_id": "JBFqnCBsd6RMkjVDRZzb",
+  "user_name": "Julian",
+  "user_address": "Cheff",
+  "user_role": "YOUR_ROLE",
+  "city": "auto",
+  "workspace_path": "C:\\Users\\Julian Zagler ZAC\\Documents\\Claude_Backup\\Jarvic\\jarvis-voice-assistant",
+  "spotify_track": "spotify:track:6GQ3WTaNHMFlVmN4burGat",
+  "browser_url": "https://www.zac-sicherheit.com",
+  "obsidian_inbox_path": "C:\\Users\\Julian Zagler ZAC\\Documents\\Obsidian Vault",
+  "rechnungen_ordner": "C:\\Users\\Julian Zagler ZAC\\Documents\\Claude_Backup\\Jarvic\\Buchhaltung\\Eingangsrechnungen",
+  "ausgangsrechnungen_ordner": "C:\\Users\\Julian Zagler ZAC\\Documents\\Claude_Backup\\Jarvic\\Buchhaltung\\Ausgangsrechnungen",
+  "apps": [],
+  "host": "127.0.0.1",
+  "programs": {
+    "outlook": "Microsoft.OutlookForWindows_8wekyb3d8bbwe!Microsoft.OutlookforWindows",
+    "outlook classic": "Microsoft.Office.OUTLOOK.EXE.15",
+    "chrome": "Chrome",
+    "edge": "MSEdge",
+    "todoist": "88449BC3.TodoistPlannerCalendarMSIX_71ef4824z52ta!BC3.TodoistPlannerCalendarMSIX",
+    "claude": "Claude_pzs8sxrjxfjjc!Claude",
+    "speedcommander": "SpeedProject.SpeedCommander.21",
+    "word": "Microsoft.Office.WINWORD.EXE.15",
+    "excel": "Microsoft.Office.EXCEL.EXE.15",
+    "teams": "MSTeams_8wekyb3d8bbwe!MSTeams",
+    "whatsapp": "5319275A.WhatsAppDesktop_cv1g1gvanyjgm!App",
+    "spotify": "SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify",
+    "obsidian": "md.obsidian",
+    "explorer": "Microsoft.Windows.Explorer",
+    "rechner": "Microsoft.WindowsCalculator_8wekyb3d8bbwe!App",
+    "editor": "Microsoft.WindowsNotepad_8wekyb3d8bbwe!App",
+    "pdf editor": "{6D809377-6AF0-444B-8957-A3773F02200E}\\Tracker Software\\PDF Editor\\PDFXEdit.exe",
+    "wiso meinbuero": "{7C5A40EF-A0FB-4BFC-874A-C0F2E0B9FA8E}\\Buhl\\Mein Büro\\MB.exe"
+  },
+  "todoist_api_token": "PLATZHALTER_TODOIST_API_TOKEN",
+  "task_window_hours": 5,
+  "activate_url": "https://www.zac-sicherheit.com",
+  "layout": [
+    {
+      "url": [
+        "--app=http://localhost:8340/zentrale"
+      ],
+      "monitor": 1,
+      "position": "full",
+      "title": "^ZAC Zentrale"
+    },
+    {
+      "app": "spotify",
+      "position": "minimized"
+    }
+  ],
+  "staffomatic_account": "zac-gmbh",
+  "staffomatic_location_id": 61232,
+  "staffomatic_user": "j.zagler@zac-sicherheit.de",
+  "staffomatic_password": "PLATZHALTER_STAFFOMATIC_PASSWORD",
+  "wake_phrases": [
+    "Partner lass was schaffen",
+    "Partner lass uns was schaffen"
+  ],
+  "wake_confidence": 0.2,
+  "telegram_bot_token": "PLATZHALTER_TELEGRAM_BOT_TOKEN",
+  "telegram_allowed_ids": [
+    5910814202,
+    1962179115
+  ],
+  "mail_accounts": [
+    {
+      "email": "info@zac-sicherheit.de",
+      "group": "arbeit",
+      "imap_host": "w01f1cd6.kasserver.com",
+      "user": "info@zac-sicherheit.de",
+      "password": "PLATZHALTER_PASSWORD"
+    },
+    {
+      "email": "rechnung@zac-sicherheit.de",
+      "group": "arbeit",
+      "imap_host": "w01f1cd6.kasserver.com",
+      "user": "rechnung@zac-sicherheit.de",
+      "password": "PLATZHALTER_PASSWORD"
+    },
+    {
+      "email": "j.zagler@zac-sicherheit.de",
+      "group": "arbeit",
+      "imap_host": "w01f1cd6.kasserver.com",
+      "user": "j.zagler@zac-sicherheit.de",
+      "password": "PLATZHALTER_PASSWORD"
+    },
+    {
+      "email": "parkstadt@zac-sicherheit.de",
+      "group": "projekt",
+      "imap_host": "w01f1cd6.kasserver.com",
+      "user": "parkstadt@zac-sicherheit.de",
+      "password": "PLATZHALTER_PASSWORD"
+    },
+    {
+      "email": "schlosspark@zac-sicherheit.de",
+      "group": "projekt",
+      "imap_host": "w01f1cd6.kasserver.com",
+      "user": "schlosspark@zac-sicherheit.de",
+      "password": "PLATZHALTER_PASSWORD"
+    },
+    {
+      "email": "fhp@zac-sicherheit.de",
+      "group": "projekt",
+      "imap_host": "w01f1cd6.kasserver.com",
+      "user": "fhp@zac-sicherheit.de",
+      "password": "PLATZHALTER_PASSWORD"
+    },
+    {
+      "email": "julian.zagler@gmail.com",
+      "group": "privat",
+      "imap_host": "imap.gmail.com",
+      "user": "julian.zagler@gmail.com",
+      "password": "PLATZHALTER_PASSWORD"
+    },
+    {
+      "email": "j.zagler.zac@gmail.com",
+      "group": "privat",
+      "imap_host": "imap.gmail.com",
+      "user": "j.zagler.zac@gmail.com",
+      "password": "PLATZHALTER_PASSWORD"
+    }
+  ],
+  "default_sender": "j.zagler@zac-sicherheit.de",
+  "layout_vorher_2026_10_16": [
+    {
+      "app": "outlook",
+      "monitor": 1,
+      "position": "full"
+    },
+    {
+      "url": [
+        "https://www.zac-sicherheit.com"
+      ],
+      "monitor": 2,
+      "position": "left",
+      "title": "ZAC Sicherheit"
+    },
+    {
+      "url": [
+        "--app=https://zac-gmbh.staffomatic.app/login?locationId=61232"
+      ],
+      "monitor": 2,
+      "position": "right",
+      "title": "Staffomatic|Übersicht"
+    },
+    {
+      "url": [
+        "--app=http://localhost:8340/zentrale"
+      ],
+      "monitor": 3,
+      "position": "minimized",
+      "title": "^ZAC Zentrale"
+    },
+    {
+      "app": "todoist",
+      "process": "Todoist",
+      "monitor": 3,
+      "position": "left"
+    },
+    {
+      "url": [
+        "https://web.whatsapp.com"
+      ],
+      "monitor": 3,
+      "position": "right",
+      "title": "WhatsApp"
+    },
+    {
+      "app": "spotify",
+      "position": "minimized"
+    }
+  ],
+  "app_key": "PLATZHALTER_APP_KEY"
+}
