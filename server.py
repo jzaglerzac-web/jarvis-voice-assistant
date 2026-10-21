@@ -1530,6 +1530,14 @@ async def zentrale_workspace_ai(request: Request):
     return {"text": "\n".join(results)}
 
 
+# Reiter „Personal": Mitarbeiter, Stunden aus Staffomatic, Zuschlaege, Lohnabrechnungen (personal_tools.py, personal.db)
+try:
+    import personal_tools
+    app.include_router(personal_tools.make_router(check_local, config))
+except Exception as e:  # Jarvis soll auch ohne den Personal-Reiter starten
+    print(f"Personal-Reiter nicht geladen: {e}", flush=True)
+
+
 if __name__ == "__main__":
     import uvicorn
     print("=" * 50, flush=True)

@@ -180,6 +180,24 @@ def shifts(von: date, bis: date) -> list:
     return result
 
 
+def assignments(von: date, bis: date) -> list:
+    """One row per assigned person and shift from von to bis (for the Personal tab):
+    [{shift_id, user_id, name, beginn, ende, bereich, standort}]; shifts without an end are left out."""
+    raw = _raw_shifts(von, bis)
+    names = _user_names({i for s in raw for i in s.get("assigned_user_ids") or []})
+    deps = {d["id"]: d.get("name", "").strip() for d in _departments()}
+    rows = []
+    for s in raw:
+        if s.get("open_end") or not s.get("ends_at"):
+            continue
+        for uid in s.get("assigned_user_ids") or []:
+            rows.append({"shift_id": s["id"], "user_id": uid, "name": names.get(uid, f"#{uid}"),
+                         "beginn": s.get("starts_at", ""), "ende": s["ends_at"],
+                         "bereich": deps.get(s.get("department_id"), ""), "standort": s["_standort"]})
+    rows.sort(key=lambda x: x["beginn"])
+    return rows
+
+
 def open_shifts(von: date, bis: date) -> list:
     """Shifts with fewer people assigned than wanted."""
     return [s for s in shifts(von, bis) if s["offen"] > 0]

@@ -27,3 +27,7 @@ einnahmen-plan.json
 ausgangsrechnungen-cache.json
 buchhaltung.db
 _auszug_test.json
+
+# Reiter Personal: Personaldaten bleiben lokal
+personal.db
+personal-startdaten.json
