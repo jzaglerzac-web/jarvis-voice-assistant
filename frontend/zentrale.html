@@ -789,6 +789,36 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
 .pe-docs a { color: var(--text); font-family: var(--f-mono); font-size: 12px; overflow-wrap: anywhere; }
 .pe-docs a.fehlt { color: var(--muted); text-decoration: line-through; }
 .pe-docs small { color: var(--muted); margin-left: auto; }
+
+.pe-sstd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; margin-top: 2px; }
+.pe-sstd strong { font-family: var(--f-mono); font-size: 20px; font-weight: 700; white-space: nowrap; }
+.pe-sstd small { color: var(--muted); font-size: 12px; }
+.pe-sstd.pos strong, .pe-tile dd.pos { color: #4A8BC9; } .pe-sstd.neg strong, .pe-tile dd.neg { color: #D0683F; }
+.pe-mstrip { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0 0 10px; }
+.pe-mstrip button { background: var(--panel-2); border: 1px solid var(--line, transparent); color: var(--muted); padding: 5px 10px; font-size: 13px; cursor: pointer; }
+.pe-mstrip button.daten { color: var(--text); }
+.pe-mstrip button.heute { box-shadow: inset 0 -2px 0 var(--muted); }
+.pe-mstrip button[aria-pressed="true"] { background: var(--red); color: #fff; }
+.pe-mstrip .pe-mnav { font-size: 16px; padding: 3px 10px; }
+.pe-mstat { margin-left: 8px; font-size: 12px; color: var(--muted); }
+
+.pe-bem-box textarea { width: 100%; box-sizing: border-box; font: inherit; background: var(--panel-2); color: var(--text); border: 1px solid var(--line, #333); padding: 8px; }
+.pe-bem-box h3 { font-size: 13px; margin: 12px 0 4px; color: var(--muted); font-weight: 600; }
+.pe-vermerke { margin: 0; padding-left: 18px; font-size: 13px; } .pe-vermerke li { margin: 3px 0; } .pe-vermerke small { color: var(--muted); }
+.pe-tnotiz { color: var(--muted); font-size: 12px; line-height: 1.3; margin-bottom: 8px; }
+
+.pe-year tr.pe-calc td { background: rgba(74, 139, 201, .10); color: #9cc3ea; font-style: italic; }
+.pe-year tr.pe-calc td:first-child { color: #9cc3ea; }
+.pe-year tr.pe-calc.diff td { font-style: normal; font-weight: 700; }
+.pe-eq { font-family: var(--f-mono); opacity: .8; }
+.pe-legend-ist, .pe-legend-calc { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-right: 14px; }
+.pe-legend-ist i, .pe-legend-calc i { width: 14px; height: 10px; display: inline-block; border: 1px solid var(--muted); }
+.pe-legend-calc i { background: rgba(74, 139, 201, .35); border-color: #4A8BC9; }
+@media print { .pe-year tr.pe-calc td { background: #eaf1f9; color: #1f4f7e; } }
+.pe-year td.zuk, .pe-year th.zuk { color: #6b7380 !important; opacity: .55; }
+.pe-year tr.pe-calc td.zuk { background: rgba(120, 128, 140, .08); }
+.pe-year td.schnitt, .pe-year th.schnitt { color: #8a93a0; border-left: 1px solid rgba(255, 255, 255, .08); }
+@media print { .pe-year td.zuk, .pe-year th.zuk { color: #9aa0a8 !important; opacity: 1; } .pe-year td.schnitt { color: #555; } }
 </style>
 </head>
 <body>
@@ -971,12 +1001,12 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
     </div>
     <section class="panel inc" aria-label="Erwartete Einnahmen">
       <div class="inc-head"><div><span class="eyebrow">Einnahmen</span><h2>Zu erwartende Einnahmen</h2></div>
-        <span class="hint" id="incSrc">Quelle: Ordner <code>Unterlagen/Ausgangsrechnungen für Jarvis</code> und geplante Einnahmen</span></div>
+        <span class="hint" id="incSrc">Quelle: Ordner <code>Unterlagen/Ausgangsrechnungen für Jarvis</code>, Kontoauszüge und geplante Einnahmen</span></div>
       <div class="kpis inc-kpis">
         <div class="kpi inc-k"><span class="eyebrow">Offene Forderungen</span><b id="iOpen">–</b><small id="iOpenN"></small></div>
         <div class="kpi inc-k alert"><span class="eyebrow">Davon überfällig</span><b id="iLate">–</b><small id="iLateN"></small></div>
         <div class="kpi inc-k"><span class="eyebrow">Erwartet · 30 Tage</span><b id="i30">–</b><small>Rechnungen und geplante Einnahmen</small></div>
-        <div class="kpi inc-k ok"><span class="eyebrow">Eingegangen diesen Monat</span><b id="iPaid">–</b><small id="iPaidN"></small></div>
+        <div class="kpi inc-k ok"><span class="eyebrow" id="iPaidL">Eingegangen diesen Monat</span><b id="iPaid">–</b><small id="iPaidN"></small></div>
       </div>
       <div class="inc-grid">
         <div>
@@ -987,6 +1017,8 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
         <div>
           <div class="dp-sub">Offene Ausgangsrechnungen</div>
           <ul class="inc-list" id="incList"><li class="notice">Wird geladen …</li></ul>
+          <div class="dp-sub" style="margin-top:12px">Regelmäßige Zahlungseingänge laut Kontoauszug</div>
+          <ul class="inc-list" id="recList"></ul>
           <div class="dp-sub" style="margin-top:12px">Geplante Einnahmen (z. B. monatliche Aufträge ohne Rechnung)</div>
           <ul class="inc-list" id="planList"></ul>
           <form class="inc-form" id="planForm" autocomplete="off">
@@ -1099,12 +1131,14 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
         <select id="peJahr" aria-label="Jahr"></select>
         <select id="peMonat" aria-label="Monat"></select>
         <button class="sec" type="button" id="peStaffo" title="Schichten des gewählten Monats aus Staffomatic holen und Zuschläge berechnen">Staffo abrufen</button>
+        <button class="sec" type="button" id="peVorschau" title="Die gerade offene Ansicht als PDF öffnen (zur Ansicht, wird nicht gespeichert)">PDF-Vorschau</button>
+        <button class="sec" type="button" id="peEineSeite" title="Den ganzen Bereich auf eine Querformat-Seite verkleinert als PDF öffnen, z. B. den ganzen Monat für die Abrechnung">PDF 1 Seite</button>
         <button class="sec" type="button" id="pePdf" title="Lohnabrechnung je Mitarbeiter plus Lohnübersicht als PDF speichern">Lohnabrechnungen erstellen</button>
         <button class="btn-open" type="button" id="peNeu">+ Mitarbeiter</button>
       </div>
     </div>
     <div class="seg pe-seg" id="peSeg" role="group" aria-label="Bereich">
-      <button type="button" data-s="uebersicht">Übersicht</button><button type="button" data-s="tabelle">Mehr- &amp; Minderstunden</button><button type="button" data-s="monat">Monat &amp; Lohn</button><button type="button" data-s="mitarbeiter">Mitarbeiter</button><button type="button" data-s="zahlungen">Zahlungen &amp; Boni</button><button type="button" data-s="abwesenheiten">Urlaub &amp; Krank</button><button type="button" data-s="orte">Einsatzorte &amp; Zuschläge</button>
+      <button type="button" data-s="uebersicht">Übersicht</button><button type="button" data-s="tabelle">Mehr- &amp; Minderstunden</button><button type="button" data-s="monat">Monat &amp; Lohn</button><button type="button" data-s="mitarbeiter">Mitarbeiter</button><button type="button" data-s="zahlungen">Zahlungen &amp; Boni</button><button type="button" data-s="abwesenheiten">Urlaub &amp; Krank</button><button type="button" data-s="orte">Einsatzorte &amp; Zuschläge</button><button type="button" data-s="nu">Nachunternehmer</button>
     </div>
     <p class="pe-msg" id="peMsg" role="status" aria-live="polite"></p>
     <div id="peBody" class="pe-body"><div class="notice">Wird geladen …</div></div>
@@ -2044,7 +2078,7 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
   let bank = { auszuege: [], buchungen: [] };
   async function loadBank() {
     try { bank = await api("/api/zentrale/buchhaltung/abgleich"); } catch { return; }
-    renderBank();
+    renderBank(); renderIncome();
   }
   function renderBank() {
     const E = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -2110,6 +2144,39 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
     }
     return out;
   }
+  // Customer payments from the imported bank statements. Refunds from health insurers and the like are no income.
+  const NO_INCOME = /krankenkasse|knappschaft|barmer|\baok\b|\bikk\b|\bbkk\b|finanzamt|bundesagentur|julian zagler/i;
+  function bankIncome() {
+    return (bank.buchungen || []).filter(b => b.betrag > 0 && !NO_INCOME.test(b.gegenpartei || ""));
+  }
+  function recurringIncome() {
+    // customers who paid in at least two different months and recently: expect the usual monthly amount on the usual day
+    const credits = bankIncome(); if (!credits.length) return [];
+    const last = credits.reduce((m, b) => b.datum > m ? b.datum : m, "");
+    const cut = new Date(last + "T00:00"); cut.setDate(cut.getDate() - 75); const cutISO = isoDay(cut);
+    const by = new Map();
+    for (const b of credits) { const k = (b.gegenpartei || "").trim(); if (!k) continue; if (!by.has(k)) by.set(k, []); by.get(k).push(b); }
+    const out = [];
+    for (const [kunde, list] of by) {
+      const months = new Map(); for (const b of list) months.set(b.datum.slice(0, 7), (months.get(b.datum.slice(0, 7)) || 0) + b.betrag);
+      const lastPaid = list.reduce((m, b) => b.datum > m ? b.datum : m, "");
+      if (months.size < 2 || lastPaid < cutISO) continue;
+      const days = list.map(b => +b.datum.slice(8, 10)).sort((a, b) => a - b);
+      const betrag = Math.round([...months.values()].reduce((x, v) => x + v, 0) / months.size * 100) / 100;
+      out.push({ kunde, betrag, tag: Math.min(days[days.length >> 1], 28), monate: months.size, zuletzt: lastPaid });
+    }
+    return out.sort((a, b) => b.betrag - a.betrag);
+  }
+  function recDates(r, from, to) {
+    // next expected dates of a recurring payment between from and to, never in a month it already paid
+    const out = []; const d = new Date(from + "T00:00");
+    for (let i = 0; i < 4; i++) {
+      const iso = isoDay(new Date(d.getFullYear(), d.getMonth() + i, r.tag));
+      if (iso > to) break; if (iso >= from && iso.slice(0, 7) > r.zuletzt.slice(0, 7)) out.push(iso);
+    }
+    if (!out.length && r.zuletzt.slice(0, 7) < from.slice(0, 7) && from <= to) out.push(from); // overdue this month
+    return out;
+  }
   function renderIncome() {
     if (!$("v-buchhaltung").hidden) setTimeout(() => { renderLedger(); renderBank(); }, 0);
     const E = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -2118,13 +2185,32 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
     const open = (income.rechnungen || []).filter(r => r.status !== "bezahlt" && !r._fehler);
     const late = open.filter(r => r.faellig && r.faellig < today);
     const paid = (income.rechnungen || []).filter(r => r.status === "bezahlt" && (r.bezahltAm || "").startsWith(month));
+    // money that actually arrived: bank statement of this month, otherwise the newest imported month
+    const credits = bankIncome();
+    const bankMonth = credits.some(b => b.datum.startsWith(month)) ? month : credits.reduce((m, b) => b.datum.slice(0, 7) > m ? b.datum.slice(0, 7) : m, "");
+    const got = credits.filter(b => bankMonth && b.datum.startsWith(bankMonth));
+    const rec = recurringIncome().filter(r => !open.some(o => (o.empfaenger || "").toLowerCase().split(/\s+/)[0] === r.kunde.toLowerCase().split(/\s+/)[0]));
     const sum = (a) => a.reduce((x, r) => x + amt(r), 0);
     const in30 = new Date(); in30.setDate(in30.getDate() + 30); const to30 = isoDay(in30);
-    const planned30 = (income.geplant || []).reduce((x, p) => x + planDates(p, today, to30).length * (Number(p.betrag) || 0), 0);
+    const planned30 = (income.geplant || []).reduce((x, p) => x + planDates(p, today, to30).length * (Number(p.betrag) || 0), 0)
+      + rec.reduce((x, r) => x + recDates(r, today, to30).length * r.betrag, 0);
     $("iOpen").textContent = eur(sum(open)); $("iOpenN").textContent = open.length + " Rechnung" + (open.length === 1 ? "" : "en");
     $("iLate").textContent = eur(sum(late)); $("iLateN").textContent = late.length ? late.length + " überfällig" : "nichts überfällig";
     $("i30").textContent = eur(sum(open.filter(r => !r.faellig || r.faellig <= to30)) + planned30);
-    $("iPaid").textContent = eur(sum(paid)); $("iPaidN").textContent = paid.length + " bezahlt";
+    if (got.length) {
+      const mName = new Date(bankMonth + "-01T00:00").toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+      $("iPaidL").textContent = bankMonth === month ? "Eingegangen diesen Monat" : "Eingegangen " + mName;
+      $("iPaid").textContent = eur(sum(got)); $("iPaidN").textContent = got.length + " Zahlungseingänge laut Kontoauszug" + (bankMonth === month ? "" : " · " + month.slice(5) + "/" + month.slice(0, 4) + " noch nicht eingelesen");
+    } else { $("iPaidL").textContent = "Eingegangen diesen Monat"; $("iPaid").textContent = eur(sum(paid)); $("iPaidN").textContent = paid.length + " bezahlt"; }
+    // recurring customer payments from the bank statements
+    const rl = $("recList"); rl.innerHTML = "";
+    if (!rec.length) rl.append(E("li", "notice", credits.length ? "Kein Kunde zahlt bisher regelmäßig." : "Noch kein Kontoauszug eingelesen."));
+    for (const r of rec) {
+      const li = E("li", "inc-row"); const next = recDates(r, today, isoDay(new Date(Date.now() + 62 * 864e5)))[0];
+      const k = E("div", "k", r.kunde);
+      k.append(E("small", null, `in ${r.monate} Monaten gezahlt · zuletzt ${new Date(r.zuletzt + "T00:00").toLocaleDateString("de-DE")}` + (next ? ` · erwartet ${new Date(next + "T00:00").toLocaleDateString("de-DE")}` : "")));
+      li.append(k, E("div", "a", "≈ " + eur(r.betrag)), E("span")); rl.append(li);
+    }
     // list of open outgoing invoices
     const ul = $("incList"); ul.innerHTML = "";
     if (!open.length) ul.append(E("li", "notice", "Keine offenen Ausgangsrechnungen. Eigene Rechnungen in die Zentrale ziehen und „Ausgangsrechnung“ wählen."));
@@ -2151,6 +2237,7 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
     const slot = (iso) => { if (!iso || iso < weeks[0].from) return weeks[0]; return weeks.find(w => iso >= w.from && iso <= w.to); };
     for (const r of open) { const w = slot(r.faellig); if (w) w.inn += amt(r); }
     for (const p of income.geplant || []) for (const d of planDates(p, weeks[0].from, weeks[7].to)) { const w = slot(d); if (w) w.inn += Number(p.betrag) || 0; }
+    for (const r of rec) for (const d of recDates(r, today, weeks[7].to)) { const w = slot(d); if (w) w.inn += r.betrag; }
     for (const r of (invoices || []).filter(r => r.status !== "bezahlt" && r.typ !== "ausgang")) { const w = slot(r.faellig); if (w) w.out += amt(r); }
     const max = Math.max(1, ...weeks.map(w => Math.max(w.inn, w.out)));
     const cf = $("cfChart"); cf.innerHTML = "";
@@ -2683,7 +2770,7 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
 
 
   /* ---------- Personal (Daten: personal_tools.py / personal.db) ---------- */
-  const PE = { jahr: new Date().getFullYear(), monat: new Date().toISOString().slice(0, 7), sub: store.get("jz.pe.sub", "uebersicht"), data: null, plan: null, sel: store.get("jz.pe.sel", null), nurAktiv: true, busy: false };
+  const PE = { jahr: new Date().getFullYear(), monat: store.get("jz.pe.monat", new Date().toISOString().slice(0, 7)), sub: store.get("jz.pe.sub", "uebersicht"), data: null, plan: null, sel: store.get("jz.pe.sel", null), nurAktiv: true, busy: false };
   const peEl = (tag, attrs, ...kids) => {
     const e = document.createElement(tag);
     for (const [k, v] of Object.entries(attrs || {})) {
@@ -2719,19 +2806,53 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
   function initPersonal() {
     const ys = $("peJahr");
     if (!ys.options.length) {
+      PE.jahr = +PE.monat.slice(0, 4);
       for (let y = new Date().getFullYear() + 1; y >= 2025; y--) ys.append(peEl("option", { value: y, text: y }));
       ys.value = PE.jahr;
-      ys.onchange = () => { PE.jahr = +ys.value; PE.monat = PE.jahr + PE.monat.slice(4); peFillMonths(); peLoad(); };
+      ys.onchange = () => peSetMonat(ys.value + PE.monat.slice(4));
       peFillMonths();
-      $("peMonat").onchange = () => { PE.monat = $("peMonat").value; peRender(); };
+      $("peMonat").onchange = () => peSetMonat($("peMonat").value);
       document.querySelectorAll("#peSeg button").forEach(b => b.onclick = () => { PE.sub = b.dataset.s; store.set("jz.pe.sub", PE.sub); peRender(); });
       $("peStaffo").onclick = peStaffo;
       $("pePdf").onclick = () => pePdf(null);
+      $("peVorschau").onclick = () => peVorschau(false);
+      $("peEineSeite").onclick = () => peVorschau(true);
       $("peNeu").onclick = () => { PE.sub = "mitarbeiter"; PE.sel = "neu"; peRender(); };
     }
     peLoad();
     if (!PE.plan) peLoadPlan();
     if (!PE.staffoUsers) api("/api/zentrale/personal/staffo-mitarbeiter").then(d => { PE.staffoUsers = d.mitarbeiter || []; }).catch(() => {});
+  }
+  /* Monat wechseln (Kopfzeile, Monatsleiste, Pfeile); bleibt beim Neuladen erhalten */
+  function peSetMonat(v) {
+    const jahrNeu = +v.slice(0, 4) !== PE.jahr;
+    PE.monat = v; PE.jahr = +v.slice(0, 4); store.set("jz.pe.monat", v);
+    $("peJahr").value = PE.jahr; peFillMonths();
+    if (jahrNeu) peLoad(); else peRender();
+  }
+  const peShift = (v, n) => { const d = new Date(+v.slice(0, 4), +v.slice(5, 7) - 1 + n, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
+  function peMonthStrip() {
+    const heute = new Date().toISOString().slice(0, 7);
+    const hatDaten = (mon) => peList().some(m => { const r = peRow(m, mon); return r && r.daten; });
+    const bar = peEl("div", { class: "pe-mstrip", role: "group", "aria-label": "Monat wählen" },
+      peEl("button", { type: "button", class: "pe-mnav", title: "Vormonat", "aria-label": "Vormonat", text: "‹", onclick: () => peSetMonat(peShift(PE.monat, -1)) }));
+    for (let i = 1; i <= 12; i++) {
+      const v = `${PE.jahr}-${String(i).padStart(2, "0")}`;
+      bar.append(peEl("button", { type: "button", "aria-pressed": String(v === PE.monat), class: (hatDaten(v) ? "daten" : "") + (v === heute ? " heute" : ""), title: peMonName(v) + " " + PE.jahr + (hatDaten(v) ? "" : " · noch keine Werte"), text: peMonName(v), onclick: () => peSetMonat(v) }));
+    }
+    bar.append(peEl("button", { type: "button", class: "pe-mnav", title: "Folgemonat", "aria-label": "Folgemonat", text: "›", onclick: () => peSetMonat(peShift(PE.monat, 1)) }));
+    const st = PE.monat < heute ? "abgeschlossener Monat" : PE.monat === heute ? "laufender Monat, Werte noch nicht vollständig" : "zukünftiger Monat";
+    bar.append(peEl("span", { class: "pe-mstat", text: peMonName(PE.monat) + " " + PE.jahr + " · " + st }));
+    return bar;
+  }
+  const peMilo = (mon) => { const st = (PE.data.tarif || {}).milo || {}; const ks = Object.keys(st).filter(k => k.slice(0, 7) <= mon).sort(); return ks.length ? st[ks[ks.length - 1]] : null; };
+  const peSign = (x) => (x > 0.005 ? "+" : x < -0.005 ? "−" : "±") + peNum(Math.abs(x || 0));
+  /* Mehr- oder Minderstunden (Zeitkonto-Saldo) als große Zahl auf der Karte */
+  function peSaldoStd(m) {
+    if (!m.zeitkonto && !m.saldo_std) return peEl("span", { class: "pe-sstd", title: "Für diesen Mitarbeiter wird kein Arbeitszeitkonto geführt" }, peEl("strong", { text: "–" }), peEl("small", { text: "kein Zeitkonto" }));
+    const v = m.saldo_std || 0, cls = v > 0.005 ? "pos" : v < -0.005 ? "neg" : "";
+    // ohne Zeitkonto kommen Stunden nur aus Stundenbuchungen (z. B. umgerechnete Euro-Beträge)
+    return peEl("span", { class: "pe-sstd " + cls, title: "Saldo Arbeitszeitkonto Stand heute, inkl. Übertrag und Stundenbuchungen" }, peEl("strong", { text: peSign(v) + " Std" }), peEl("small", { text: v > 0.005 ? "Mehrstunden" : v < -0.005 ? "Minderstunden" : "ausgeglichen" }));
   }
   function peFillMonths() {
     const ms = $("peMonat"); ms.innerHTML = "";
@@ -2759,16 +2880,38 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
     } catch (e) { peMsg("Lohnabrechnung: " + e.message, true); }
     b.disabled = false;
   }
+  const PE_TITEL = { uebersicht: "Übersicht", tabelle: "Mehr- & Minderstunden", monat: "Monat & Lohn", mitarbeiter: "Mitarbeiter", zahlungen: "Zahlungen & Boni", abwesenheiten: "Urlaub & Krank", orte: "Einsatzorte & Zuschläge", nu: "Nachunternehmer" };
+  async function peVorschau(eineSeite, nur) {
+    const b = nur ? null : $(eineSeite ? "peEineSeite" : "peVorschau"); if (b) b.disabled = true; peMsg("PDF-Vorschau wird erstellt …");
+    const quelle = nur ? nur.node : $("peBody"), c = quelle.cloneNode(true);
+    // Eingaben werden zu Text, Formulare zum Eintragen und Knöpfe fallen weg
+    const src = quelle.querySelectorAll("input, select, textarea"), dst = c.querySelectorAll("input, select, textarea");
+    dst.forEach((el, i) => {
+      const o = src[i]; let v = "";
+      if (o.type === "checkbox") v = o.checked ? "ja" : "nein"; else if (o.tagName === "SELECT") v = o.selectedOptions[0]?.text || ""; else v = o.value;
+      el.replaceWith(document.createTextNode(v));
+    });
+    c.querySelectorAll("form.pe-inline, button, .pe-chk, .pe-side, datalist, .inv-detail").forEach(e => e.remove());
+    const m = PE.sub === "mitarbeiter" ? peMa(PE.sel) : null;
+    const titel = nur ? nur.titel : `${PE_TITEL[PE.sub] || "Personal"}${m ? " – " + peName(m) : ""} · ${["monat", "uebersicht", "nu"].includes(PE.sub) ? peMonName(PE.monat) + " " : ""}${PE.jahr}`;
+    try {
+      const r = await fetch("/api/zentrale/personal/bericht", write("POST", { titel, html: c.innerHTML, eine_seite: !!eineSeite }));
+      if (!r.ok || !(r.headers.get("content-type") || "").includes("pdf")) { const d = await r.json().catch(() => ({})); throw new Error(d.fehler || "HTTP " + r.status); }
+      window.open(URL.createObjectURL(await r.blob()), "_blank");
+      peMsg("PDF-Vorschau geöffnet: " + titel);
+    } catch (e) { peMsg("PDF-Vorschau: " + e.message, true); }
+    if (b) b.disabled = false;
+  }
   function peRender() {
     document.querySelectorAll("#peSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.s === PE.sub)));
     if (!PE.data) return;
     const body = $("peBody"); body.innerHTML = "";
-    const f = { uebersicht: peOverview, tabelle: peTable, monat: peMonth, mitarbeiter: peStaff, zahlungen: pePay, abwesenheiten: peAbs, orte: peSites }[PE.sub] || peOverview;
+    const f = { uebersicht: peOverview, tabelle: peTable, monat: peMonth, mitarbeiter: peStaff, zahlungen: pePay, abwesenheiten: peAbs, orte: peSites, nu: peNu }[PE.sub] || peOverview;
     f(body);
   }
-  const peList = () => PE.data.mitarbeiter.filter(m => !PE.nurAktiv || m.aktiv);
+  const peList = () => PE.data.mitarbeiter.filter(m => m.aktiv);
   function peToggleAktiv() {
-    return peEl("label", { class: "pe-chk" }, peEl("input", { type: "checkbox", checked: PE.nurAktiv, onchange: (e) => { PE.nurAktiv = e.target.checked; peRender(); } }), " nur aktive");
+    return peEl("label", { class: "pe-chk" }, peEl("input", { type: "checkbox", checked: !!PE.ehemalige, onchange: (e) => { PE.ehemalige = e.target.checked; peRender(); } }), " Ehemalige zeigen");
   }
 
   /* Tooltip für Diagramme */
@@ -2800,7 +2943,12 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
       g.append(sv("rect", { x: L, y: y, width: W - L, height: rowH, fill: "transparent" }));
       const r = sv("rect", { x: pos ? mid : mid - w, y: y + 5, width: w, height: rowH - 12, rx: 3, class: pos ? "pe-pos" : "pe-neg" });
       const lab = sv("text", { x: L - 8, y: y + rowH / 2 + 4, "text-anchor": "end", class: "pe-lab" }); lab.textContent = peName(m);
-      const val = sv("text", { x: pos ? mid + w + 6 : mid - w - 6, y: y + rowH / 2 + 4, "text-anchor": pos ? "start" : "end", class: "pe-val" }); val.textContent = peE(m.saldo_eur);
+      /* lange Balken: Betrag in den Balken setzen, damit er nicht in die Namen ragt */
+      const inside = w > 95;
+      const val = sv("text", inside
+        ? { x: pos ? mid + w - 6 : mid - w + 6, y: y + rowH / 2 + 4, "text-anchor": pos ? "end" : "start", class: "pe-val", fill: "#fff" }
+        : { x: pos ? mid + w + 6 : mid - w - 6, y: y + rowH / 2 + 4, "text-anchor": pos ? "start" : "end", class: "pe-val" });
+      val.textContent = peE(m.saldo_eur);
       g.append(r, lab, val); s.append(g);
     });
     wrap.append(s, peEl("div", { class: "pe-legend" }, peEl("span", { class: "pos" }, "ZAC schuldet dem Mitarbeiter (Guthaben)"), peEl("span", { class: "neg" }, "Mitarbeiter hat zu viel erhalten")));
@@ -2861,7 +3009,7 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
     const krank = list.reduce((a, m) => a + m.summe.krank, 0), gel = list.reduce((a, m) => a + m.summe.geleistet, 0);
     const k = peEl("div", { class: "kpis" });
     const kpi = (label, val, sub, alert) => peEl("div", { class: "panel kpi" + (alert ? " alert" : "") }, peEl("span", { class: "eyebrow", text: label }), peEl("b", { text: val }), peEl("small", { text: sub || " " }));
-    k.append(kpi("Aktive Mitarbeiter", list.length, `${PE.data.mitarbeiter.length - list.length} inaktiv`),
+    k.append(kpi("Aktive Mitarbeiter", list.length, `${PE.data.mitarbeiter.length - list.length} ehemalige ausgeblendet`),
       kpi("Stunden " + peMonName(PE.monat), peNum(hrs, 0), "geleistet laut Staffo bzw. eingetragen"),
       kpi("Guthaben Mitarbeiter", peE(sumPos), "ZAC schuldet noch (Überstunden, Minderzahlung)"),
       kpi("Zu viel erhalten", peE(sumNeg), "Mitarbeiter schulden der ZAC", sumNeg < -0.01),
@@ -2871,7 +3019,7 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
     // Hinweise
     const hints = [];
     const ohne = PE.data.staffo_ohne_akte;
-    if (ohne && ohne.mitarbeiter && ohne.mitarbeiter.length) hints.push(["warn", `${ohne.mitarbeiter.length} Staffo-Mitarbeiter ohne Personalakte (${peMonName(ohne.monat)}: ${peNum(ohne.mitarbeiter.reduce((a, x) => a + x.std + x.geplant, 0), 0)} Std). Unter „Einsatzorte“ anlegen oder zuordnen.`, "orte"]);
+    if (ohne && ohne.mitarbeiter && ohne.mitarbeiter.length) hints.push(["warn", `${ohne.mitarbeiter.length} Staffo-Mitarbeiter ohne Personalakte (${peMonName(ohne.monat)}: ${peNum(ohne.mitarbeiter.reduce((a, x) => a + x.std + x.geplant, 0), 0)} Std). Unter „Nachunternehmer“ einsortieren oder unter „Einsatzorte“ eine Personalakte anlegen.`, "nu"]);
     const ungeprueft = PE.data.einsatzorte.filter(o => !o.geprueft).length;
     if (ungeprueft) hints.push(["warn", `${ungeprueft} Einsatzort(e) mit geschätztem Bundesland – bitte prüfen, sonst stimmen die Feiertagszuschläge evtl. nicht.`, "orte"]);
     const r0 = list.find(m => m.staffo_id && peRow(m) && !peRow(m).staffo_stand);
@@ -2883,11 +3031,17 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
       if (PE.plan && PE.plan.plan && m.staffo_id && !PE.plan.plan[String(m.staffo_id)]) hints.push(["warn", `${peName(m)} hat in den nächsten 14 Tagen keine Schicht in Staffo.`, m.id]);
       if (m.notiz && /bitte prüfen/.test(m.notiz)) hints.push(["warn", `${peName(m)}: ${m.notiz.replace(/^Aus Excel übernommen\.\s*/, "")}`, m.id]);
     }
-    const ohneStaffo = list.filter(m => !m.staffo_id);
-    if (ohneStaffo.length) hints.push(["info", `Ohne Staffo-Zuordnung (keine Stunden aus dem Dienstplan): ${ohneStaffo.map(peName).join("; ")}. Unter „Mitarbeiter“ → Staffo-Mitarbeiter zuordnen.`, ohneStaffo[0].id]);
+    for (const m of list) {
+      const r = peRow(m);
+      const milo = peMilo(PE.monat);
+      if (r && milo && !m.festgehalt && m.stundenlohn && m.stundenlohn < milo - 0.005) hints.push(["bad", `${peName(m)}: Stundenlohn ${peE(m.stundenlohn)} liegt unter dem gesetzlichen Mindestlohn ${peE(milo)}.`, m.id]);
+      else if (r && r.tarif_min && !m.festgehalt && !m.tarif_ausgleich && (m.stundenlohn || 0) < r.tarif_min - 0.005) hints.push(["warn", `${peName(m)}: ${m.stundenlohn ? "Stundenlohn " + peE(m.stundenlohn) + " liegt unter dem" : "kein Stundenlohn eingetragen,"} Tarif-Mindestlohn ${peE(r.tarif_min)} (${r.tarif_info}, ${peMonName(PE.monat)}).`, m.id]);
+    }
+    const ohneStaffo = list.filter(m => !m.staffo_id && !m.ohne_staffo);
+    if (ohneStaffo.length) hints.push(["info", `Ohne Staffo-Zuordnung (keine Stunden aus dem Dienstplan): ${ohneStaffo.map(peName).join("; ")}. Unter „Mitarbeiter“ → Staffo-Mitarbeiter zuordnen oder „nicht in Staffo geführt“ anhaken.`, ohneStaffo[0].id]);
     if (hints.length) {
       const ul = peEl("ul", { class: "pe-hints" });
-      for (const [lvl, text, go] of hints.slice(0, 14)) ul.append(peEl("li", { class: lvl, onclick: go ? () => { if (go === "orte") PE.sub = "orte"; else { PE.sub = "mitarbeiter"; PE.sel = go; } peRender(); } : null }, peEl("i"), text));
+      for (const [lvl, text, go] of hints.slice(0, 14)) ul.append(peEl("li", { class: lvl, onclick: go ? () => { if (go === "orte" || go === "nu") PE.sub = go; else { PE.sub = "mitarbeiter"; PE.sel = go; } peRender(); } : null }, peEl("i"), text));
       body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Hinweise", peEl("span", { text: hints.length })), ul));
     }
     // Kacheln je Mitarbeiter
@@ -2901,11 +3055,14 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
         peEl("span", { class: "pe-nr", text: m.personalnr ? "#" + m.personalnr : "ohne Nr." }),
         peEl("b", { text: peName(m) }),
         peEl("span", { class: "pe-st " + st[0], text: st[1] }),
+        peSaldoStd(m),
         peEl("dl", {},
+          ...(m.zeitkonto ? [peEl("dt", { text: "Diff. " + peMonName(PE.monat) }), peEl("dd", { class: r.diff > 0.005 ? "pos" : r.diff < -0.005 ? "neg" : "", text: r.daten ? peSign(r.diff) + " Std" : "–" })] : []),
           peEl("dt", { text: peMonName(PE.monat) }), peEl("dd", { text: peNum(g0) + " Std" + (soll ? ` / ${peNum(soll)}` : "") }),
-          peEl("dt", { text: "14 Tage" }), peEl("dd", { text: pl ? `${peNum(pl.std)} Std geplant` : (m.staffo_id ? "keine Schicht" : "–") }),
+          peEl("dt", { text: "14 Tage" }), peEl("dd", { text: pl ? `${peNum(pl.std)} Std geplant` : (m.staffo_id ? "keine Schicht" : m.ohne_staffo ? "nicht in Staffo" : "–") }),
           peEl("dt", { text: "Urlaub" }), peEl("dd", { text: m.urlaubstage != null ? `${peNum(m.urlaub_tage_rest, 1)} von ${peNum(m.urlaubstage)} Tagen frei` : "kein Anspruch eingetragen" }),
           peEl("dt", { text: "Krank " + PE.jahr }), peEl("dd", { text: m.summe.krank ? peNum(m.summe.krank) + " Std" : "–" })),
+        m.notiz ? peEl("small", { class: "pe-tnotiz", title: m.notiz, text: "✎ " + (m.notiz.length > 90 ? m.notiz.slice(0, 90) + " …" : m.notiz) }) : "",
         peEl("span", { class: "pe-meter", title: q != null ? `Auslastung ${q} %` : "kein Soll eingetragen" }, peEl("i", { style: `width:${q ?? 0}%` }))));
     }
     body.append(grid);
@@ -2935,43 +3092,68 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
       inp.onblur = () => save(true);
     };
   }
+  const peHeute = () => new Date().toISOString().slice(0, 7);
+  const PE_FORMEL = { gezahlt: "berechnet: Lohnstunden + Urlaub + Krank", diff: "berechnet: Geleistet − Lohnstunden − fremd bezahlt + Stundenkorrekturen", saldo_std: "berechnet: Saldo Vormonat + Differenz" };
+  function peFormelWerte(key, r, m) {
+    if (key === "gezahlt") return `${peNum(r.lohn_std || 0)} Lohn + ${peNum(r.urlaub)} Urlaub + ${peNum(r.krank)} Krank = ${peNum(r.gezahlt)}`;
+    if (key === "diff" && !m.zeitkonto) return `ohne Zeitkonto: nur Stundenkorrekturen ${peNum(r.buch_std)} = ${peNum(r.diff)}`;
+    if (key === "diff") return `${peNum(r.geleistet || 0)} geleistet − ${peNum(m.zeitkonto ? r.lohn_std || 0 : 0)} Lohn` + (r.fremd ? ` − ${peNum(r.fremd)} fremd` : "") + (r.buch_std ? ` ${r.buch_std > 0 ? "+" : "−"} ${peNum(Math.abs(r.buch_std))} Korrektur` : "") + ` = ${peNum(r.diff)}`;
+    if (key === "saldo_std") return `Saldo ${peNum(r.saldo_std - r.diff)} + Differenz ${peNum(r.diff)} = ${peNum(r.saldo_std)}`;
+    return "";
+  }
   function peTable(body) {
     const months = PE.data.mitarbeiter[0]?.monate.map(r => r.monat) || [];
-    const bar = peEl("div", { class: "pe-bar-row" }, peToggleAktiv(), peEl("label", { class: "pe-chk" }, peEl("input", { type: "checkbox", checked: !!PE.nurZk, onchange: (e) => { PE.nurZk = e.target.checked; peRender(); } }), " nur Arbeitszeitkonto"),
+    const bar = peEl("div", { class: "pe-bar-row" }, peEl("label", { class: "pe-chk" }, peEl("input", { type: "checkbox", checked: !!PE.nurZk, onchange: (e) => { PE.nurZk = e.target.checked; peRender(); } }), " nur Arbeitszeitkonto"),
+      peEl("span", { class: "pe-legend-ist" }, peEl("i"), "tatsächliche Stunden"), peEl("span", { class: "pe-legend-calc" }, peEl("i"), "= berechnet daraus (Maus drüber zeigt die Rechnung)"),
       peEl("span", { class: "hint", text: "Geleistet und Lohnstunden per Klick ändern. Urlaub/Krank unter „Abwesenheiten“, Euro-Beträge unter „Zahlungen & Boni“." }));
     body.append(bar);
     const t = peEl("table", { class: "inv pe-year" });
-    t.append(peEl("thead", {}, peEl("tr", {}, peEl("th", { text: "Mitarbeiter" }), ...months.map(m => peEl("th", { class: "num" + (m === PE.monat ? " cur" : ""), text: peMonName(m) })), peEl("th", { class: "num", text: "Gesamt" }), peEl("th", { class: "num", text: "Saldo" }))));
+    t.append(peEl("thead", {}, peEl("tr", {}, peEl("th", { text: "Mitarbeiter" }), ...months.map(m => peEl("th", { class: "num" + (m === PE.monat ? " cur" : "") + (m > peHeute() ? " zuk" : ""), text: peMonName(m), title: m > peHeute() ? "kommt erst, zählt noch nicht zum Saldo" : "" })),
+      peEl("th", { class: "num schnitt", text: "Ø Monat", title: "Jahresschnitt je Monat mit Daten, bis zum aktuellen Monat" }), peEl("th", { class: "num", text: "Gesamt", title: "Summe bis zum aktuellen Monat" }), peEl("th", { class: "num", text: "Saldo" }))));
     const tb = peEl("tbody");
+    const thead = t.querySelector("thead");
     for (const m of peList().filter(x => !PE.nurZk || x.zeitkonto)) {
-      tb.append(peEl("tr", { class: "pe-head" }, peEl("td", { colspan: 1 }, peEl("b", { text: peName(m) }), peEl("small", { text: ` #${m.personalnr || "–"} · ${peE(m.stundenlohn)}/h` + (m.zeitkonto ? " · Zeitkonto" : "") })),
-        ...months.map(() => peEl("td")), peEl("td"), peEl("td", { class: "num " + (m.saldo_eur > 0.005 ? "pos" : m.saldo_eur < -0.005 ? "neg" : ""), text: peE(m.saldo_eur) })));
-      const lines = [["Gezahlt", "gezahlt"], ["davon Lohnstunden", "lohn_std", "lohn_std"], ["Geleistet", "geleistet", "geleistet_std"], ["Urlaub", "urlaub"], ["Krank", "krank"], ["Buchungen (Std)", "buch_std"], ["Differenz", "diff"], ["Saldo (Std)", "saldo_std"], ["Euro-Buchungen", "buch_eur"]];
-      for (const [label, key, field] of lines) {
-        if (!m.zeitkonto && ["gezahlt", "diff", "saldo_std", "lohn_std"].includes(key)) continue;
-        const tr = peEl("tr", { class: "pe-line" + (key === "diff" ? " diff" : "") }, peEl("td", { text: label }));
+      const eigene = [];
+      const pdf = peEl("button", { class: "act", type: "button", text: "PDF", title: "Mehr- & Minderstunden nur dieses Mitarbeiters als PDF", onclick: () => {
+        const tab = peEl("table", { class: "inv pe-year" }, thead.cloneNode(true), peEl("tbody", {}, ...eigene.map(x => x.cloneNode(true))));
+        peVorschau(false, { node: peEl("div", {}, tab, body.querySelector("p.hint")?.cloneNode(true) || ""), titel: `Mehr- & Minderstunden – ${peName(m)} · ${PE.jahr}` });
+      } });
+      const head = peEl("tr", { class: "pe-head" }, peEl("td", { colspan: 1 }, peEl("b", { text: peName(m) }), peEl("small", { text: ` #${m.personalnr || "–"} · ${peE(m.stundenlohn)}/h` + (m.zeitkonto ? " · Zeitkonto" : "") }), " ", pdf),
+        ...months.map(() => peEl("td")), peEl("td"), peEl("td"), peEl("td", { class: "num " + (m.saldo_eur > 0.005 ? "pos" : m.saldo_eur < -0.005 ? "neg" : ""), text: peE(m.saldo_eur) }));
+      tb.append(head); eigene.push(head);
+      const lines = [["Geleistet", "geleistet", "geleistet_std"], ["Lohnstunden (bezahlt)", "lohn_std", "lohn_std"], ["Urlaub", "urlaub"], ["Krank", "krank"], ["Fremd bezahlt (Std)", "fremd"], ["Stundenkorrekturen", "buch_std"], ["Gezahlt", "gezahlt"], ["Differenz", "diff"], ["Saldo (Std)", "saldo_std"], ["Euro-Buchungen", "buch_eur"]];
+      for (let [label, key, field] of lines) {
+        if (key === "fremd" && !m.fremd_std) continue;
+        if (key === "fremd") label = `Fremd bezahlt (Std)${m.fremd_von ? " · " + m.fremd_von : ""}`;
+        if (!m.zeitkonto && (["gezahlt", "lohn_std"].includes(key) || (["diff", "saldo_std"].includes(key) && !m.saldo_std))) continue;
+        // berechnete Zeilen (aus den tatsächlichen Stunden abgeleitet) farblich abgesetzt
+        const calc = ["gezahlt", "diff", "saldo_std"].includes(key);
+        const tr = peEl("tr", { class: "pe-line" + (key === "diff" ? " diff" : "") + (calc ? " pe-calc" : " pe-ist"), title: calc ? PE_FORMEL[key] : "" }, peEl("td", {}, calc ? peEl("span", { class: "pe-eq", text: "= " }) : "", label));
         for (const r of m.monate) {
           const v = r[key];
-          const td = peEl("td", { class: "num" + (r.monat === PE.monat ? " cur" : "") + (field && r.hand[field] != null ? " hand" : "") + (key === "geleistet" && r.geleistet_quelle === "staffo" ? " staffo" : ""), text: key === "buch_eur" ? (v ? peE(v) : "") : peH(v) });
+          const td = peEl("td", { title: calc && r.daten ? peFormelWerte(key, r, m) : "", class: "num" + (r.monat === PE.monat ? " cur" : "") + (r.zukunft ? " zuk" : "") + (field && r.hand[field] != null ? " hand" : "") + (key === "geleistet" && r.geleistet_quelle === "staffo" ? " staffo" : ""), text: key === "buch_eur" ? (v ? peE(v) : "") : peH(v) });
           if (key === "geleistet" && r.staffo_std != null && r.hand.geleistet_std != null && Math.abs(r.staffo_std - r.hand.geleistet_std) > .01) { td.classList.add("abw"); td.title = `Staffo: ${peNum(r.staffo_std)} Std`; }
           if (field && (r.daten || r.monat <= new Date().toISOString().slice(0, 7))) peEditCell(td, m, r.monat, field, r.hand[field] ?? (key === "geleistet" ? null : r.lohn_std));
           tr.append(td);
         }
-        const tot = key === "saldo_std" ? m.saldo_std : m.summe[key] ?? m.monate.reduce((a, r) => a + (r[key] || 0), 0);
+        const tot = key === "saldo_std" ? m.saldo_std : m.summe_bis[key] ?? m.monate.filter(r => !r.zukunft).reduce((a, r) => a + (r[key] || 0), 0);
+        const avg = key === "saldo_std" ? null : m.schnitt[key];
+        tr.append(peEl("td", { class: "num schnitt", title: `Ø aus ${m.schnitt_monate} Monat(en)`, text: avg == null ? "" : key === "buch_eur" ? (avg ? peE(avg) : "") : peH(avg) }));
         tr.append(peEl("td", { class: "num tot", text: key === "buch_eur" ? (tot ? peE(tot) : "") : peH(tot) }), peEl("td"));
-        tb.append(tr);
+        tb.append(tr); eigene.push(tr);
       }
     }
     t.append(tb);
     body.append(peEl("div", { class: "panel tablewrap" }, t));
-    body.append(peEl("p", { class: "hint", text: "Gezahlt = Lohnstunden + Urlaub + Krank. Differenz = Geleistet − Lohnstunden + Stundenbuchungen (wie Excel: Geleistet + Urlaub + Krank − Gezahlt). Grün markierte Werte kommen aus Staffo, weiße sind von Hand oder aus Excel; ein Punkt zeigt eine Abweichung zu Staffo." }));
+    body.append(peEl("p", { class: "hint", text: "Gezahlt = Lohnstunden + Urlaub + Krank. Lohnstunden = bezahlte Arbeitsstunden (nicht die geleisteten). Differenz = Geleistet − Lohnstunden − fremd bezahlte Stunden + Stundenbuchungen (wie Excel: Geleistet + Urlaub + Krank − Gezahlt). Grau = spätere Monate, sie zählen erst zum Saldo, wenn sie erreicht sind. Ø Monat und Gesamt rechnen bis zum aktuellen Monat. Grün markierte Werte kommen aus Staffo, weiße sind von Hand oder aus Excel; ein Punkt zeigt eine Abweichung zu Staffo." }));
   }
 
   /* ---- Monat / Lohnabrechnung ---- */
   function peMonth(body) {
     const cols = [["Lohn", null], ["Staffo", null], ["Geleistet", "geleistet_std"], ["Lohnstd.", "lohn_std"], ["Urlaub", null], ["Krank", null], ["Objektzul. €", "objektzulage_eur"], ["Nacht", "nacht_std"], ["Sonntag", "sonntag_std"], ["Feiertag", "feiertag_std"], ["Verpfl. €", "verpflegung_eur"], ["Bonus", null], ["Brutto", "brutto_fest"], ["Vorschuss", null]];
     const s = PE.data.einstellungen;
-    body.append(peEl("div", { class: "pe-bar-row" }, peToggleAktiv(), peEl("span", { class: "hint", text: `Zuschläge: Nacht ${s.nacht_von}–${s.nacht_bis} Uhr ${s.nacht_prozent} %, Sonntag ${s.sonntag_prozent} %, Feiertag ${s.feiertag_prozent} % (nach Bundesland des Einsatzorts). Werte per Klick überschreiben, leer = Staffo-Wert.` })));
+    body.append(peMonthStrip());
+    body.append(peEl("div", { class: "pe-bar-row" }, peEl("span", { class: "hint", text: `Zuschläge nach BDSW-Tarif des Bundeslands am Einsatzort (Übersicht unter „Einsatzorte & Zuschläge“; Satz steht beim Darüberfahren an der Zahl). ⚠ = Stundenlohn unter Tarif-Mindestlohn. Werte per Klick korrigieren, Feld leeren = wieder Staffo-Wert. Urlaub und Krank unter „Urlaub & Krank“, Bonus und Vorschuss unter „Zahlungen & Boni“.` })));
     const t = peEl("table", { class: "inv pe-month" });
     t.append(peEl("thead", {}, peEl("tr", {}, peEl("th", { text: "Mitarbeiter" }), ...cols.map(c => peEl("th", { class: "num", text: c[0] })), peEl("th", { text: "Bemerkung" }), peEl("th"))));
     const tb = peEl("tbody");
@@ -2981,12 +3163,16 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
       if (!m.aktiv && !r.daten) continue;
       sum += r.brutto || 0;
       const tr = peEl("tr", { class: "inv-row" }, peEl("td", {}, peEl("b", { text: peName(m) }), peEl("small", { class: "pe-sub", text: " #" + (m.personalnr || "–") })));
-      const val = { Lohn: m.festgehalt ? "fest " + peE(m.festgehalt) : peE(m.stundenlohn), Staffo: r.staffo_std != null ? `${peNum(r.staffo_std)} h · ${r.einsaetze || 0} E.` : "", Geleistet: peH(r.geleistet), "Lohnstd.": peH(r.lohn_std), Urlaub: peH(r.urlaub), Krank: peH(r.krank), "Objektzul. €": r.objektzulage ? peE(r.objektzulage) : "", Nacht: peH(r.nacht), Sonntag: peH(r.sonntag), Feiertag: peH(r.feiertag), "Verpfl. €": r.verpflegung ? peE(r.verpflegung) : "", Bonus: r.bonus ? peE(r.bonus) : "", Brutto: r.brutto != null ? peE(r.brutto) : "", Vorschuss: r.vorschuss ? peE(r.vorschuss) : "" };
+      const unterTarif = r.tarif_min && !m.festgehalt && !m.tarif_ausgleich && (m.stundenlohn || 0) < r.tarif_min - 0.005;
+      const val = { Lohn: m.festgehalt ? "fest " + peE(m.festgehalt) : peE(m.stundenlohn) + (unterTarif ? " ⚠" : "") + (r.tarifzulage ? ` + ${peE(r.lohn_eff - m.stundenlohn)}` : ""), Staffo: r.staffo_std != null ? `${peNum(r.staffo_std)} h · ${r.einsaetze || 0} E.` : "", Geleistet: peH(r.geleistet), "Lohnstd.": peH(r.lohn_std), Urlaub: peH(r.urlaub), Krank: peH(r.krank), "Objektzul. €": r.objektzulage ? peE(r.objektzulage) : "", Nacht: peH(r.nacht), Sonntag: peH(r.sonntag), Feiertag: peH(r.feiertag), "Verpfl. €": r.verpflegung ? peE(r.verpflegung) : "", Bonus: r.bonus ? peE(r.bonus) : "", Brutto: r.brutto != null ? peE(r.brutto) : "", Vorschuss: r.vorschuss ? peE(r.vorschuss) : "" };
       for (const [label, field] of cols) {
         const td = peEl("td", { class: "num" + (field && r.hand[field] != null ? " hand" : "") + (label === "Brutto" ? " tot" : ""), text: val[label] });
         if (field) peEditCell(td, m, PE.monat, field, r.hand[field]);
         const sk = { geleistet_std: "staffo_std", nacht_std: "staffo_nacht", sonntag_std: "staffo_sonntag", feiertag_std: "staffo_feiertag", objektzulage_eur: "staffo_objektzulage" }[field];
         if (sk && r.hand[field] == null && r.staffo[sk] != null) td.classList.add("staffo");
+        if (label === "Lohn" && unterTarif) { td.classList.add("neg"); td.title = `unter Tarif-Mindestlohn ${peE(r.tarif_min)} · ${r.tarif_info}`; }
+        if (label === "Lohn" && r.tarifzulage) td.title = `Tarifzulage ${peE(r.lohn_eff - m.stundenlohn)} je Std bis Mindestlohn ${peE(r.lohn_eff)} (${r.tarif_info}) = ${peE(r.tarifzulage)} im Monat`;
+        if (["Nacht", "Sonntag", "Feiertag"].includes(label) && r[label.toLowerCase()]) td.title = `${peNum(r.zuschlag_prozent[label.toLowerCase()])} % Zuschlag`;
         tr.append(td);
       }
       const bem = peEl("td", { class: "pe-bem", text: r.bemerkung }); peEditCell(bem, m, PE.monat, "bemerkung", r.bemerkung);
@@ -3022,10 +3208,10 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
   /* ---- Mitarbeiter verwalten ---- */
   const PE_FIELDS = [
     ["Person", [["nachname", "Nachname"], ["vorname", "Vorname"], ["personalnr", "Personal-Nr."], ["geburtsdatum", "Geburtsdatum", "date"], ["telefon", "Telefon"], ["email", "E-Mail", "email"], ["adresse", "Adresse", "textarea"]]],
-    ["Vertrag & Lohn", [["beschaeftigung", "Beschäftigung", "list:Minijob,Teilzeit,Vollzeit,Aushilfe,Werkstudent"], ["eintritt", "Eintritt", "date"], ["austritt", "Austritt", "date"], ["stundenlohn", "Stundenlohn €", "num"], ["festgehalt", "Festgehalt € / Monat", "num"], ["soll_std", "Soll-Stunden / Monat (Auslastung)", "num"], ["urlaubstage", "Urlaubstage / Jahr", "num"], ["std_pro_tag", "Stunden je Urlaubstag", "num"]]],
-    ["Arbeitszeitkonto", [["zeitkonto", "Arbeitszeitkonto führen (Mehr- & Minderstunden)", "check"], ["auszahlung_std", "Feste Auszahlung Std / Monat (inkl. Urlaub/Krank)", "num"], ["uebertrag_std", "Übertrag Vorjahr (Std)", "num"], ["uebertrag_eur", "Übertrag Vorjahr (€)", "num"]]],
+    ["Vertrag & Lohn", [["beschaeftigung", "Beschäftigung", "list:Minijob,Teilzeit,Vollzeit,Aushilfe,Werkstudent"], ["eintritt", "Eintritt", "date"], ["austritt", "Austritt", "date"], ["stundenlohn", "Stundenlohn €", "num"], ["tarif_ausgleich", "Zulage bis Tarif-Mindestlohn des Einsatzorts", "check"], ["festgehalt", "Festgehalt € / Monat", "num"], ["soll_std", "Soll-Stunden / Monat (Auslastung)", "num"], ["urlaubstage", "Urlaubstage / Jahr", "num"], ["std_pro_tag", "Stunden je Urlaubstag", "num"]]],
+    ["Arbeitszeitkonto", [["zeitkonto", "Arbeitszeitkonto führen (Mehr- & Minderstunden)", "check"], ["auszahlung_std", "Feste Auszahlung Std / Monat (inkl. Urlaub/Krank)", "num"], ["fremd_std", "Fremd bezahlt Std / Monat (muss hier geleistet werden)", "num"], ["fremd_von", "Fremd bezahlt durch (z. B. Auftraggeber)"], ["fremd_ab", "Fremd bezahlt ab Monat", "month"], ["uebertrag_std", "Übertrag Vorjahr (Std)", "num"], ["uebertrag_eur", "Übertrag Vorjahr (€)", "num"]]],
     ["Nachweise & Behörden", [["bewacher_id", "Bewacher-ID (§ 34a)"], ["steuer_id", "Steuer-ID"], ["sv_nummer", "SV-Nummer"], ["krankenkasse", "Krankenkasse"], ["iban", "IBAN"]]],
-    ["Staffomatic & Notiz", [["staffo_id", "Staffo-Mitarbeiter", "staffo"], ["aktiv", "aktiv", "check"], ["notiz", "Notiz", "textarea"]]],
+    ["Staffomatic", [["staffo_id", "Staffo-Mitarbeiter", "staffo"], ["ohne_staffo", "nicht in Staffo geführt (Stunden von Hand)", "check"], ["aktiv", "aktiv", "check"]]],
   ];
   function peStaff(body) {
     const wrap = peEl("div", { class: "pe-staff" });
@@ -3034,7 +3220,7 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
     const ul = peEl("ul", { class: "pe-names" });
     const fill = () => {
       ul.innerHTML = "";
-      for (const m of peList().filter(m => !PE.q || (peName(m) + (m.personalnr || "")).toLowerCase().includes(PE.q.toLowerCase())))
+      for (const m of PE.data.mitarbeiter.filter(m => PE.ehemalige || m.aktiv).filter(m => !PE.q || (peName(m) + (m.personalnr || "")).toLowerCase().includes(PE.q.toLowerCase())))
         ul.append(peEl("li", {}, peEl("button", { type: "button", "aria-current": String(PE.sel === m.id), class: m.aktiv ? "" : "inaktiv", onclick: () => { PE.sel = m.id; store.set("jz.pe.sel", m.id); peRender(); } }, peEl("span", { text: peName(m) }), peEl("small", { class: m.saldo_eur > 0.005 ? "pos" : m.saldo_eur < -0.005 ? "neg" : "", text: Math.abs(m.saldo_eur) > 0.005 ? peE(m.saldo_eur) : "" }))));
     };
     fill();
@@ -3047,7 +3233,7 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
     PE.sel = m.id || "neu";
     // Stammdaten
     const form = peEl("form", { class: "panel pe-form", autocomplete: "off" });
-    form.append(peEl("h2", {}, m.id ? peName(m) : "Neuer Mitarbeiter", m.id ? peEl("span", { text: `Saldo ${peE(m.saldo_eur)} · ${peNum(m.saldo_std)} Std` }) : null));
+    form.append(peEl("h2", {}, m.id ? peName(m) : "Neuer Mitarbeiter", m.id ? peEl("span", { text: `Saldo ${peE(m.saldo_eur)}` + ((m.zeitkonto || m.saldo_std) ? ` · ${peSign(m.saldo_std)} Std ${m.saldo_std > 0.005 ? "Mehrstunden" : m.saldo_std < -0.005 ? "Minderstunden" : ""}` : "") }) : null));
     const vergeben = new Set(PE.data.mitarbeiter.filter(x => x.staffo_id && x.id !== m.id).map(x => x.staffo_id));
     const staffoUsers = (PE.staffoUsers && PE.staffoUsers.length ? PE.staffoUsers.map(u => ({ staffo_id: u.id, name: u.name })) : (PE.data.staffo_ohne_akte?.mitarbeiter || []))
       .filter(u => !vergeben.has(u.staffo_id) && u.staffo_id !== m.staffo_id);
@@ -3082,6 +3268,7 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
       try { const d = await pePost("mitarbeiter", b); PE.sel = d.id; store.set("jz.pe.sel", d.id); msg.textContent = "Gespeichert."; await peLoad(); }
       catch (err) { msg.textContent = "Nicht gespeichert: " + err.message; }
     };
+    if (m.id) main.append(peBemerkung(m));
     main.append(form);
     if (!m.id) return;
     // Auswertung
@@ -3089,6 +3276,22 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
     main.append(ue);
     // Abwesenheiten, Buchungen, Dokumente
     main.append(peAbsSection(m), pePaySection(m), peDocSection(m));
+  }
+
+  /* Bemerkungen zum Mitarbeiter: freier Text plus die Notizen aus Buchungen und Abwesenheiten */
+  function peBemerkung(m) {
+    const ta = peEl("textarea", { rows: 3, placeholder: "z. B. Absprachen, Umstellungen, Besonderheiten …" }, m.notiz || "");
+    const msg = peEl("span", { class: "doc-msg" });
+    const save = peEl("button", { class: "tw-send", type: "button", text: "Bemerkung speichern", onclick: async () => {
+      try { await pePost("mitarbeiter", { id: m.id, notiz: ta.value }); msg.textContent = "Gespeichert."; await peLoad(); } catch (e) { msg.textContent = "Nicht gespeichert: " + e.message; }
+    } });
+    const vermerke = [
+      ...PE.data.buchungen.filter(b => b.mitarbeiter_id === m.id && b.notiz).map(b => [b.monat, `${b.art}${b.stunden ? " " + peSign(b.stunden) + " Std" : ""}${b.betrag ? " " + peE(b.betrag) : ""}`, b.notiz]),
+      ...PE.data.abwesenheiten.filter(a => a.mitarbeiter_id === m.id && a.notiz && a.notiz !== "Monatssumme aus Excel").map(a => [a.von.slice(0, 7), `${a.art} ${new Date(a.von).toLocaleDateString("de-DE")}`, a.notiz]),
+    ].sort((a, b) => b[0].localeCompare(a[0]));
+    const ul = vermerke.length ? peEl("ul", { class: "pe-vermerke" }, ...vermerke.map(([mon, was, notiz]) => peEl("li", {}, peEl("small", { text: `${peMonName(mon)} ${mon.slice(0, 4)} · ${was}` }), " ", notiz))) : null;
+    return peEl("section", { class: "panel pe-sec pe-bem-box" }, peEl("h2", {}, "Bemerkungen", peEl("span", { text: "nur für dich" })), ta, peEl("div", { class: "tf-actions" }, save, msg),
+      ul ? peEl("h3", { text: "Vermerke aus Buchungen und Abwesenheiten" }) : null, ul);
   }
 
   function peAbsForm(m) {
@@ -3128,7 +3331,7 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
     }
     body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Urlaubsstand & Krankenstand " + PE.jahr), peEl("div", { class: "tablewrap" }, t)));
     body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Neue Abwesenheit"), peAbsForm(null), peEl("p", { class: "hint", text: "Ohne Tage zählt Jarvis die Werktage Mo–Fr; ohne Stunden rechnet er Tage × Stunden je Urlaubstag. Urlaub und Krank werden bezahlt und zählen im Zeitkonto als geleistet." })));
-    const rows = PE.data.abwesenheiten.filter(a => !PE.nurAktiv || peMa(a.mitarbeiter_id)?.aktiv);
+    const rows = PE.data.abwesenheiten.filter(a => peMa(a.mitarbeiter_id)?.aktiv);
     body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Alle Einträge", peEl("span", { text: rows.length })), peAbsTable(rows, true)));
   }
 
@@ -3179,8 +3382,8 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
     body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Sammelübersicht " + PE.jahr, peEl("span", { text: "Mehr-/Minderauszahlungen, Boni, Vorschüsse je Mitarbeiter" })), used.length ? peEl("div", { class: "tablewrap" }, t) : peEl("p", { class: "hint", text: "Noch keine Euro-Buchungen in diesem Jahr." })));
     body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Neue Buchung"), pePayForm(null),
       peEl("p", { class: "hint", text: "Plus = der Mitarbeiter bekommt noch Geld, Minus = er hat schon (zu viel) erhalten. Bonus kommt auf die Lohnabrechnung (Brutto), Vorschuss steht dort als Hinweis zum Abziehen. Stunden gehen aufs Zeitkonto." })));
-    const rows = PE.data.buchungen.filter(b => !PE.nurAktiv || peMa(b.mitarbeiter_id)?.aktiv);
-    body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Alle Buchungen " + PE.jahr, peEl("span", { text: rows.length })), peToggleAktiv(), pePayTable(rows, true)));
+    const rows = PE.data.buchungen.filter(b => peMa(b.mitarbeiter_id)?.aktiv);
+    body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Alle Buchungen " + PE.jahr, peEl("span", { text: rows.length })), pePayTable(rows, true)));
   }
 
   function peDocList(docs) {
@@ -3216,27 +3419,102 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
   }
 
   /* ---- Einsatzorte, Zuschläge, Staffo-Zuordnung ---- */
+  /* ---- Nachunternehmer: Staffo-Leute fremder Firmen, nur Stunden, keine Lohnabrechnung ---- */
+  function peNuForm(n, after) {
+    const firmen = [...new Set((PE.data.nachunternehmer || []).map(x => x.firma))];
+    const dl = peEl("datalist", { id: "peNuFirmen" }, ...firmen.map(f => peEl("option", { value: f })));
+    const f = peEl("form", { class: "pe-inline", autocomplete: "off" }, dl,
+      peEl("input", { name: "name", placeholder: "Name", value: n.name || "", required: true, size: 18 }),
+      peEl("input", { name: "firma", placeholder: "Firma (Nachunternehmer)", value: n.firma || "", list: "peNuFirmen", required: true, size: 18 }),
+      peEl("input", { name: "bewacher_id", placeholder: "Bewacher-ID", value: n.bewacher_id || "", size: 10 }),
+      peEl("input", { name: "notiz", placeholder: "Notiz", value: n.notiz || "", size: 18 }),
+      peEl("button", { class: "tw-send", type: "submit", text: n.id ? "Speichern" : "Als Nachunternehmer ablegen" }));
+    f.onsubmit = async (e) => {
+      e.preventDefault();
+      try { await pePost("nachunternehmer", { ...Object.fromEntries(new FormData(f)), id: n.id || null, staffo_id: n.staffo_id || null, aktiv: n.aktiv ?? true }); peMsg(`${new FormData(f).get("name")} bei ${new FormData(f).get("firma")} abgelegt.`); await peLoad(); if (after) after(); }
+      catch (err) { peMsg(err.message, true); }
+    };
+    return f;
+  }
+  function peNu(body) {
+    const nus = PE.data.nachunternehmer || [];
+    const ohne = PE.data.staffo_ohne_akte;
+    // 1) aus Staffo einsortieren
+    if (ohne && ohne.mitarbeiter.length) {
+      const t = peEl("table", { class: "inv" }, peEl("tr", {}, ...["Staffo-Name", "Std " + peMonName(ohne.monat), "geplant", "Einsätze", "Einsortieren als Nachunternehmer"].map(h => peEl("th", { text: h }))));
+      for (const u of ohne.mitarbeiter)
+        t.append(peEl("tr", {}, peEl("td", { text: u.name }), peEl("td", { class: "num", text: peH(u.std) }), peEl("td", { class: "num", text: peH(u.geplant) }), peEl("td", { class: "num", text: u.einsaetze }),
+          peEl("td", {}, peNuForm({ name: u.name.replace(/\s+\d{5,}$/, "").trim(), staffo_id: u.staffo_id }))));
+      body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Aus Staffo einsortieren", peEl("span", { text: `${ohne.mitarbeiter.length} ohne Akte · Stand ${new Date(ohne.stand).toLocaleString("de-DE")}` })),
+        peEl("div", { class: "tablewrap" }, t), peEl("p", { class: "hint", text: "Eigene Mitarbeiter legst du unter „Einsatzorte & Zuschläge“ als Personalakte an. Nachunternehmer bekommen keine Lohnabrechnung, ihre Staffo-Stunden werden hier je Firma gesammelt (z. B. zum Prüfen der Rechnung)." })));
+    } else body.append(peEl("p", { class: "hint", text: "Alle Staffo-Mitarbeiter des letzten Abrufs sind einsortiert. „Staffo abrufen“ aktualisiert die Liste." }));
+    // 2) Akten je Firma
+    if (!nus.length) { body.append(peEl("div", { class: "notice", text: "Noch keine Nachunternehmer-Mitarbeiter abgelegt." })); return; }
+    const firmen = {};
+    for (const n of nus) (firmen[n.firma] = firmen[n.firma] || []).push(n);
+    for (const [firma, list] of Object.entries(firmen)) {
+      const sum = list.reduce((a, n) => a + (n.monate[PE.monat]?.std || 0), 0), plan = list.reduce((a, n) => a + (n.monate[PE.monat]?.geplant || 0), 0);
+      const t = peEl("table", { class: "inv" }, peEl("tr", {}, ...["Name", "Bewacher-ID", "Std " + peMonName(PE.monat), "geplant", "Einsätze", "Objekte", "Std " + PE.jahr, "Notiz", ""].map(h => peEl("th", { class: h.startsWith("Std") || h === "geplant" || h === "Einsätze" ? "num" : "", text: h }))));
+      for (const n of list) {
+        const mo = n.monate[PE.monat] || {};
+        const tr = peEl("tr", { class: n.aktiv ? "" : "pe-sub" }, peEl("td", {}, peEl("b", { text: n.name }), n.staffo_id ? null : peEl("small", { class: "pe-sub", text: " ohne Staffo" })), peEl("td", { text: n.bewacher_id || "" }),
+          peEl("td", { class: "num", text: peH(mo.std) }), peEl("td", { class: "num", text: peH(mo.geplant) }), peEl("td", { class: "num", text: mo.einsaetze || "" }), peEl("td", { class: "pe-sub", text: mo.objekte || "" }),
+          peEl("td", { class: "num", text: peH(n.std_jahr) }), peEl("td", { text: n.notiz || "" }),
+          peEl("td", {}, peEl("button", { class: "act", type: "button", text: "Bearbeiten", onclick: () => {
+              const next = tr.nextElementSibling;
+              if (next && next.classList.contains("inv-detail")) { next.remove(); return; }
+              tr.after(peEl("tr", { class: "inv-detail" }, peEl("td", { colspan: 9 }, peNuForm(n))));
+            } }), " ",
+            peEl("button", { class: "act", type: "button", text: "Entfernen", title: "Akte entfernen; die Person erscheint beim nächsten Staffo-Abruf wieder unter „ohne Akte“", onclick: async () => {
+              if (!confirm(`${n.name} aus den Nachunternehmer-Akten entfernen?`)) return;
+              try { await pePost("nachunternehmer", { id: n.id, loeschen: true }); await peLoad(); } catch (e) { peMsg(e.message, true); }
+            } })));
+        t.append(tr);
+      }
+      t.append(peEl("tr", { class: "pe-sum" }, peEl("td", { text: "Summe" }), peEl("td"), peEl("td", { class: "num", text: peH(sum) }), peEl("td", { class: "num", text: peH(plan) }), peEl("td", { colspan: 5 })));
+      body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, firma, peEl("span", { text: `${list.length} Mitarbeiter · ${peNum(sum)} Std ${peMonName(PE.monat)}` })), peEl("div", { class: "tablewrap" }, t)));
+    }
+    body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Ohne Staffo von Hand anlegen"), peNuForm({})));
+  }
+
   function peSites(body) {
     const s = PE.data.einstellungen;
     const f = peEl("form", { class: "pe-inline pe-settings", autocomplete: "off" });
     const fld = (k, label, w) => peEl("label", {}, label, peEl("input", { name: k, value: String(s[k]).replace(".", ","), size: w || 6 }));
     f.append(fld("nacht_von", "Nacht von"), fld("nacht_bis", "bis"), fld("nacht_prozent", "Nacht %"), fld("sonntag_prozent", "Sonntag %"), fld("feiertag_prozent", "Feiertag %"), fld("std_pro_tag", "Std je Urlaubstag"), fld("bereichsleitung", "Bereichsleitung", 16), peEl("button", { class: "tw-send", type: "submit", text: "Speichern" }));
     f.onsubmit = async (e) => { e.preventDefault(); try { await pePost("einstellungen", Object.fromEntries(new FormData(f))); peMsg("Zuschläge gespeichert. Für neue Werte „Staffo abrufen“ erneut drücken."); await peLoad(); } catch (err) { peMsg(err.message, true); } };
-    body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Zuschläge"), f, peEl("p", { class: "hint", text: "Eine Feiertagsstunde zählt nicht zusätzlich als Sonntagsstunde. Die Feiertage richten sich nach dem Bundesland des Einsatzorts." })));
-    const t = peEl("table", { class: "inv" }, peEl("tr", {}, ...["Einsatzort (Staffo-Bereich)", "Standort", "Bundesland", "Objektzulage € / Std", ""].map(h => peEl("th", { text: h }))));
+    const tf = PE.data.tarif || { laender: {}, taetigkeiten: [] };
+    body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Zuschläge ohne Tarif"), f, peEl("p", { class: "hint", text: "Gelten nur für Einsatzorte ohne Bundesland bzw. ohne Tarif. Sonst gelten die Tarifzuschläge unten. Eine Feiertagsstunde zählt nicht zusätzlich als Sonntagsstunde. Die Feiertage richten sich nach dem Bundesland des Einsatzorts." })));
+    const pz = (z) => z ? `N ${peNum(z.nacht)} % (${z.nacht_von}–${z.nacht_bis}) · So ${peNum(z.sonntag)} % · Ft ${peNum(z.feiertag)} %` : "";
+    const t = peEl("table", { class: "inv" }, peEl("tr", {}, ...["Einsatzort (Staffo-Bereich)", "Standort", "Bundesland", "Tätigkeit (Lohngruppe)", "Mindestlohn (verbindlich)", "Zuschläge", "Objektzulage € / Std", ""].map(h => peEl("th", { text: h }))));
     for (const o of PE.data.einsatzorte) {
       const land = peEl("select", {}, peEl("option", { value: "", text: "– keins –" }), ...Object.entries(PE.data.arten.laender).map(([k, v]) => peEl("option", { value: k, text: v, selected: o.land === k })));
+      const taet = peEl("select", {}, ...tf.taetigkeiten.map(x => peEl("option", { value: x, text: x, selected: (o.taetigkeit || "Objektschutz") === x })));
       const oz = peEl("input", { value: o.objektzulage_std ? String(o.objektzulage_std).replace(".", ",") : "", size: 6, inputmode: "decimal", placeholder: "0" });
-      const btn = peEl("button", { class: "act", type: "button", text: o.geprueft ? "Speichern" : "Bestätigen", onclick: async () => { try { await pePost("einsatzort", { bereich: o.bereich, land: land.value, objektzulage_std: oz.value }); await peLoad(); } catch (e) { peMsg(e.message, true); } } });
-      t.append(peEl("tr", {}, peEl("td", { text: o.bereich }), peEl("td", { text: o.standort || "" }), peEl("td", {}, land, o.geprueft ? null : peEl("span", { class: "st offen", text: "geschätzt" })), peEl("td", {}, oz), peEl("td", {}, btn)));
+      const btn = peEl("button", { class: "act", type: "button", text: o.geprueft ? "Speichern" : "Bestätigen", onclick: async () => { try { await pePost("einsatzort", { bereich: o.bereich, land: land.value, taetigkeit: taet.value, objektzulage_std: oz.value }); peMsg(`${o.bereich} gespeichert. „Staffo abrufen“ rechnet die Zuschläge neu.`); await peLoad(); } catch (e) { peMsg(e.message, true); } } });
+      t.append(peEl("tr", {}, peEl("td", { text: o.bereich }), peEl("td", { text: o.standort || "" }), peEl("td", {}, land, o.geprueft ? null : peEl("span", { class: "st offen", text: "vorbelegt" })), peEl("td", {}, taet),
+        peEl("td", { class: "num", title: o.mindest_art || "", text: o.tarif_lohn != null ? peE(o.tarif_lohn) + (o.mindest_art && o.mindest_art !== "Tarif" ? " gesetzl." : "") : "–" }), peEl("td", { class: "pe-sub", text: pz(o.zuschlaege) }), peEl("td", {}, oz), peEl("td", {}, btn)));
     }
     body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Einsatzorte", peEl("span", { text: "kommen beim ersten Staffo-Abruf automatisch dazu" })),
       PE.data.einsatzorte.length ? peEl("div", { class: "tablewrap" }, t) : peEl("p", { class: "hint", text: "Noch keine Einsatzorte. Oben „Staffo abrufen“ drücken." })));
+    // Tariftabelle je Bundesland
+    const lands = Object.entries(tf.laender);
+    if (lands.length) {
+      const tt = peEl("table", { class: "inv pe-tarif" }, peEl("tr", {}, peEl("th", { text: "Tätigkeit" }), ...lands.map(([k, l]) => peEl("th", { class: "num", text: l.name || k }))));
+      const stufe = (l) => { const ks = Object.keys(l.loehne || {}).filter(k => k <= new Date().toISOString().slice(0, 10)).sort(); return ks.length ? l.loehne[ks[ks.length - 1]] : {}; };
+      for (const x of tf.taetigkeiten) tt.append(peEl("tr", {}, peEl("td", { text: x }), ...lands.map(([, l]) => { const st = stufe(l); return peEl("td", { class: "num" + (st[x] == null ? " pe-sub" : ""), title: st[x] == null ? "keine eigene Lohngruppe, mindestens Objektschutz" : "", text: st[x] != null ? peE(st[x]) : st.Objektschutz != null ? "(" + peE(st.Objektschutz) + ")" : "" }); })));
+      tt.append(peEl("tr", { class: "pe-sum" }, peEl("td", { text: "Zuschläge" }), ...lands.map(([, l]) => peEl("td", { class: "num", text: pz(l.zuschlaege_eff) }))));
+      tt.append(peEl("tr", {}, peEl("td", { text: "allgemeinverbindlich" }), ...lands.map(([, l]) => peEl("td", { class: "num", title: l.ave_hinweis || "", text: l.allgemeinverbindlich === true ? "ja" : l.allgemeinverbindlich === false ? "nein → gesetzl. Mindestlohn" : "ungeklärt" }))));
+      tt.append(peEl("tr", {}, peEl("td", { text: "Laufzeit" }), ...lands.map(([, l]) => peEl("td", { class: "num pe-sub", text: l.laufzeit || "" }))));
+      tt.append(peEl("tr", {}, peEl("td", { text: "Sicherheit" }), ...lands.map(([, l]) => peEl("td", { class: "num pe-sub", text: l.sicherheit || "" }))));
+      body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "BDSW-Tariflöhne € / Std", peEl("span", { text: "Stand " + (tf.stand || "") })), peEl("div", { class: "tablewrap" }, tt),
+        peEl("p", { class: "hint" }, `Gesetzlicher Mindestlohn: ${Object.entries(tf.milo || {}).map(([k, v]) => peE(v) + " ab " + new Date(k).toLocaleDateString("de-DE")).join(", ")}. Ist ein Tarif nicht allgemeinverbindlich, gilt dort ohne Tarifbindung nur der gesetzliche Mindestlohn. Werte in Klammern: keine eigene Lohngruppe gefunden, es gilt mindestens Objektschutz. Zulagen (z. B. Doorman, Detektiv, Revier in Berlin) sind eingerechnet. Ohne Gewähr, verbindlich ist der Tarifvertrag. Datei: `, peEl("code", { text: tf.datei || "tarife-bdsw.json fehlt" }))));
+    }
     const ohne = PE.data.staffo_ohne_akte;
     if (ohne && ohne.mitarbeiter.length) {
       const t2 = peEl("table", { class: "inv" }, peEl("tr", {}, ...["Staffo-Name", "Std " + peMonName(ohne.monat), "geplant", "Einsätze", "Zuordnen", ""].map(h => peEl("th", { text: h }))));
       for (const u of ohne.mitarbeiter) {
-        const sel = peEl("select", {}, peEl("option", { value: "", text: "neue Personalakte" }), ...PE.data.mitarbeiter.filter(m => !m.staffo_id).map(m => peEl("option", { value: m.id, text: peName(m) })));
+        const sel = peEl("select", {}, peEl("option", { value: "", text: "neue Personalakte" }), ...PE.data.mitarbeiter.filter(m => m.aktiv && !m.staffo_id).map(m => peEl("option", { value: m.id, text: peName(m) })));
         t2.append(peEl("tr", {}, peEl("td", { text: u.name }), peEl("td", { class: "num", text: peH(u.std) }), peEl("td", { class: "num", text: peH(u.geplant) }), peEl("td", { class: "num", text: u.einsaetze }), peEl("td", {}, sel),
           peEl("td", {}, peEl("button", { class: "act", type: "button", text: "Übernehmen", onclick: async () => {
             const parts = u.name.replace(/\s+\d{5,}$/, "").trim().split(/\s+/);

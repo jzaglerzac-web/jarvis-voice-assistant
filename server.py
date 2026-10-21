@@ -1316,15 +1316,26 @@ async def zentrale_rechnung_datei(request: Request, name: str, art: str = "einga
 @app.post("/api/zentrale/rechnungen/bezahlt")
 async def zentrale_rechnung_bezahlt(request: Request):
     check_local(request, write=True)
+    import shutil
     body = await request.json()
+    art, paid = _art(str(body.get("art", ""))), bool(body.get("bezahlt"))
     try:
-        new = await rechnungen_tools.set_paid(config, str(body.get("datei", "")), bool(body.get("bezahlt")),
-                                              _art(str(body.get("art", ""))))
+        new = await rechnungen_tools.set_paid(config, str(body.get("datei", "")), paid, art)
     except OSError as e:
         return {"ok": False, "fehler": f"Datei konnte nicht umbenannt werden: {e}"}
     if not new:
         raise HTTPException(404)
-    return {"ok": True, "datei": new}
+    if not paid:
+        return {"ok": True, "datei": new}
+    # Paid invoices go to the DATEV month folder, like buchhaltung_db._settle does
+    target_dir = buchhaltung_db._datev_target(config, art, date.today().isoformat())
+    try:
+        os.makedirs(target_dir, exist_ok=True)
+        target = dokumente_tools.unique_path(target_dir, new)
+        shutil.move(os.path.join(rechnungen_tools.folder(config, art), new), target)
+    except OSError as e:
+        return {"ok": False, "datei": new, "fehler": f"Datei umbenannt, aber nicht in den DATEV-Ordner verschoben: {e}"}
+    return {"ok": True, "datei": os.path.basename(target), "ablage": target_dir}
 
 
 PLAN_FILE = os.path.join(os.path.dirname(__file__), "einnahmen-plan.json")

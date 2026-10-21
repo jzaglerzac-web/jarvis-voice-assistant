@@ -39,6 +39,7 @@ import staffo_tools
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(HERE, "personal.db")
 SEED_FILE = os.path.join(HERE, "personal-startdaten.json")
+TARIF_FILE = os.path.join(HERE, "tarife-bdsw.json")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS mitarbeiter (
@@ -75,6 +76,13 @@ CREATE TABLE IF NOT EXISTS einsatzorte (
   bereich TEXT PRIMARY KEY, standort TEXT, land TEXT, objektzulage_std REAL NOT NULL DEFAULT 0,
   geprueft INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS einstellungen (schluessel TEXT PRIMARY KEY, wert TEXT);
+CREATE TABLE IF NOT EXISTS nachunternehmer (
+  id INTEGER PRIMARY KEY, staffo_id INTEGER UNIQUE, name TEXT NOT NULL, firma TEXT NOT NULL, bewacher_id TEXT,
+  notiz TEXT DEFAULT '', aktiv INTEGER NOT NULL DEFAULT 1, erstellt TEXT);
+CREATE TABLE IF NOT EXISTS nu_stunden (
+  nu_id INTEGER NOT NULL REFERENCES nachunternehmer(id) ON DELETE CASCADE, monat TEXT NOT NULL,
+  std REAL NOT NULL DEFAULT 0, geplant REAL NOT NULL DEFAULT 0, einsaetze INTEGER NOT NULL DEFAULT 0, objekte TEXT DEFAULT '',
+  PRIMARY KEY (nu_id, monat));
 """
 
 DEFAULTS = {"nacht_von": "22:00", "nacht_bis": "06:00", "nacht_prozent": 15, "sonntag_prozent": 50,
@@ -113,7 +121,94 @@ def db() -> sqlite3.Connection:
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA foreign_keys = ON")
     con.executescript(SCHEMA)
+    for table, col, typ in MIGRATIONEN:
+        if col not in {r[1] for r in con.execute(f"PRAGMA table_info({table})")}:
+            con.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
     return con
+
+
+# Spalten, die nach der ersten Version dazugekommen sind
+MIGRATIONEN = [("mitarbeiter", "tarif_ausgleich", "INTEGER NOT NULL DEFAULT 0"), ("mitarbeiter", "fremd_std", "REAL"), ("mitarbeiter", "ohne_staffo", "INTEGER NOT NULL DEFAULT 0"),
+               ("mitarbeiter", "fremd_von", "TEXT"), ("mitarbeiter", "fremd_ab", "TEXT"), ("einsatzorte", "taetigkeit", "TEXT"), ("einsaetze", "taetigkeit", "TEXT"), ("einsaetze", "zuschlag_eur_faktor", "REAL"),
+               ("monatswerte", "staffo_nacht_gew", "REAL"), ("monatswerte", "staffo_sonntag_gew", "REAL"),
+               ("monatswerte", "staffo_feiertag_gew", "REAL"), ("monatswerte", "staffo_tarif_min", "REAL"),
+               ("monatswerte", "staffo_tarif_info", "TEXT")]
+
+
+# ---------- BDSW-Tarife (tarife-bdsw.json) ----------
+
+_tarif_cache: tuple[float, dict] = (0.0, {})
+
+
+def tarif() -> dict:
+    """Tarifdatei lesen; wird bei Aenderung neu geladen. Ohne Datei gelten die Zuschlaege aus den Einstellungen."""
+    global _tarif_cache
+    try:
+        mt = os.path.getmtime(TARIF_FILE)
+    except OSError:
+        return {}
+    if mt != _tarif_cache[0]:
+        with open(TARIF_FILE, encoding="utf-8") as f:
+            _tarif_cache = (mt, json.load(f))
+    return _tarif_cache[1]
+
+
+def tarif_land(land: str) -> dict:
+    t = tarif().get("laender", {}).get(land) or {}
+    if t.get("gleich_wie"):
+        t = {**tarif()["laender"].get(t["gleich_wie"], {}), "name": t.get("name", land)}
+    return t
+
+
+def zuschlaege(land: str, taetigkeit: str, s: dict) -> dict:
+    """Zuschlaege (Prozent, Nachtzeit) fuer Bundesland und Taetigkeit; ohne Tarif die Werte aus den Einstellungen."""
+    z = {"nacht_von": s["nacht_von"], "nacht_bis": s["nacht_bis"], "nacht": s["nacht_prozent"], "sonntag": s["sonntag_prozent"],
+         "feiertag": s["feiertag_prozent"], "quelle": "Einstellungen"}
+    t = tarif_land(land)
+    if t.get("zuschlaege"):
+        z.update({k: t["zuschlaege"][k] for k in ("nacht_von", "nacht_bis", "nacht", "sonntag", "feiertag") if k in t["zuschlaege"]})
+        z["quelle"] = "Tarif " + t.get("name", land)
+        z.update((t.get("zuschlaege_abweichend") or {}).get(taetigkeit or "", {}))
+    return z
+
+
+def gesetzlicher_mindestlohn(tag: str) -> float | None:
+    stufen = {k: v for k, v in (tarif().get("gesetzlicher_mindestlohn") or {}).items() if k[:1].isdigit()}
+    ab = max((k for k in stufen if k <= tag), default=None)
+    return stufen[ab] if ab else None
+
+
+def mindestlohn(land: str, taetigkeit: str, tag: str) -> tuple[float | None, str]:
+    """Verbindliche Untergrenze: Tariflohn, wenn der Tarif allgemeinverbindlich (oder ungeklaert) ist, sonst der gesetzliche Mindestlohn."""
+    milo = gesetzlicher_mindestlohn(tag)
+    if tarif_land(land).get("allgemeinverbindlich") is False:
+        return milo, "gesetzlicher Mindestlohn (Tarif nicht allgemeinverbindlich)"
+    t = tarif_lohn(land, taetigkeit, tag)
+    if t is None:
+        return milo, "gesetzlicher Mindestlohn"
+    return max(t, milo or 0), "Tarif"
+
+
+def tarif_lohn(land: str, taetigkeit: str, tag: str) -> float | None:
+    """Tariflicher Mindeststundenlohn am Tag (JJJJ-MM-TT); fehlt die Taetigkeit im Tarif, gilt Objektschutz."""
+    stufen = tarif_land(land).get("loehne") or {}
+    ab = max((k for k in stufen if k <= tag), default=None)
+    if not ab:
+        return None
+    l = stufen[ab]
+    return l.get(taetigkeit or "Objektschutz", l.get("Objektschutz"))
+
+
+def _match(regeln: list, bereich: str, key: str) -> str:
+    b = " " + (bereich or "").lower().replace("-", " ") + " "
+    for r in regeln:
+        if any(w in b for w in r["suche"]):
+            return r[key]
+    return ""
+
+
+def guess_taetigkeit(bereich: str) -> str:
+    return _match(tarif().get("taetigkeit_vorschlag", []), bereich, "taetigkeit") or "Objektschutz"
 
 
 def settings(con) -> dict:
@@ -210,8 +305,11 @@ def split_hours(beginn: datetime, ende: datetime, land: str, s: dict) -> dict:
 
 
 def guess_land(bereich: str, standort: str) -> str:
+    land = _match(tarif().get("einsatzorte", []), f"{bereich} {standort}" if "berlin" in (standort or "").lower() else bereich, "land")
+    if land:
+        return land
     b, st = (bereich or "").lower(), (standort or "").lower()
-    for words, land in ((("harburg", "hamburg", "hh "), "HH"), (("oststeinbek", "schwarzenbek", "geesthacht", "mölln", "moelln", "bad.", "lübeck", "kiel"), "SH"),
+    for words, land in ((("harburg",), "NI"), (("hamburg", "hh "), "HH"), (("oststeinbek", "schwarzenbek", "geesthacht", "mölln", "moelln", "bad.", "lübeck", "kiel"), "SH"),
                         (("leipzig", "dresden"), "SN"), (("berlin",), "BE"), (("potsdam",), "BB"), (("hannover", "lüneburg"), "NI")):
         if any(w in b for w in words):
             return land
@@ -320,36 +418,55 @@ def compute(con, jahr: int) -> dict:
             sonntag = _v(w.get("sonntag_std"), w.get("staffo_sonntag")) or 0
             feiertag = _v(w.get("feiertag_std"), w.get("staffo_feiertag")) or 0
             objekt = _v(w.get("objektzulage_eur"), w.get("staffo_objektzulage")) or 0
+            # Zuschlagssatz je Art: aus den Staffo-Schichten (Bundesland des Einsatzorts), sonst aus den Einstellungen
+            # Zulage bis zum Tarif-Mindestlohn der Einsatzorte des Monats (je Mitarbeiter einschaltbar)
+            tmin = w.get("staffo_tarif_min")
+            lohn_eff = max(lohn, tmin) if (m.get("tarif_ausgleich") and tmin and not m["festgehalt"]) else lohn
+            proz = {}
+            for k, p in (("nacht", pn), ("sonntag", ps), ("feiertag", pf)):
+                st, gew = w.get(f"staffo_{k}"), w.get(f"staffo_{k}_gew")
+                proz[k] = round(gew / st * 100, 2) if (st and gew is not None) else round(p * 100, 2)
             verpf = w.get("verpflegung_eur") or 0
-            diff = ((gel or 0) - (lohn_std or 0) if m["zeitkonto"] else 0) + buch_std
             hat_daten = bool(w) or bool(a) or bool(b)
+            # fest vereinbarte Stunden, die ein Dritter (z. B. der Auftraggeber) direkt bezahlt: muss er hier trotzdem leisten
+            fremd = (m.get("fremd_std") or 0) if (m["zeitkonto"] and hat_daten and vergangen and mon >= (m.get("fremd_ab") or "")) else 0
+            diff = ((gel or 0) - (lohn_std or 0) - fremd if m["zeitkonto"] else 0) + buch_std
+            tarifzulage = 0
             if m["festgehalt"]:
                 brutto = m["festgehalt"] + bonus
             else:
-                brutto = ((lohn_std or 0) + urlaub + krank) * lohn + objekt + nacht * lohn * pn + sonntag * lohn * ps + feiertag * lohn * pf + bonus
+                tarifzulage = round(((lohn_std or 0) + urlaub + krank) * (lohn_eff - lohn), 2)
+                brutto = ((lohn_std or 0) + urlaub + krank) * lohn + tarifzulage + objekt + (nacht * proz["nacht"] + sonntag * proz["sonntag"] + feiertag * proz["feiertag"]) / 100 * lohn_eff + bonus
             brutto = _v(w.get("brutto_fest"), round(brutto, 2) if hat_daten else None)
-            if hat_daten:
+            if hat_daten and vergangen:  # spätere Monate (z. B. Excel-Planwerte) zählen erst, wenn sie erreicht sind
                 saldo_std += diff
                 saldo_eur_extra += buch_eur
             rows.append({
-                "monat": mon, "daten": hat_daten, "geleistet": gel, "geleistet_quelle": "hand" if w.get("geleistet_std") is not None else ("staffo" if w.get("staffo_std") is not None else ""),
+                "monat": mon, "daten": hat_daten, "zukunft": not vergangen, "geleistet": gel, "geleistet_quelle": "hand" if w.get("geleistet_std") is not None else ("staffo" if w.get("staffo_std") is not None else ""),
                 "staffo_std": w.get("staffo_std"), "staffo_geplant": w.get("staffo_geplant_std"), "staffo_stand": w.get("staffo_stand"),
                 "tage": w.get("staffo_tage"), "einsaetze": w.get("staffo_einsaetze"),
                 "lohn_std": lohn_std, "lohn_std_hand": w.get("lohn_std") is not None,
                 "urlaub": urlaub, "krank": krank, "unbezahlt": unbez, "gezahlt": round((lohn_std or 0) + urlaub + krank, 2),
-                "nacht": nacht, "sonntag": sonntag, "feiertag": feiertag, "objektzulage": objekt, "verpflegung": verpf,
+                "nacht": nacht, "sonntag": sonntag, "feiertag": feiertag, "objektzulage": objekt, "verpflegung": verpf, "zuschlag_prozent": proz, "lohn_eff": lohn_eff, "tarifzulage": tarifzulage,
+                "tarif_min": w.get("staffo_tarif_min"), "tarif_info": w.get("staffo_tarif_info") or "",
                 "hand": {k: w.get(k) for k in ("geleistet_std", "lohn_std", "nacht_std", "sonntag_std", "feiertag_std", "objektzulage_eur", "verpflegung_eur", "brutto_fest")},
                 "staffo": {k: w.get(k) for k in ("staffo_std", "staffo_nacht", "staffo_sonntag", "staffo_feiertag", "staffo_objektzulage")},
                 "bonus": bonus, "vorschuss": vorschuss, "buch_std": round(buch_std, 2), "buch_eur": round(buch_eur, 2),
-                "buchungen": len(b), "diff": round(diff, 2), "saldo_std": round(saldo_std, 2),
+                "buchungen": len(b), "fremd": fremd, "diff": round(diff, 2), "saldo_std": round(saldo_std, 2),
                 "saldo_eur": round(saldo_std * lohn + saldo_eur_extra, 2), "brutto": brutto,
                 "bemerkung": w.get("bemerkung") or "",
             })
         tot = lambda k: round(sum((r[k] or 0) for r in rows), 2)
+        bis_heute = [r for r in rows if not r["zukunft"]]
+        tot_bis = lambda k: round(sum((r[k] or 0) for r in bis_heute), 2)
+        n_schnitt = sum(1 for r in bis_heute if r["daten"]) or 1
+        ZK = ("geleistet", "lohn_std", "urlaub", "krank", "gezahlt", "fremd", "buch_std", "diff", "buch_eur", "brutto")
         urlaub_tage_genommen = round(tot("urlaub") / (m["std_pro_tag"] or s["std_pro_tag"] or 10), 1)
         result.append({**m, "monate": rows,
                        "summe": {k: tot(k) for k in ("geleistet", "lohn_std", "urlaub", "krank", "gezahlt", "nacht", "sonntag", "feiertag",
-                                                     "objektzulage", "verpflegung", "bonus", "vorschuss", "buch_eur", "diff", "brutto")},
+                                                     "objektzulage", "verpflegung", "bonus", "vorschuss", "buch_eur", "fremd", "diff", "brutto")},
+                       "summe_bis": {k: tot_bis(k) for k in ZK}, "schnitt": {k: round(tot_bis(k) / n_schnitt, 2) for k in ZK},
+                       "schnitt_monate": n_schnitt,
                        "saldo_std": round(saldo_std, 2), "saldo_eur": round(saldo_std * lohn + saldo_eur_extra, 2),
                        "saldo_eur_extra": round(saldo_eur_extra, 2), "urlaub_tage_genommen": urlaub_tage_genommen,
                        "urlaub_tage_rest": (round(m["urlaubstage"] - urlaub_tage_genommen, 1) if m["urlaubstage"] is not None else None)})
@@ -372,55 +489,82 @@ def staffo_import(monat: str) -> dict:
     s = settings(con)
     orte = {r["bereich"]: dict(r) for r in con.execute("SELECT * FROM einsatzorte")}
     for r in rows:
-        if r["bereich"] and r["bereich"] not in orte:
-            land = guess_land(r["bereich"], r["standort"])
-            con.execute("INSERT INTO einsatzorte (bereich, standort, land) VALUES (?,?,?)", (r["bereich"], r["standort"], land))
-            orte[r["bereich"]] = {"bereich": r["bereich"], "standort": r["standort"], "land": land, "objektzulage_std": 0, "geprueft": 0}
+        o = orte.get(r["bereich"])
+        if r["bereich"] and (o is None or not o["geprueft"]):
+            # noch nicht bestaetigte Orte folgen der Zuordnung aus tarife-bdsw.json
+            land, taet = guess_land(r["bereich"], r["standort"]), (o or {}).get("taetigkeit") or guess_taetigkeit(r["bereich"])
+            con.execute("INSERT INTO einsatzorte (bereich, standort, land, taetigkeit) VALUES (?,?,?,?) ON CONFLICT(bereich) DO UPDATE SET "
+                        "standort = excluded.standort, land = excluded.land, taetigkeit = excluded.taetigkeit", (r["bereich"], r["standort"], land, taet))
+            orte[r["bereich"]] = {**(o or {"objektzulage_std": 0, "geprueft": 0}), "bereich": r["bereich"], "standort": r["standort"], "land": land, "taetigkeit": taet}
+        elif o is not None and not o.get("taetigkeit"):
+            o["taetigkeit"] = guess_taetigkeit(r["bereich"])
+            con.execute("UPDATE einsatzorte SET taetigkeit = ? WHERE bereich = ?", (o["taetigkeit"], r["bereich"]))
     by_staffo = {r["staffo_id"]: r["id"] for r in con.execute("SELECT id, staffo_id FROM mitarbeiter WHERE staffo_id IS NOT NULL")}
     jetzt = datetime.now().astimezone()
-    agg, einsaetze, fremd = {}, [], {}
+    nu = {r["staffo_id"]: r["id"] for r in con.execute("SELECT id, staffo_id FROM nachunternehmer WHERE staffo_id IS NOT NULL")}
+    agg, einsaetze, fremd, nu_agg = {}, [], {}, {}
     for r in rows:
         try:
             b, e = datetime.fromisoformat(r["beginn"]), datetime.fromisoformat(r["ende"])
         except (TypeError, ValueError):
             continue
         ort = orte.get(r["bereich"], {})
-        h = split_hours(b, e, ort.get("land") or "", s)
+        land, taet = ort.get("land") or "", ort.get("taetigkeit") or ""
+        z = zuschlaege(land, taet, s)
+        h = split_hours(b, e, land, z)
+        faktor = (h["nacht"] * z["nacht"] + h["sonntag"] * z["sonntag"] + h["feiertag"] * z["feiertag"]) / 100
+        tmin, tart = mindestlohn(land, taet, b.date().isoformat())
         geplant = e > jetzt
         mid = by_staffo.get(r["user_id"])
+        if mid is None and r["user_id"] in nu:  # Mitarbeiter eines Nachunternehmers: nur Stunden, keine Lohnabrechnung
+            n = nu_agg.setdefault(nu[r["user_id"]], {"std": 0, "geplant": 0, "einsaetze": 0, "objekte": set()})
+            n["geplant" if geplant else "std"] += h["std"]
+            n["einsaetze"] += 1
+            if r["bereich"]:
+                n["objekte"].add(r["bereich"])
+            continue
         if mid is None:
             f = fremd.setdefault(r["user_id"], {"staffo_id": r["user_id"], "name": r["name"], "std": 0, "geplant": 0, "einsaetze": 0})
             f["geplant" if geplant else "std"] += h["std"]
             f["einsaetze"] += 1
             continue
-        a = agg.setdefault(mid, {"std": 0, "nacht": 0, "sonntag": 0, "feiertag": 0, "objekt": 0, "tage": set(), "n": 0, "geplant": 0})
+        a = agg.setdefault(mid, {"std": 0, "nacht": 0, "sonntag": 0, "feiertag": 0, "objekt": 0, "tage": set(), "n": 0, "geplant": 0,
+                                 "ng": 0, "sg": 0, "fg": 0, "tmin": None, "tinfo": ""})
         oz = round(h["std"] * (ort.get("objektzulage_std") or 0), 2)
         if geplant:
             a["geplant"] += h["std"]
         else:
             a["std"] += h["std"]; a["nacht"] += h["nacht"]; a["sonntag"] += h["sonntag"]; a["feiertag"] += h["feiertag"]
             a["objekt"] += oz; a["tage"].add(b.date()); a["n"] += 1
-        einsaetze.append((mid, monat, r["shift_id"], r["beginn"], r["ende"], r["bereich"], r["standort"], ort.get("land") or "",
-                          h["std"], h["nacht"], h["sonntag"], h["feiertag"], oz, int(geplant)))
+            a["ng"] += h["nacht"] * z["nacht"] / 100; a["sg"] += h["sonntag"] * z["sonntag"] / 100; a["fg"] += h["feiertag"] * z["feiertag"] / 100
+        if tmin is not None and (a["tmin"] is None or tmin > a["tmin"]):
+            a["tmin"], a["tinfo"] = tmin, (f"{taet or 'Objektschutz'} {LAENDER.get(land, land)}" if tart == "Tarif" else f"{tart}, {LAENDER.get(land, land) or 'ohne Bundesland'}") + f" ({r['bereich']})"
+        einsaetze.append((mid, monat, r["shift_id"], r["beginn"], r["ende"], r["bereich"], r["standort"], land,
+                          h["std"], h["nacht"], h["sonntag"], h["feiertag"], oz, int(geplant), taet, round(faktor, 4)))
     stand = now()
     con.execute("DELETE FROM einsaetze WHERE monat = ?", (monat,))
     con.executemany("INSERT INTO einsaetze (mitarbeiter_id, monat, schicht_id, beginn, ende, bereich, standort, land, std, nacht, sonntag,"
-                    " feiertag, objektzulage, geplant) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", einsaetze)
+                    " feiertag, objektzulage, geplant, taetigkeit, zuschlag_eur_faktor) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", einsaetze)
     # Staffo-Spalten aller zugeordneten Mitarbeiter fuer den Monat neu setzen (wer keine Schicht hatte, bekommt 0)
     for mid in set(by_staffo.values()):
         a = agg.get(mid)
         vals = (round(a["std"], 2), round(a["nacht"], 2), round(a["sonntag"], 2), round(a["feiertag"], 2), round(a["objekt"], 2),
-                len(a["tage"]), a["n"], round(a["geplant"], 2)) if a else (0, 0, 0, 0, 0, 0, 0, 0)
+                len(a["tage"]), a["n"], round(a["geplant"], 2), round(a["ng"], 4), round(a["sg"], 4), round(a["fg"], 4),
+                a["tmin"], a["tinfo"]) if a else (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, None, "")
         con.execute("INSERT INTO monatswerte (mitarbeiter_id, monat) VALUES (?, ?) ON CONFLICT DO NOTHING", (mid, monat))
         con.execute("UPDATE monatswerte SET staffo_std=?, staffo_nacht=?, staffo_sonntag=?, staffo_feiertag=?, staffo_objektzulage=?,"
-                    " staffo_tage=?, staffo_einsaetze=?, staffo_geplant_std=?, staffo_stand=? WHERE mitarbeiter_id=? AND monat=?",
+                    " staffo_tage=?, staffo_einsaetze=?, staffo_geplant_std=?, staffo_nacht_gew=?, staffo_sonntag_gew=?, staffo_feiertag_gew=?,"
+                    " staffo_tarif_min=?, staffo_tarif_info=?, staffo_stand=? WHERE mitarbeiter_id=? AND monat=?",
                     (*vals, stand, mid, monat))
+    con.execute("DELETE FROM nu_stunden WHERE monat = ?", (monat,))
+    con.executemany("INSERT INTO nu_stunden (nu_id, monat, std, geplant, einsaetze, objekte) VALUES (?,?,?,?,?,?)",
+                    [(k, monat, round(n["std"], 2), round(n["geplant"], 2), n["einsaetze"], ", ".join(sorted(n["objekte"]))) for k, n in nu_agg.items()])
     fremd_list = sorted(({**f, "std": round(f["std"], 2), "geplant": round(f["geplant"], 2)} for f in fremd.values()), key=lambda x: -x["std"] - x["geplant"])
     con.execute("INSERT INTO einstellungen (schluessel, wert) VALUES (?, ?) ON CONFLICT(schluessel) DO UPDATE SET wert = excluded.wert",
                 ("staffo_ohne_akte", json.dumps({"monat": monat, "stand": stand, "mitarbeiter": fremd_list}, ensure_ascii=False)))
     con.commit()
     con.close()
-    return {"ok": True, "monat": monat, "schichten": len(rows), "zugeordnet": len(agg), "ohne_akte": fremd_list, "stand": stand}
+    return {"ok": True, "monat": monat, "schichten": len(rows), "zugeordnet": len(agg), "nachunternehmer": len(nu_agg), "ohne_akte": fremd_list, "stand": stand}
 
 
 _plan_cache: tuple[float, dict] = (0.0, {})
@@ -519,12 +663,16 @@ def _abrechnung_html(m: dict, r: dict, einsaetze: list, abw: list, buch: list, s
             pos.append(("Urlaub", _h(r["urlaub"]), _eur(lohn), r["urlaub"] * lohn))
         if r["krank"]:
             pos.append(("Krank (Lohnfortzahlung)", _h(r["krank"]), _eur(lohn), r["krank"] * lohn))
+        if r["tarifzulage"]:
+            pos.append((f"Tarifzulage auf Mindestlohn {_eur(r['lohn_eff'])}", _h((r["lohn_std"] or 0) + r["urlaub"] + r["krank"]),
+                        _eur(r["lohn_eff"] - lohn), r["tarifzulage"]))
         if r["objektzulage"]:
             pos.append(("Objektzulage", "", "", r["objektzulage"]))
-        for label, k, p in (("Zuschlag Nacht", "nacht", s["nacht_prozent"]), ("Zuschlag Sonntag", "sonntag", s["sonntag_prozent"]),
-                            ("Zuschlag Feiertag", "feiertag", s["feiertag_prozent"])):
+        zp = r["zuschlag_prozent"]
+        for label, k, p in (("Zuschlag Nacht", "nacht", zp["nacht"]), ("Zuschlag Sonntag", "sonntag", zp["sonntag"]),
+                            ("Zuschlag Feiertag", "feiertag", zp["feiertag"])):
             if r[k]:
-                pos.append((f"{label} {p:g} %", _h(r[k]), _eur(lohn * p / 100), r[k] * lohn * p / 100))
+                pos.append((f"{label} {p:g} %", _h(r[k]), _eur(r["lohn_eff"] * p / 100), r[k] * r["lohn_eff"] * p / 100))
     for b in buch:
         if b["art"] == "Bonus":
             pos.append(("Bonus" + (f" – {b['notiz']}" if b["notiz"] else ""), "", "", b["betrag"]))
@@ -643,7 +791,7 @@ def lohnabrechnungen(config: dict, monat: str, ids: list | None = None) -> dict:
         body = (f"<div class=kopf><div><h1>Lohnübersicht {MONATE[mo - 1]} {j}</h1><small>Aufzeichnungspflichten des Arbeitgebers nach § 2 Abs. 2a "
                 f"Arbeitnehmer-Entsendegesetz</small></div><div style='text-align:right'><b>ZAC GmbH</b><small>Bereichsleitung: {html.escape(s.get('bereichsleitung') or '')}</small></div></div>"
                 "<table><tr><th>Nr.</th><th>Name</th><th class=n>Std.-Lohn</th><th class=n>Stunden</th><th class=n>Verpfl.</th><th class=n>Objektzul.</th>"
-                f"<th class=n>Nacht {s['nacht_prozent']:g} %</th><th class=n>Sonntag {s['sonntag_prozent']:g} %</th><th class=n>Feiertag {s['feiertag_prozent']:g} %</th>"
+                "<th class=n>Nacht</th><th class=n>Sonntag</th><th class=n>Feiertag</th>"
                 f"<th class=n>Krank</th><th class=n>Urlaub</th><th class=n>Bonus</th><th class=n>Brutto</th><th>Bemerkung</th></tr>{rows}"
                 f"<tr class=sum><td colspan=12>Gesamt</td><td class=n>{_eur(total)}</td><td></td></tr></table><p class=hinweis>{html.escape(LEGENDE)}</p>"
                 "<div class=unterschrift><div>Datum</div><div>Unterschrift Bereichsleitung</div></div>")
@@ -659,6 +807,72 @@ def lohnabrechnungen(config: dict, monat: str, ids: list | None = None) -> dict:
     con.commit()
     con.close()
     return {"ok": True, "monat": monat, "erstellt": done, "uebersicht": sammel, "ordner": personal_dir(config)}
+
+
+
+BERICHT_CSS = """@page { size: A4 landscape; margin: 10mm; }
+body { font-family: Arial, Helvetica, sans-serif; font-size: 8.5pt; color: #111; }
+.kopf { display: flex; justify-content: space-between; border-bottom: 2px solid #C8102E; padding-bottom: 5pt; margin-bottom: 8pt; }
+.kopf h1 { font-size: 14pt; margin: 0; } .kopf small { color: #555; display: block; }
+h2 { font-size: 11pt; margin: 10pt 0 4pt; display: flex; justify-content: space-between; gap: 8pt; } h2 span { font-weight: normal; color: #666; font-size: 8pt; }
+table { border-collapse: collapse; width: 100%; margin: 2pt 0 6pt; page-break-inside: auto; } tr { page-break-inside: avoid; }
+th, td { border: 1px solid #ccc; padding: 2pt 4pt; text-align: left; white-space: nowrap; } th { background: #eee; font-size: 7.5pt; }
+td.num, th.num { text-align: right; } .pe-head td { background: #f1f1f1; font-weight: bold; } .pe-line td:first-child { padding-left: 10pt; color: #444; }
+.pos { color: #1f5f9e; } .neg { color: #b4471c; } .tot, .diff td, .pe-sum td { font-weight: bold; }
+.pe-calc td { background: #eaf1f9; color: #1f4f7e; font-style: italic; } .pe-calc.diff td { font-style: normal; }
+td.zuk, th.zuk, .pe-calc td.zuk { color: #a0a4aa; background: #f6f6f6; } td.schnitt, th.schnitt { color: #555; border-left: 1px solid #ccc; }
+.pe-legend-ist, .pe-legend-calc { display: inline-flex; align-items: center; gap: 4pt; font-size: 7.5pt; color: #555; margin-right: 10pt; }
+.pe-legend-ist i, .pe-legend-calc i { width: 10pt; height: 7pt; display: inline-block; border: 1px solid #999; } .pe-legend-calc i { background: #eaf1f9; border-color: #4A8BC9; }
+.kpis, .pe-tiles { display: flex; flex-wrap: wrap; gap: 6pt; margin-bottom: 6pt; }
+.kpi, .pe-tile { border: 1px solid #ccc; border-radius: 3pt; padding: 5pt 7pt; min-width: 120pt; flex: 1; page-break-inside: avoid; }
+.kpi b { display: block; font-size: 14pt; } .kpi small, .eyebrow { color: #555; font-size: 7.5pt; text-transform: uppercase; }
+.pe-tile b { display: block; font-size: 10pt; } .pe-tile dl { display: grid; grid-template-columns: auto 1fr; gap: 1pt 6pt; margin: 3pt 0 0; } .pe-tile dt { color: #666; } .pe-tile dd { margin: 0; }
+.pe-meter { display: block; height: 3pt; background: #ddd; margin-top: 4pt; } .pe-meter i { display: block; height: 100%; background: #4A8BC9; }
+.pe-hints { margin: 0; padding-left: 12pt; } .pe-hints li { margin: 1pt 0; }
+.pe-sec { page-break-inside: avoid; margin-bottom: 6pt; } .pe-two { display: flex; gap: 10pt; } .pe-two > * { flex: 1; }
+svg { width: 100%; max-width: 520pt; height: auto; } .pe-axis { stroke: #bbb; } .pe-pos, .pe-bar { fill: #4A8BC9; } .pe-neg { fill: #D0683F; }
+.pe-plan { fill: #4A8BC9; fill-opacity: .35; } .pe-soll { stroke: #111; stroke-width: 2; } .pe-lab { fill: #444; font-size: 11px; } .pe-val { fill: #111; font-size: 11px; }
+.pe-legend { display: flex; gap: 10pt; font-size: 7.5pt; color: #555; } .pe-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6pt; }
+fieldset { border: 1px solid #ccc; padding: 4pt 6pt; } legend { font-weight: bold; font-size: 8pt; } .pe-form label { display: flex; justify-content: space-between; gap: 6pt; border-bottom: 1px dotted #ddd; }
+.pe-form label span:first-child { color: #555; } .hint { color: #555; font-size: 7.5pt; } .st { border: 1px solid #aaa; border-radius: 6pt; padding: 0 4pt; font-size: 7pt; }
+.pe-docs { list-style: none; padding: 0; } .pe-staff { display: block; }"""
+
+
+# Querformat A4 abzueglich Rand (10 mm) in CSS-Pixeln; skaliert den ganzen Bereich auf eine Seite
+EINE_SEITE_JS = """<script>(function () {
+  var W = 1040, H = 700, w = document.getElementById('alles');
+  w.style.width = W + 'px';
+  var z = Math.min(1, W / w.scrollWidth, H / w.scrollHeight);
+  for (var i = 0; i < 40; i++) {
+    w.style.width = (W / z) + 'px'; w.style.zoom = z;
+    var r = w.getBoundingClientRect();
+    if (r.height <= H && r.width <= W + 1 && w.scrollWidth * z <= W + 1) break;
+    z *= 0.96;
+  }
+})();</script>"""
+
+
+def bericht_pdf(titel: str, inhalt: str, s: dict, eine_seite: bool = False) -> bytes | None:
+    """PDF-Vorschau eines Unterreiters: die Seite schickt den bereinigten Inhalt, hier wird er hell gesetzt und gedruckt."""
+    inhalt = re.sub(r"<(script|style|iframe|object|embed)[\s\S]*?</\1>", "", inhalt, flags=re.I)
+    inhalt = re.sub(r"\son\w+=\"[^\"]*\"", "", inhalt)
+    body = (f"<div class=kopf><div><h1>{html.escape(titel)}</h1><small>ZAC GmbH · Personal · Stand {datetime.now().strftime('%d.%m.%Y %H:%M')}</small></div>"
+            f"<div style='text-align:right'><small>Bereichsleitung: {html.escape(s.get('bereichsleitung') or '')}</small><small>nur für den internen Gebrauch</small></div></div>{inhalt}")
+    if eine_seite:
+        body = f"<div id=alles>{body}</div>{EINE_SEITE_JS}"
+    css = BERICHT_CSS + (" .pe-sec, tr { page-break-inside: auto; } body { margin: 0; }" if eine_seite else "")
+    page = f"<!doctype html><html lang=de><head><meta charset=utf-8><title>{html.escape(titel)}</title><style>{css}</style></head><body>{body}</body></html>"
+    fd, target = tempfile.mkstemp(suffix=".pdf")
+    os.close(fd)
+    os.remove(target)
+    try:
+        if not html_to_pdf(page, target):
+            return None
+        with open(target, "rb") as f:
+            return f.read()
+    finally:
+        if os.path.exists(target):
+            os.remove(target)
 
 
 # ---------- Eingaben pruefen ----------
@@ -686,8 +900,8 @@ def _datum(x) -> str:
 
 
 MA_TEXT = ["personalnr", "nachname", "vorname", "beschaeftigung", "eintritt", "austritt", "geburtsdatum", "telefon", "email",
-           "adresse", "iban", "steuer_id", "sv_nummer", "krankenkasse", "bewacher_id", "staffo_name", "notiz"]
-MA_NUM = ["stundenlohn", "festgehalt", "auszahlung_std", "soll_std", "urlaubstage", "std_pro_tag", "uebertrag_std", "uebertrag_eur"]
+           "adresse", "iban", "steuer_id", "sv_nummer", "krankenkasse", "bewacher_id", "staffo_name", "notiz", "fremd_von", "fremd_ab"]
+MA_NUM = ["stundenlohn", "festgehalt", "fremd_std", "auszahlung_std", "soll_std", "urlaubstage", "std_pro_tag", "uebertrag_std", "uebertrag_eur"]
 MV_NUM = ["geleistet_std", "lohn_std", "nacht_std", "sonntag_std", "feiertag_std", "objektzulage_eur", "verpflegung_eur", "brutto_fest"]
 
 
@@ -726,7 +940,27 @@ def make_router(check_local, config: dict) -> APIRouter:
             d["dokumente"] = [{**dict(x), "datei": os.path.basename(x["pfad"]), "vorhanden": os.path.exists(x["pfad"])}
                               for x in con.execute("SELECT * FROM dokumente ORDER BY datum DESC, id DESC")]
             d["staffo_ohne_akte"] = d["einstellungen"].pop("staffo_ohne_akte", None)
+            nus = [dict(x) for x in con.execute("SELECT * FROM nachunternehmer ORDER BY firma, name")]
+            std = {}
+            for x in con.execute("SELECT * FROM nu_stunden WHERE monat LIKE ?", (f"{jahr}-%",)):
+                std.setdefault(x["nu_id"], {})[x["monat"]] = {k: x[k] for k in ("std", "geplant", "einsaetze", "objekte")}
+            for n in nus:
+                n["monate"] = std.get(n["id"], {})
+                n["std_jahr"] = round(sum(v["std"] for v in n["monate"].values()), 2)
+            d["nachunternehmer"] = nus
+            # wer inzwischen eine Akte hat (Personal oder Nachunternehmer), faellt aus der Liste „ohne Personalakte“
+            if d["staffo_ohne_akte"]:
+                vergeben = {m["staffo_id"] for m in d["mitarbeiter"] if m["staffo_id"]} | {n["staffo_id"] for n in nus if n["staffo_id"]}
+                d["staffo_ohne_akte"]["mitarbeiter"] = [u for u in d["staffo_ohne_akte"]["mitarbeiter"] if u["staffo_id"] not in vergeben]
             d["arten"] = {"abwesenheit": ABWESENHEITEN, "buchung": BUCHUNGSARTEN, "dokument": KATEGORIEN, "laender": LAENDER}
+            t = tarif()
+            heute = date.today().isoformat()
+            d["tarif"] = {"stand": t.get("stand"), "datei": TARIF_FILE if t else None, "taetigkeiten": t.get("taetigkeiten", []),
+                          "milo": {k: v for k, v in (t.get("gesetzlicher_mindestlohn") or {}).items() if k[:1].isdigit()},
+                          "laender": {k: {**tarif_land(k), "zuschlaege_eff": zuschlaege(k, "", d["einstellungen"])} for k in t.get("laender", {})}}
+            for o in d["einsatzorte"]:
+                o["tarif_lohn"], o["mindest_art"] = mindestlohn(o["land"] or "", o.get("taetigkeit") or "", heute)
+                o["zuschlaege"] = zuschlaege(o["land"] or "", o.get("taetigkeit") or "", d["einstellungen"])
             d["ordner"] = personal_dir(config)
             con.close()
             return d
@@ -748,7 +982,7 @@ def make_router(check_local, config: dict) -> APIRouter:
                 return {"ok": True}
             vals = {k: (str(b[k]).strip()[:500] if b.get(k) not in (None, "") else None) for k in MA_TEXT if k in b}
             vals.update({k: _num(b[k]) for k in MA_NUM if k in b})
-            for k in ("aktiv", "zeitkonto"):
+            for k in ("aktiv", "zeitkonto", "tarif_ausgleich", "ohne_staffo"):
                 if k in b:
                     vals[k] = int(bool(b[k]))
             if "staffo_id" in b:
@@ -840,9 +1074,37 @@ def make_router(check_local, config: dict) -> APIRouter:
             land = str(b.get("land") or "")
             if land and land not in LAENDER:
                 raise ValueError("Unbekanntes Bundesland.")
-            con.execute("INSERT INTO einsatzorte (bereich, land, objektzulage_std, geprueft) VALUES (?,?,?,1) ON CONFLICT(bereich) DO UPDATE SET "
-                        "land = excluded.land, objektzulage_std = excluded.objektzulage_std, geprueft = 1",
-                        (str(b["bereich"]), land, _num(b.get("objektzulage_std")) or 0))
+            taet = str(b.get("taetigkeit") or "")[:80]
+            con.execute("INSERT INTO einsatzorte (bereich, land, objektzulage_std, taetigkeit, geprueft) VALUES (?,?,?,?,1) ON CONFLICT(bereich) DO UPDATE SET "
+                        "land = excluded.land, objektzulage_std = excluded.objektzulage_std, taetigkeit = excluded.taetigkeit, geprueft = 1",
+                        (str(b["bereich"]), land, _num(b.get("objektzulage_std")) or 0, taet))
+        return run(save)
+
+    @r.post("/nachunternehmer")
+    async def nachunternehmer(request: Request):
+        """Akte fuer Mitarbeiter eines Nachunternehmers anlegen, aendern oder entfernen (Stunden bleiben in Staffo)."""
+        check_local(request, write=True)
+        b = await request.json()
+
+        def save(con):
+            if b.get("loeschen"):
+                con.execute("DELETE FROM nachunternehmer WHERE id = ?", (int(b["id"]),))
+                return {"ok": True}
+            name, firma = str(b.get("name") or "").strip()[:200], str(b.get("firma") or "").strip()[:200]
+            if not name or not firma:
+                raise ValueError("Bitte Name und Firma des Nachunternehmers angeben.")
+            sid = int(b["staffo_id"]) if str(b.get("staffo_id") or "").strip() else None
+            if sid and con.execute("SELECT 1 FROM mitarbeiter WHERE staffo_id = ?", (sid,)).fetchone():
+                raise ValueError("Dieser Staffo-Mitarbeiter hat schon eine Personalakte.")
+            vals = (sid, name, firma, str(b.get("bewacher_id") or "").strip()[:50] or None, str(b.get("notiz") or "")[:500], int(b.get("aktiv", True) not in (False, 0, "0")))
+            if b.get("id"):
+                con.execute("UPDATE nachunternehmer SET staffo_id=?, name=?, firma=?, bewacher_id=?, notiz=?, aktiv=? WHERE id=?", (*vals, int(b["id"])))
+                return {"ok": True, "id": int(b["id"])}
+            try:
+                cur = con.execute("INSERT INTO nachunternehmer (staffo_id, name, firma, bewacher_id, notiz, aktiv, erstellt) VALUES (?,?,?,?,?,?,?)", (*vals, now()))
+            except sqlite3.IntegrityError:
+                raise ValueError("Dieser Staffo-Mitarbeiter ist schon als Nachunternehmer erfasst.")
+            return {"ok": True, "id": cur.lastrowid}
         return run(save)
 
     @r.post("/einstellungen")
@@ -873,6 +1135,23 @@ def make_router(check_local, config: dict) -> APIRouter:
             return {"ok": False, "fehler": str(e)}
         except ValueError as e:
             return {"ok": False, "fehler": str(e)}
+
+    @r.post("/bericht")
+    async def bericht(request: Request):
+        """PDF-Vorschau der gerade offenen Ansicht (wird nicht gespeichert)."""
+        check_local(request, write=True)
+        b = await request.json()
+        inhalt = str(b.get("html", ""))[:3_000_000]
+        titel = str(b.get("titel", "Personal"))[:120]
+        con = db()
+        s = settings(con)
+        con.close()
+        pdf = await asyncio.to_thread(bericht_pdf, titel, inhalt, s, bool(b.get("eine_seite")))
+        if not pdf:
+            return {"ok": False, "fehler": "PDF konnte nicht erstellt werden (Chrome nicht gefunden?)."}
+        from fastapi.responses import Response
+        name = _clean(f"{date.today().isoformat()}_{titel}") + ".pdf"
+        return Response(pdf, media_type="application/pdf", headers={"Content-Disposition": f"inline; filename*=UTF-8''{__import__('urllib.parse').parse.quote(name)}"})
 
     @r.get("/einsaetze")
     async def einsaetze(request: Request, mitarbeiter_id: int, monat: str):

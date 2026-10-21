@@ -1,0 +1,290 @@
+{
+  "_hinweis": "Tarifliche Mindeststundenloehne und Zeitzuschlaege im Wach- und Sicherheitsgewerbe je Bundesland (BDSW-Tarifvertraege). Stand der Recherche: 21.10.2026. Alle Angaben ohne Gewaehr, verbindlich ist der jeweilige Tarifvertrag. Wird von personal_tools.py gelesen (Mindestlohn-Pruefung, Zuschlaege nach Bundesland des Einsatzorts). Werte koennen hier direkt angepasst werden; danach in der Zentrale 'Staffo abrufen' druecken.",
+  "stand": "2026-10-21",
+  "taetigkeiten": [
+    "Objektschutz",
+    "Objektschutz mit Sachkundeprüfung",
+    "Revier-/Interventionsdienst",
+    "Veranstaltungsdienst",
+    "Doorman/Shopguard",
+    "Kaufhausdetektiv",
+    "Einkaufszentrum",
+    "Flüchtlingsunterkunft",
+    "NSL/Leitstelle",
+    "Geprüfte Schutz- und Sicherheitskraft (IHK)",
+    "Fachkraft für Schutz und Sicherheit",
+    "ÖPNV"
+  ],
+  "laender": {
+    "BE": {
+      "name": "Berlin",
+      "tarifvertrag": "Entgelttarifvertrag Sicherheitsdienstleistungen Berlin/Brandenburg (BDSW / ver.di), allgemeinverbindlich",
+      "laufzeit": "2026-01-01 bis 2027-12-31",
+      "quelle": "https://www.bdsw.de/images/tarifvertraege/ave/2026/AVE_BE_ETV_2026_0703.pdf",
+      "sicherheit": "geprüft (Tarifvertragstext)",
+      "zuschlaege": {
+        "nacht_von": "22:00",
+        "nacht_bis": "06:00",
+        "nacht": 15,
+        "sonntag": 25,
+        "feiertag": 50,
+        "regel": "Nur der höchste Zuschlag, der Nachtzuschlag kommt daneben dazu. Feiertag auch Oster- und Pfingstsonntag; 24.12. und 31.12. ab 14 Uhr."
+      },
+      "zuschlaege_abweichend": {
+        "Veranstaltungsdienst": {
+          "nacht": 10,
+          "sonntag": 10,
+          "feiertag": 10
+        }
+      },
+      "loehne": {
+        "2026-01-01": {
+          "Objektschutz": 15.15,
+          "Objektschutz mit Sachkundeprüfung": 15.55,
+          "Revier-/Interventionsdienst": 16.2,
+          "Veranstaltungsdienst": 15.55,
+          "Doorman/Shopguard": 16.55,
+          "Kaufhausdetektiv": 17.55,
+          "Einkaufszentrum": 15.55,
+          "Flüchtlingsunterkunft": 15.55,
+          "NSL/Leitstelle": 16.8,
+          "Geprüfte Schutz- und Sicherheitskraft (IHK)": 16.8,
+          "Fachkraft für Schutz und Sicherheit": 17.65,
+          "ÖPNV": 16.55
+        },
+        "2027-01-01": {
+          "Objektschutz": 15.7,
+          "Objektschutz mit Sachkundeprüfung": 16.15,
+          "Revier-/Interventionsdienst": 16.8,
+          "Veranstaltungsdienst": 16.15,
+          "Doorman/Shopguard": 17.15,
+          "Kaufhausdetektiv": 18.15,
+          "Einkaufszentrum": 16.15,
+          "Flüchtlingsunterkunft": 16.15,
+          "NSL/Leitstelle": 17.45,
+          "Geprüfte Schutz- und Sicherheitskraft (IHK)": 17.45,
+          "Fachkraft für Schutz und Sicherheit": 18.35,
+          "ÖPNV": 17.15
+        }
+      },
+      "zulagen_hinweis": "Entgeltgruppe 2 (15,55 / 16,15) plus Zulage je Stunde: Revier/Intervention 0,65; Doorman/Shopguard 1,00; Kaufhausdetektiv 2,00; ÖPNV 1,00; Waffenträger 2,50; Team-/Schichtleiter 0,75; Objektleiter 1,00. Oben bereits eingerechnet. EG 2 bis 5 nur, wenn Leistungsbeschreibung oder Gesetz die Qualifikation fordert.",
+      "allgemeinverbindlich": true,
+      "ave_hinweis": "AVE Entgelttarifvertrag 2026 (Bekanntmachung Land Berlin, März 2026)"
+    },
+    "BB": {
+      "name": "Brandenburg",
+      "gleich_wie": "BE",
+      "allgemeinverbindlich": true,
+      "ave_hinweis": "AVE Entgelttarifvertrag (Bekanntmachung Land Brandenburg, 18.11.2025)"
+    },
+    "HH": {
+      "name": "Hamburg",
+      "tarifvertrag": "Lohntarifvertrag Sicherheitsdienstleistungen Hamburg (BDSW / ver.di)",
+      "laufzeit": "2026-01-01 bis 2027-12-31",
+      "quelle": "BDSW-Entgeltübersicht Stand 01.04.2026 (über darkbird.io/tarifuebersicht und coredinate.de)",
+      "sicherheit": "aus Übersicht, Tarifvertragstext nicht geprüft",
+      "zuschlaege": {
+        "nacht_von": "20:00",
+        "nacht_bis": "06:00",
+        "nacht": 15,
+        "sonntag": 50,
+        "feiertag": 100,
+        "regel": "Laut Übersicht; Ausnahmen siehe Tarifvertrag."
+      },
+      "loehne": {
+        "2026-01-01": {
+          "Objektschutz": 15.14,
+          "Veranstaltungsdienst": 15.14,
+          "Revier-/Interventionsdienst": 15.32,
+          "NSL/Leitstelle": 15.32,
+          "Geprüfte Schutz- und Sicherheitskraft (IHK)": 16.77,
+          "Fachkraft für Schutz und Sicherheit": 16.77,
+          "ÖPNV": 17.75
+        }
+      },
+      "zulagen_hinweis": "Für Doorman, Detektiv, Einkaufszentrum und Flüchtlingsunterkunft keine eigene Lohngruppe gefunden: es gilt mindestens Objektschutz.",
+      "allgemeinverbindlich": null,
+      "ave_hinweis": "Vorgänger-Tarifverträge waren allgemeinverbindlich (2023, 2024); für den Vertrag ab 2026 keine AVE gefunden. Bis zur Klärung wird mit dem Tarif gerechnet."
+    },
+    "SH": {
+      "name": "Schleswig-Holstein",
+      "tarifvertrag": "Lohntarifvertrag Sicherheitsdienstleistungen Schleswig-Holstein (BDSW / ver.di), allgemeinverbindlich",
+      "laufzeit": "2024-01-01 bis 2026-12-31",
+      "quelle": "BDSW-Entgeltübersicht Stand 01.04.2026 (über darkbird.io/tarifuebersicht und coredinate.de); Sonntagszuschlag laut Protokollnotiz zum MTV (bdsw.de/images/tarifvertraege/laender/SHmtv.pdf)",
+      "sicherheit": "aus Übersicht, Tarifvertragstext nicht geprüft; Laufzeit endet 31.12.2026",
+      "zuschlaege": {
+        "nacht_von": "20:00",
+        "nacht_bis": "06:00",
+        "nacht": 15,
+        "sonntag": 10,
+        "feiertag": 50,
+        "regel": "Nur der höchste Zuschlag, Nacht- und Mehrarbeitszuschlag kommen daneben dazu (MTV)."
+      },
+      "loehne": {
+        "2026-01-01": {
+          "Objektschutz": 15.1,
+          "Veranstaltungsdienst": 15.1,
+          "Revier-/Interventionsdienst": 15.1,
+          "Flüchtlingsunterkunft": 15.59,
+          "NSL/Leitstelle": 16.71,
+          "Geprüfte Schutz- und Sicherheitskraft (IHK)": 16.96,
+          "Fachkraft für Schutz und Sicherheit": 16.96
+        }
+      },
+      "zulagen_hinweis": "Für Doorman, Detektiv und Einkaufszentrum keine eigene Lohngruppe gefunden: es gilt mindestens Objektschutz. Ab 2027 neuer Tarifabschluss nötig.",
+      "allgemeinverbindlich": true,
+      "ave_hinweis": "AVE Lohntarifvertrag (Pressemitteilung Land SH 23.05.2025)"
+    },
+    "NI": {
+      "name": "Niedersachsen",
+      "tarifvertrag": "Entgelttarifvertrag Sicherheitsdienstleistungen Niedersachsen (BDSW / GÖD)",
+      "laufzeit": "2026-01-01 bis 2027-12-31",
+      "quelle": "BDSW-Entgeltübersicht Stand 01.04.2026 (über darkbird.io/tarifuebersicht und coredinate.de)",
+      "sicherheit": "Löhne aus Übersicht; Zuschläge in den Quellen widersprüchlich, bitte am Tarifvertrag prüfen",
+      "zuschlaege": {
+        "nacht_von": "23:00",
+        "nacht_bis": "06:00",
+        "nacht": 10,
+        "sonntag": 50,
+        "feiertag": 100,
+        "regel": "Unsicher: eine Quelle nennt keinen Nachtzuschlag, eine andere 10 % von 23 bis 6 Uhr; für die unteren Lohngruppen evtl. Sonntag 25 % und Feiertag 75 %."
+      },
+      "loehne": {
+        "2026-01-01": {
+          "Objektschutz": 15.14,
+          "Veranstaltungsdienst": 15.14,
+          "Revier-/Interventionsdienst": 16.28,
+          "Flüchtlingsunterkunft": 15.54,
+          "Geprüfte Schutz- und Sicherheitskraft (IHK)": 17.77,
+          "Fachkraft für Schutz und Sicherheit": 17.77
+        }
+      },
+      "zulagen_hinweis": "Für Doorman, Detektiv, Einkaufszentrum und NSL keine eigene Lohngruppe gefunden: es gilt mindestens Objektschutz.",
+      "allgemeinverbindlich": false,
+      "ave_hinweis": "Laut Verzeichnis der allgemeinverbindlichen Tarifverträge Niedersachsen ist der allgemeine Lohntarif (BDSW/GÖD) nicht allgemeinverbindlich (nur Flughäfen, Kerntechnik, Militär). Ohne Tarifbindung gilt der gesetzliche Mindestlohn."
+    }
+  },
+  "einsatzorte": [
+    {
+      "suche": [
+        "berlin",
+        "schlosspark",
+        "fhp"
+      ],
+      "land": "BE",
+      "notiz": "Alle Objekte im Bereich Berlin/Brandenburg liegen in Berlin (Angabe Julian)."
+    },
+    {
+      "suche": [
+        "geesthacht",
+        "gestacht"
+      ],
+      "land": "SH",
+      "notiz": "ISM Geesthacht"
+    },
+    {
+      "suche": [
+        "schwarzenbek",
+        "schwarzenbeck"
+      ],
+      "land": "SH",
+      "notiz": "ISM IB Schwarzenbek"
+    },
+    {
+      "suche": [
+        "aqua"
+      ],
+      "land": "SH",
+      "notiz": "LYD Bad Aqua"
+    },
+    {
+      "suche": [
+        "schlosswiese"
+      ],
+      "land": "SH",
+      "notiz": "LYD Bad Schlosswiese"
+    },
+    {
+      "suche": [
+        "mölln",
+        "moelln"
+      ],
+      "land": "SH",
+      "notiz": "LYD Mölln"
+    },
+    {
+      "suche": [
+        "oststeinbek",
+        "oststeinbeck"
+      ],
+      "land": "SH",
+      "notiz": "MM Oststeinbek"
+    },
+    {
+      "suche": [
+        "harburg"
+      ],
+      "land": "NI",
+      "notiz": "MM Harburg DET und DOOR (Angabe Julian: Niedersachsen)"
+    },
+    {
+      "suche": [
+        "tropicana",
+        "mm son",
+        "headquarter",
+        "büro"
+      ],
+      "land": "NI",
+      "notiz": "Tropicana, MM SON, Büro-Headquarter (Angabe Julian: Niedersachsen)"
+    }
+  ],
+  "taetigkeit_vorschlag": [
+    {
+      "suche": [
+        " det",
+        "detektiv"
+      ],
+      "taetigkeit": "Kaufhausdetektiv"
+    },
+    {
+      "suche": [
+        "door",
+        "shopguard"
+      ],
+      "taetigkeit": "Doorman/Shopguard"
+    },
+    {
+      "suche": [
+        "veranstaltung",
+        "event"
+      ],
+      "taetigkeit": "Veranstaltungsdienst"
+    },
+    {
+      "suche": [
+        "revier",
+        "intervention"
+      ],
+      "taetigkeit": "Revier-/Interventionsdienst"
+    },
+    {
+      "suche": [
+        "unterkunft",
+        "flüchtling"
+      ],
+      "taetigkeit": "Flüchtlingsunterkunft"
+    },
+    {
+      "suche": [
+        "schlosspark"
+      ],
+      "taetigkeit": "Einkaufszentrum"
+    }
+  ],
+  "gesetzlicher_mindestlohn": {
+    "2026-01-01": 13.9,
+    "2027-01-01": 14.6,
+    "quelle": "Fünfte Mindestlohnanpassungsverordnung vom 29.10.2025"
+  },
+  "_hinweis_ave": "allgemeinverbindlich: true = Tarif gilt für alle Betriebe im Land (Mindestlohn = Tariflohn); false = gilt nur für tarifgebundene Betriebe, sonst greift der gesetzliche Mindestlohn; null = nicht geklärt, es wird vorsichtshalber mit dem Tarif gerechnet."
+}
