@@ -69,6 +69,7 @@ button { cursor: pointer; }
 .jline svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .jline-out { position: fixed; top: 52px; right: 16px; width: min(56ch, calc(100vw - 32px)); z-index: 50; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--red); border-radius: 6px; padding: 10px 14px; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.4); cursor: pointer; }
 .jline-out .q { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.jline-out div { white-space: pre-wrap; max-height: 60vh; overflow: auto; }
 .brand i { width: 9px; height: 9px; background: var(--red); transform: rotate(45deg); display: inline-block; }
 .tab { background: none; border: 0; border-bottom: 2px solid transparent; padding: 12px 14px 10px; font-family: var(--f-display); font-weight: 600; font-size: 16px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .tab:hover { color: var(--text); }
@@ -105,6 +106,9 @@ table.inv { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 .st.offen { border-color: var(--warn); color: var(--warn); }
 .st.late { border-color: var(--red-hot); color: var(--red-hot); }
 .st.bezahlt { border-color: var(--ok); color: var(--ok); }
+/* SEPA-Lastschrift: wird abgebucht, nicht selbst ueberweisen */
+.st.sepa { border-color: var(--ok); color: var(--ok); }
+.st.nosepa { color: var(--muted); }
 .inv-row { cursor: pointer; }
 .inv-row:hover td { background: var(--panel-2); }
 .inv-row .file a { color: var(--text); }
@@ -650,7 +654,7 @@ body { overflow: hidden; }
 .shift .tm { white-space: nowrap; }
 .shift .loc { color: var(--text); font-weight: 500; }
 
-/* Jarvis im Obsidian-Hub: der Hub leuchtet, wenn Jarvis hört oder spricht */
+/* Victor im Obsidian-Hub: der Hub leuchtet, wenn Victor hört oder spricht */
 .hub { transition: border-color .4s, box-shadow .4s; }
 .hub[data-s="hört"] { border-color: rgba(198,40,40,.7); animation: hub-hear 2.4s ease-in-out infinite; }
 .hub[data-s="denkt"] { border-color: rgba(224,168,74,.6); box-shadow: 0 0 28px rgba(224,168,74,.18), inset 0 0 50px rgba(224,168,74,.07); }
@@ -670,11 +674,11 @@ body { overflow: hidden; }
 .hub-off:hover { border-color: var(--red); color: var(--text); }
 @media (prefers-reduced-motion: reduce) { .hub, .hub::after { animation: none !important; } }
 
-/* Antwortfeld = Gesprächsverlauf mit Jarvis */
+/* Antwortfeld = Gesprächsverlauf mit Victor */
 .answer { white-space: normal; }
 .answer .user { color: var(--muted); font-size: 13px; margin: 8px 0 2px; }
 .answer .jarvis { white-space: pre-wrap; margin-bottom: 6px; }
-.answer .jarvis::before { content: "Jarvis"; display: block; font-family: var(--f-display); font-weight: 600; color: var(--red-hot); letter-spacing: .1em; text-transform: uppercase; font-size: 12px; margin-bottom: 2px; }
+.answer .jarvis::before { content: "Victor"; display: block; font-family: var(--f-display); font-weight: 600; color: var(--red-hot); letter-spacing: .1em; text-transform: uppercase; font-size: 12px; margin-bottom: 2px; }
 .answer .sys { color: var(--muted); font-size: 13px; }
 .iconbtn[aria-pressed="false"]#voice { opacity: .7; }
 /* Social Media */
@@ -711,7 +715,7 @@ body { overflow: hidden; }
 .sm-day .i { grid-column: 2; grid-row: 1 / 3; font-size: 13px; color: var(--muted); }
 .kpi small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
 .hint a { color: var(--text); }
-/* Handy (App): Reiter in einer wischbaren Zeile, Jarvis-Zeile darunter über die volle Breite */
+/* Handy (App): Reiter in einer wischbaren Zeile, Victor-Zeile darunter über die volle Breite */
 @media (max-width: 720px) {
   body { padding-block: 8px; padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); }
   .nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-top: env(safe-area-inset-top, 0px); }
@@ -732,8 +736,25 @@ body { overflow: hidden; }
   .inv-detail dd { margin-bottom: 6px; }
   .inv-pay { order: -1; }
 }
-/* Jarvis-Reiter: angeheftete Claude-Projekte */
+/* Victor-Reiter: angeheftete Claude-Projekte */
 .tab-jarvis { color: var(--red-hot); }
+/* V.I.C.T.O.R.-Reiter: links Regelaufgaben, rechts Projekte, beide scrollen fuer sich */
+.vt-cols { display: grid; grid-template-columns: minmax(320px, 1fr) minmax(0, 2fr); gap: 16px; height: calc(100vh - 210px); min-height: 420px; }
+.vt-col { display: flex; flex-direction: column; min-height: 0; gap: 10px; }
+.vt-col > h2 { margin: 0; font-family: var(--f-display); font-size: 20px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.vt-scroll { flex: 1; min-height: 0; overflow: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 12px; }
+.vt-scroll .pgrid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.rt-card { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; border-left: 3px solid var(--ok); }
+.rt-card.err { border-left-color: var(--red-hot); }
+.rt-card.other { border-left-color: var(--line); }
+.rt-card h3 { margin: 0; font-family: var(--f-display); font-size: 18px; font-weight: 700; }
+.rt-card .plan { font-family: var(--f-mono); font-size: 12px; color: var(--red-hot); }
+.rt-card p { margin: 0; font-size: 13px; color: var(--muted); }
+.rt-card .last { font-size: 13px; color: var(--text); }
+.rt-card .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.rt-card button { background: var(--red); border: 0; border-radius: 5px; padding: 5px 10px; color: var(--text); font-weight: 600; font-size: 12px; }
+.rt-card button:disabled { opacity: .5; }
+@media (max-width: 900px) { .vt-cols { grid-template-columns: 1fr; height: auto; } .vt-scroll { max-height: 70vh; } }
 .cp-card { padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 10px; color: var(--text); border-left: 3px solid var(--red); min-height: 170px; }
 .applink { margin-top: 16px; padding: 16px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
 .applink p { margin: 6px 0 0; color: var(--muted); font-size: 14px; max-width: 60ch; }
@@ -866,7 +887,6 @@ td.abw { background-image: radial-gradient(circle at 4px 50%, var(--warn) 2.5px,
 .pe-year tr.pe-calc td.zuk { background: rgba(120, 128, 140, .08); }
 .pe-year td.schnitt, .pe-year th.schnitt { color: #8a93a0; border-left: 1px solid rgba(255, 255, 255, .08); }
 @media print { .pe-year td.zuk, .pe-year th.zuk { color: #9aa0a8 !important; opacity: 1; } .pe-year td.schnitt { color: #555; } }
-
 /* ===================================================================
    Design-Ebene „Glas" (2026-11-01): Hell/Dunkel, Glas-Optik, Animationen.
    Liegt bewusst am Ende, überschreibt nur Optik. Alles darüber bleibt gültig.
@@ -1067,19 +1087,19 @@ button:active:not(:disabled) { transform: scale(.96); }
 <body>
 <div class="shell">
 <nav class="nav" role="tablist" aria-label="Bereiche">
-  <span class="brand"><i></i>ZAC · Jarvis</span>
+  <span class="brand"><i></i>ZAC · V.I.C.T.O.R.</span>
   <button class="tab" role="tab" data-v="dashboard" type="button">Dashboard</button>
   <button class="tab" role="tab" data-v="projekte" type="button">Todoist</button>
-  <button class="tab tab-jarvis" role="tab" data-v="jarvis" type="button">Jarvis</button>
+  <button class="tab tab-jarvis" role="tab" data-v="jarvis" type="button">V.I.C.T.O.R.</button>
   <button class="tab" role="tab" data-v="buchhaltung" type="button">Buchhaltung</button>
   <button class="tab" role="tab" data-v="arbeitsspace" type="button">Arbeitsspace</button>
   <button class="tab" role="tab" data-v="staffo" type="button">Staffo</button>
   <button class="tab" role="tab" data-v="personal" type="button">Personal</button>
   <button class="tab" role="tab" data-v="social" type="button">Social Media</button>
   <form class="jline" id="jlineForm" autocomplete="off" role="search">
-    <label for="jline">Jarvis</label>
-    <input id="jline" type="text" placeholder="Anweisung, Bemerkung oder Info an Jarvis …" aria-label="Anweisung an Jarvis">
-    <button type="submit" aria-label="An Jarvis senden"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6"/></svg></button>
+    <label for="jline">Victor</label>
+    <input id="jline" type="text" placeholder="Anweisung, Bemerkung oder Info an Victor …" aria-label="Anweisung an Victor">
+    <button type="submit" aria-label="An Victor senden"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6"/></svg></button>
   </form>
   <button class="theme-toggle" id="themeToggle" type="button" aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel umschalten">
     <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -1113,10 +1133,10 @@ button:active:not(:disabled) { transform: scale(.96); }
   <div class="drop-zones">
     <div class="dz" data-z="rechnung"><b>Rechnung</b><span>landet im Ordner der Buchhaltung und wird ausgelesen</span></div>
     <div class="dz" data-z="ausgang"><b>Ausgangsrechnung</b><span>eigene Rechnung an einen Kunden, zählt zu den erwarteten Einnahmen</span></div>
-    <div class="dz" data-z="kontoauszug"><b>Kontoauszug</b><span>Jarvis liest die Buchungen, gleicht Rechnungen ab und legt sie bei DATEV ab</span></div>
+    <div class="dz" data-z="kontoauszug"><b>Kontoauszug</b><span>Victor liest die Buchungen, gleicht Rechnungen ab und legt sie bei DATEV ab</span></div>
     <div class="dz" data-z="unterlagen"><b>Unterlagen</b><span id="dzDocs">landen im Arbeitsspace zur Bearbeitung</span></div>
   </div>
-  <p>Oder außerhalb der Felder loslassen: Jarvis prüft selbst, ob es eine Rechnung ist.</p>
+  <p>Oder außerhalb der Felder loslassen: Victor prüft selbst, ob es eine Rechnung ist.</p>
 </div>
 <div class="view" id="v-dashboard">
 <section class="panel paybar" aria-label="Zahlungen in den nächsten 7 Tagen">
@@ -1145,9 +1165,9 @@ button:active:not(:disabled) { transform: scale(.96); }
         <canvas id="core" aria-hidden="true"></canvas>
         <div id="orb" class="idle" title="Klick: Zuhören pausieren / fortsetzen"></div>
         <div class="hub-label"><span class="eyebrow">Obsidian</span><span class="state-pill" id="state" data-s="bereit">bereit</span></div>
-        <div id="status">Verbinde mit Jarvis …</div>
-        <div class="hub-title"><div class="big">J·A·R·V·I·S</div><div class="focus" id="focus"></div></div>
-        <button class="hub-off" id="zacAus" type="button" title="Jarvis beenden">ZAC aus</button>
+        <div id="status">Verbinde mit Victor …</div>
+        <div class="hub-title"><div class="big" title="Visuelle Intelligenz · Connecting · Traffic · Organization · Routine">V.I.C.T.O.R.</div><div class="focus" id="focus"></div></div>
+        <button class="hub-off" id="zacAus" type="button" title="Victor beenden">ZAC aus</button>
       </div>
     </div>
     <div class="panel todo">
@@ -1166,8 +1186,8 @@ button:active:not(:disabled) { transform: scale(.96); }
     <div hidden><div id="tiles"></div><button id="allProjects" type="button"></button></div>
   </section>
 
-  <!-- MITTE: Mein Tag (Agenda + Fokus) und Jarvis -->
-  <section class="col center" aria-label="Mein Tag und Jarvis">
+  <!-- MITTE: Mein Tag (Agenda + Fokus) und Victor -->
+  <section class="col center" aria-label="Mein Tag und Victor">
     <div class="panel day-plan">
       <div class="dp-head"><div><span class="eyebrow">Mein Tag</span><h2 id="dpTitle">Heute</h2></div><div class="dp-next" id="dpNext"></div></div>
       <div class="dp-grid">
@@ -1175,10 +1195,10 @@ button:active:not(:disabled) { transform: scale(.96); }
         <div class="dp-col"><div class="dp-sub">Fokus · das Wichtigste zuerst</div><ul class="dp-list" id="dpFocus"><li class="notice">Aufgaben werden geladen …</li></ul></div>
       </div>
     </div>
-    <div class="panel answer" id="transcript" aria-live="polite"><div class="sys">Sprich mit Jarvis oder schreib unten einen Befehl, zum Beispiel „Wer hat heute Dienst?“ oder „Neue Aufgabe: Dienstplan prüfen, morgen 9 Uhr“.</div></div>
+    <div class="panel answer" id="transcript" aria-live="polite"><div class="sys">Sprich mit Victor oder schreib unten einen Befehl, zum Beispiel „Wer hat heute Dienst?“ oder „Neue Aufgabe: Dienstplan prüfen, morgen 9 Uhr“.</div></div>
     <form class="panel cmd" id="cmdForm" autocomplete="off">
       <button class="iconbtn" id="mic" type="button" aria-pressed="false" aria-label="Zuhören an/aus" title="Zuhören an/aus"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
-      <input id="cmd" type="text" placeholder="Befehl an Jarvis … Aufgabe anlegen, Dienstplan, Mails, fragen" aria-label="Befehl an Jarvis">
+      <input id="cmd" type="text" placeholder="Befehl an Victor … Aufgabe anlegen, Dienstplan, Mails, fragen" aria-label="Befehl an Victor">
       <button class="iconbtn" id="voice" type="button" aria-pressed="true" aria-label="Stimme an/aus" title="Stimme an/aus"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
       <button class="iconbtn send" type="submit" aria-label="Senden"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6"/></svg></button>
     </form>
@@ -1215,7 +1235,7 @@ button:active:not(:disabled) { transform: scale(.96); }
       </section>
     </div>
     <form class="panel tw-line" id="twLine" autocomplete="off">
-      <span class="lbl">Jarvis · Todoist</span>
+      <span class="lbl">Victor · Todoist</span>
       <input id="twText" type="text" placeholder="Termin oder Aufgabe schreiben oder sprechen, z. B. „Morgen 14 Uhr Baustellenbegehung, Projekt Berlin - Schlosspark“" aria-label="Termin oder Aufgabe für Todoist">
       <button type="button" class="tw-mic" id="twMic" aria-pressed="false" aria-label="Diktieren" title="Diktieren"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
       <button type="submit" class="tw-send">Eintragen</button>
@@ -1227,9 +1247,18 @@ button:active:not(:disabled) { transform: scale(.96); }
 
 <div class="view" id="v-jarvis" hidden>
   <div class="page">
-    <div class="page-head"><h1>Jarvis · Themen und Projekte</h1>
+    <div class="page-head"><h1>V.I.C.T.O.R. · Regelaufgaben und Projekte</h1>
       <a class="btn-open" href="https://claude.ai/cowork/projects" target="_blank" rel="noopener">Alle Projekte in Claude ↗</a></div>
-    <div class="pgrid" id="cpGrid"><div class="notice">Claude-Projekte werden geladen …</div></div>
+    <div class="vt-cols">
+      <section class="vt-col" aria-label="Regelaufgaben">
+        <h2>Regelaufgaben</h2>
+        <div class="vt-scroll" id="rtList"><div class="notice">Regelaufgaben werden geladen …</div></div>
+      </section>
+      <section class="vt-col" aria-label="Themen und Projekte">
+        <h2>Themen und Projekte</h2>
+        <div class="vt-scroll"><div class="pgrid" id="cpGrid"><div class="notice">Projekte werden geladen …</div></div></div>
+      </section>
+    </div>
     <section class="panel applink" id="appLink" hidden>
       <div><span class="eyebrow">ZAC Zentrale aufs Handy</span>
         <p>Auf dem Handy Tailscale öffnen und verbinden, dann diesen Code mit der Kamera scannen. Die Zentrale öffnet sich; im Chrome-Menü „App installieren“ bzw. „Zum Startbildschirm hinzufügen“ wählen.</p>
@@ -1298,7 +1327,7 @@ button:active:not(:disabled) { transform: scale(.96); }
         <tbody id="bkBody"><tr><td colspan="4" class="pay-empty">Noch kein Kontoauszug. Kontoauszug als PDF oder CSV in die Zentrale ziehen und „Kontoauszug“ wählen.</td></tr></tbody></table></div>
       <p class="hint">Erkannt wird eine Rechnung, wenn Betrag und Richtung stimmen und die Rechnungsnummer oder der Partner in der Buchung steht. Dann wird sie mit dem Buchungsdatum als bezahlt markiert und abgelegt: Eingangsrechnungen in <code>DATEV _ Hochladen/JJJJ/MM_JJJJ</code>, Ausgangsrechnungen in <code>…/MM_JJJJ/Rechnungsausgang</code>. Nicht eindeutige Fälle ordnest du hier von Hand zu.</p>
     </section>
-    <p class="hint" id="invHint">Quelle: Ordner <code>Claude_Backup/Unterlagen/Rechnungen für Jarvis</code>. Neue PDFs dort ablegen, Jarvis liest sie beim nächsten Laden aus. Zeile anklicken für alle Rechnungsdaten. „Bezahlt“ benennt die Datei in <code>…_Bezahlt_TTMMJJ</code> um.</p>
+    <p class="hint" id="invHint">Quelle: Ordner <code>Claude_Backup/Unterlagen/Rechnungen für Jarvis</code>. Neue PDFs dort ablegen, Victor liest sie beim nächsten Laden aus. Zeile anklicken für alle Rechnungsdaten. „Bezahlt“ benennt die Datei in <code>…_Bezahlt_TTMMJJ</code> um.</p>
   </div>
 </div>
 
@@ -1418,7 +1447,7 @@ button:active:not(:disabled) { transform: scale(.96); }
           <span class="eyebrow">Arbeitsfläche</span>
           <textarea class="ws-paste" id="wsPaste" placeholder="Text hier einfügen (Strg+V). Dateien kannst du hier ebenfalls einfügen oder hineinziehen."></textarea>
           <div class="ws-row"><button type="button" id="wsPasteSave">Als Unterlage übernehmen</button><span class="docs-hint" id="docFolder"></span></div>
-          <div class="docs-head"><span class="eyebrow">Unterlagen · Eingang</span><span class="docs-hint">Anklicken und schreiben, was Jarvis damit machen soll. Fertig → PDF im Ordner des Bereichs.</span></div>
+          <div class="docs-head"><span class="eyebrow">Unterlagen · Eingang</span><span class="docs-hint">Anklicken und schreiben, was Victor damit machen soll. Fertig → PDF im Ordner des Bereichs.</span></div>
           <ul class="doc-list" id="docList"><li class="notice">Unterlagen werden geladen …</li></ul>
           <div class="docs-sub"><span class="eyebrow">Fertig abgelegt</span><ul class="doc-list doc-done" id="docDone"></ul></div>
         </div>
@@ -1428,8 +1457,8 @@ button:active:not(:disabled) { transform: scale(.96); }
     <div class="ws">
       <textarea id="wsText" placeholder="Gedanken, Gesprächsnotizen, Entwürfe … wird automatisch gespeichert." aria-label="Arbeitsspace Notizen"></textarea>
       <aside class="panel">
-        <span class="eyebrow">Mit Jarvis weiterarbeiten</span>
-        <p>Markiere Text im Notizblock (oder nichts für alles) und lass Jarvis daraus Aufgaben machen oder es zusammenfassen.</p>
+        <span class="eyebrow">Mit Victor weiterarbeiten</span>
+        <p>Markiere Text im Notizblock (oder nichts für alles) und lass Victor daraus Aufgaben machen oder es zusammenfassen.</p>
         <button class="btn" type="button" id="wsTasks">Aufgaben daraus machen</button>
         <button class="btn" type="button" id="wsSum" style="background:var(--panel-2);border:1px solid var(--line)">Zusammenfassen</button>
         <div id="wsOut" style="white-space:pre-wrap;color:var(--text)"></div>
@@ -1454,9 +1483,9 @@ button:active:not(:disabled) { transform: scale(.96); }
     <div class="mbox-body" id="mBody"></div>
   </div>
 </div>
-<script src="/static/main.js?v=3"></script>
+<script src="/static/main.js?v=6"></script>
 <script>
-// ZAC Zentrale (lokal): Layout der claude.ai-"Jarvis Zentrale", Daten vom Jarvis-Server,
+// ZAC Zentrale (lokal): Layout der claude.ai-"Victor Zentrale", Daten vom Victor-Server,
 // Stimme und Gespräch über main.js (Orb, Mikrofon, ElevenLabs, "ZAC aus").
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -1486,7 +1515,7 @@ button:active:not(:disabled) { transform: scale(.96); }
   }
   tick(); setInterval(tick, 1000);
 
-  /* ---------- Ort + Wetter: vom Jarvis-Server, sonst Open-Meteo für Jesteburg ---------- */
+  /* ---------- Ort + Wetter: vom Victor-Server, sonst Open-Meteo für Jesteburg ---------- */
   const WX = { 0:"klar",1:"überwiegend klar",2:"teils bewölkt",3:"bedeckt",45:"Nebel",48:"Reifnebel",51:"Niesel",53:"Niesel",55:"starker Niesel",61:"leichter Regen",63:"Regen",65:"starker Regen",71:"leichter Schnee",73:"Schnee",75:"starker Schnee",80:"Schauer",81:"Schauer",82:"heftige Schauer",95:"Gewitter",96:"Gewitter mit Hagel",99:"Gewitter mit Hagel" };
   async function fallbackWeather() {
     try {
@@ -1620,7 +1649,7 @@ button:active:not(:disabled) { transform: scale(.96); }
   }
   function lightUp() { flash = 1; for (let i = 0; i < 5; i++) setTimeout(strike, i * 90); }
 
-  /* ---------- Jarvis (main.js) steuert den Hub ---------- */
+  /* ---------- Victor (main.js) steuert den Hub ---------- */
   const ORB_STATE = { idle: "bereit", listening: "hört", thinking: "denkt", speaking: "spricht" };
   window.onJarvisState = (s) => {
     voiceState = ORB_STATE[s] || "bereit";
@@ -1637,19 +1666,19 @@ button:active:not(:disabled) { transform: scale(.96); }
     const qs = document.createElement("span"); qs.className = "q"; qs.textContent = "Du: " + q;
     const a = document.createElement("div"); a.textContent = text;
     o.append(qs, a); o.style.top = ($("jlineForm").getBoundingClientRect().bottom + 6) + "px"; o.hidden = false;
-    clearTimeout(jlineHide); jlineHide = setTimeout(() => { o.hidden = true; }, 20000);
+    clearTimeout(jlineHide); jlineHide = setTimeout(() => { o.hidden = true; }, Math.max(20000, text.length * 80));
   }
   $("jlineOut").onclick = () => { $("jlineOut").hidden = true; };
   let jlineQ = "";
   $("jlineForm").addEventListener("submit", (e) => {
     e.preventDefault(); const v = $("jline").value.trim(); if (!v) return;
-    if (sendCommand(v)) { $("jline").value = ""; jlineQ = v; jlineWaiting = true; jlineShow(v, "Jarvis denkt nach …"); }
-    else jlineShow(v, "Jarvis ist nicht verbunden.");
+    if (sendCommand(v)) { $("jline").value = ""; jlineQ = v; jlineWaiting = true; jlineShow(v, "Victor denkt nach …"); }
+    else jlineShow(v, "Victor ist nicht verbunden.");
   });
   window.onJarvisResponse = (data) => {
     if (jlineWaiting && data && data.text) { jlineWaiting = false; jlineShow(jlineQ, data.text); }
     flash = Math.max(flash, .6);
-    // Jarvis may have created a task: refresh Todoist shortly after his answer
+    // Victor may have created a task: refresh Todoist shortly after his answer
     clearTimeout(reloadSoon); reloadSoon = setTimeout(reloadTodoist, 2500);
   };
   $("mic").onclick = () => $("orb").click();
@@ -1662,18 +1691,18 @@ button:active:not(:disabled) { transform: scale(.96); }
     if (!voiceOn && typeof stopSpeaking === "function" && isPlaying) { audioQueue = []; if (currentAudio) currentAudio.pause(); if (window.speechSynthesis) speechSynthesis.cancel(); finishedSpeaking(); }
   };
   function sendCommand(text) {
-    if (typeof ws === "undefined" || !ws || ws.readyState !== WebSocket.OPEN || shutDown) { note("Jarvis ist nicht verbunden."); return false; }
+    if (typeof ws === "undefined" || !ws || ws.readyState !== WebSocket.OPEN || shutDown) { note("Victor ist nicht verbunden."); return false; }
     unlockAudio();
     if (asleep) { asleep = false; setMusicVolume("active"); }
-    sendToJarvis(text);
+    sendToJarvis(text, true);
     return true;
   }
   $("cmdForm").addEventListener("submit", (e) => {
     e.preventDefault(); const v = $("cmd").value.trim(); if (!v) return;
     if (sendCommand(v)) $("cmd").value = "";
   });
-  $("cmd").addEventListener("input", () => { if (/\b(jarvis|obsidian)\b/i.test($("cmd").value)) { if (target < .5) setState("aktiv"); flash = Math.max(flash, .5); } });
-  $("zacAus").onclick = () => { if (confirm("Jarvis beenden (ZAC aus)?")) sendCommand("ZAC aus"); };
+  $("cmd").addEventListener("input", () => { if (/\b(victor|viktor|obsidian)\b/i.test($("cmd").value)) { if (target < .5) setState("aktiv"); flash = Math.max(flash, .5); } });
+  $("zacAus").onclick = () => { if (confirm("Victor beenden (ZAC aus)?")) sendCommand("ZAC aus"); };
 
   /* ---------- Todoist ---------- */
   let inbox = [], projects = [], tasks = [], filter = store.get("jz.filter", null);
@@ -1845,7 +1874,7 @@ button:active:not(:disabled) { transform: scale(.96); }
       const dTxt = d < 0 ? `${-d} T überfällig` : d === 0 ? "heute fällig" : d === 1 ? "morgen fällig" : `in ${d} Tagen`;
       box.innerHTML = `<div><div class="who"></div><div class="sub"><span class="nr"></span> · <span class="d">${dTxt}</span></div></div><div class="amt"></div>`;
       box.querySelector(".who").textContent = r.glaeubiger || "Unbekannt";
-      box.querySelector(".nr").textContent = (r.typ === "ausgang" ? "Ausgang " : "") + (r.nummer || "ohne Nr.");
+      box.querySelector(".nr").textContent = (r.typ === "ausgang" ? "Ausgang " : "") + (r.nummer || "ohne Nr.") + (r.sepa?.lastschrift ? " · SEPA-Lastschrift" : "");
       box.querySelector(".amt").textContent = r.betrag != null ? eur(r.betrag, r.waehrung) : "–";
       box.tabIndex = 0; box.setAttribute("role", "button"); box.title = "Details in der Buchhaltung";
       box.onclick = box.onkeydown = (e) => { if (e.type === "keydown" && e.key !== "Enter") return; invOpen = r.datei; show("buchhaltung"); try { history.replaceState(null, "", "#buchhaltung"); } catch {} };
@@ -1885,6 +1914,13 @@ button:active:not(:disabled) { transform: scale(.96); }
       const out = r.typ === "ausgang";
       tr.querySelector(".g").textContent = out ? (r.empfaenger || "Kunde unbekannt") : (r.glaeubiger || "–");
       if (out) { const t = document.createElement("span"); t.className = "st ausgang"; t.textContent = "Ausgang"; t.title = "Ausgangsrechnung: Einnahme"; tr.querySelector(".g").prepend(t, " "); }
+      else if (r.sepa) {
+        const t = document.createElement("span"); t.className = "st " + (r.sepa.lastschrift ? "sepa" : "nosepa");
+        t.textContent = r.sepa.lastschrift ? "SEPA" : "ohne SEPA";
+        t.title = r.sepa.lastschrift ? "SEPA-Lastschrift: wird abgebucht, nicht überweisen" + (r.sepa.mandat ? " · Mandat " + r.sepa.mandat : "")
+          : "Auf der Rechnung ist keine SEPA-Lastschrift angegeben: selbst überweisen oder im Kundenportal prüfen";
+        tr.querySelector(".g").append(" ", t);
+      }
       tr.querySelector(".n").textContent = r.nummer || "–";
       const fl = tr.querySelector(".file");
       if (r.datei) { const a = document.createElement("a"); a.href = "/api/zentrale/rechnungen/datei?name=" + encodeURIComponent(r.datei) + (out ? "&art=ausgang" : ""); a.target = "_blank"; a.rel = "noopener"; a.textContent = "PDF ↗"; a.title = r.datei; a.onclick = e => e.stopPropagation(); fl.append(a); }
@@ -1911,12 +1947,19 @@ button:active:not(:disabled) { transform: scale(.96); }
     const tr = document.createElement("tr"); tr.className = "inv-detail";
     const td = document.createElement("td"); td.colSpan = 8; tr.append(td);
     const money = v => v != null ? eur(v, r.waehrung) : null;
-    const pay = [["Zahlungsempfänger", r.glaeubiger], ["IBAN", r.iban], ["Betrag brutto", money(r.betrag)], ["Verwendungszweck", r.verwendungszweck || r.nummer]];
+    const sepa = r.typ !== "ausgang" && r.sepa;
+    const debit = sepa && sepa.lastschrift;
+    const pay = debit
+      ? [["Gläubiger", r.glaeubiger], ["Mandatsreferenz", sepa.mandat], ["Gläubiger-ID", sepa.glaeubiger_id], ["Betrag brutto", money(r.betrag)], ["Abbuchung", sepa.abbuchung ? new Date(sepa.abbuchung + "T00:00").toLocaleDateString("de-DE") : null]]
+      : [["Zahlungsempfänger", r.glaeubiger], ["IBAN", r.iban], ["Betrag brutto", money(r.betrag)], ["Verwendungszweck", r.verwendungszweck || r.nummer]];
+    const sepaText = !sepa ? null : debit
+      ? ["Ja, wird abgebucht", sepa.mandat && "Mandat " + sepa.mandat, sepa.glaeubiger_id && "Gläubiger-ID " + sepa.glaeubiger_id].filter(Boolean).join(" · ")
+      : "Nein, auf der Rechnung nicht angegeben (selbst überweisen oder im Kundenportal prüfen)";
     const rows = [
       ["Worum es geht", r.beschreibung], ["Rechnungssteller", [r.glaeubiger, r.glaeubiger_adresse].filter(Boolean).join(", ")],
       ["Empfänger", r.empfaenger], ["Kundennummer", r.kundennummer], ["Leistungszeitraum", r.leistungszeitraum],
       ["Netto", money(r.netto)], ["USt", [r.ust_satz, money(r.ust_betrag)].filter(Boolean).join(" · ")], ["Brutto", money(r.betrag)],
-      ["Zahlungsziel", r.zahlungsziel], ["Zahlungsart", r.zahlungsart], ["Skonto", r.skonto],
+      ["SEPA-Lastschrift", sepaText], ["Zahlungsziel", r.zahlungsziel], ["Zahlungsart", r.zahlungsart], ["Skonto", r.skonto],
       ["IBAN", r.iban], ["BIC / Bank", [r.bic, r.bank].filter(Boolean).join(" · ")], ["Verwendungszweck", r.verwendungszweck],
       ["USt-IdNr. / St.-Nr.", r.ust_id], ["Bezahlt am", r.bezahltAm], ["Datei", r.datei],
     ];
@@ -1926,7 +1969,7 @@ button:active:not(:disabled) { transform: scale(.96); }
     for (const [k, v] of rows) { if (!v) continue; const dt = document.createElement("dt"); dt.textContent = k; const dd = document.createElement("dd"); dd.textContent = v; dl.append(dt, dd); }
     left.append(dl);
     const right = document.createElement("div"); right.className = "inv-pay";
-    const h = document.createElement("span"); h.className = "eyebrow"; h.textContent = "Überweisung"; right.append(h);
+    const h = document.createElement("span"); h.className = "eyebrow"; h.textContent = debit ? "SEPA-Lastschrift · wird abgebucht, nicht überweisen" : "Überweisung"; right.append(h);
     for (const [k, v] of pay) {
       const f = document.createElement("div"); f.className = "f";
       const l = document.createElement("span"); l.className = "l"; l.textContent = k;
@@ -1961,8 +2004,36 @@ button:active:not(:disabled) { transform: scale(.96); }
   document.querySelectorAll(".tab").forEach(t => t.onclick = () => { show(t.dataset.v); try { window.history.replaceState(null, "", "#" + t.dataset.v); } catch {} });
   addEventListener("hashchange", () => show(location.hash.slice(1)));
 
-  /* ---------- Jarvis: Themen und Projekte aus Obsidian (Start.md) ---------- */
+  /* ---------- Victor: Themen und Projekte aus Obsidian (Start.md) ---------- */
+  async function loadRoutines() {
+    const box = $("rtList");
+    let d;
+    try { d = await api("/api/zentrale/regelaufgaben"); }
+    catch { box.innerHTML = '<div class="notice">Regelaufgaben konnten nicht geladen werden.</div>'; return; }
+    box.innerHTML = "";
+    const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    for (const j of d.regelaufgaben || []) {
+      const c = el("section", "panel rt-card" + (j.ok ? "" : " err"));
+      c.append(el("h3", null, j.name), el("span", "plan", j.plan), el("p", null, j.was));
+      if (j.letzter) c.append(el("div", "last", (j.ok ? "Zuletzt " : "Fehler am ") + j.letzter + ": " + j.ergebnis));
+      const row = el("div", "row", j.laeuft ? "läuft gerade …" : "Nächster Lauf: " + (j.naechster || "–"));
+      const b = el("button", null, "Jetzt ausführen"); b.type = "button"; b.disabled = !!j.laeuft;
+      b.onclick = async () => {
+        b.disabled = true; b.textContent = "Gestartet …";
+        try { await api("/api/zentrale/regelaufgaben/start", write("POST", { id: j.id })); } catch { b.textContent = "Fehler"; }
+        setTimeout(loadRoutines, 3000);
+      };
+      row.append(b); c.append(row); box.append(c);
+    }
+    for (const j of d.weitere || []) {
+      const c = el("section", "panel rt-card other");
+      c.append(el("h3", null, j.name), el("span", "plan", j.plan), el("p", null, j.was)); box.append(c);
+    }
+    clearTimeout(loadRoutines.t);
+    if (!$("v-jarvis").hidden) loadRoutines.t = setTimeout(loadRoutines, (d.regelaufgaben || []).some(j => j.laeuft) ? 10000 : 60000);
+  }
   async function initJarvis() {
+    loadRoutines();
     const g = $("cpGrid");
     let d;
     try { d = await api("/api/zentrale/obsidian-projekte"); }
@@ -2693,7 +2764,7 @@ button:active:not(:disabled) { transform: scale(.96); }
   });
   $("twLine").addEventListener("submit", async (e) => {
     e.preventDefault(); const v = $("twText").value.trim(); if (!v) return;
-    $("twMsg").textContent = "Jarvis trägt ein …"; setState("denkt");
+    $("twMsg").textContent = "Victor trägt ein …"; setState("denkt");
     try {
       const d = await api("/api/zentrale/todoist/sprache", write("POST", { text: v }));
       if (d.fehler) throw new Error(d.fehler);
@@ -2756,7 +2827,7 @@ button:active:not(:disabled) { transform: scale(.96); }
   async function wsRun(modus) {
     const out = $("wsOut");
     const text = wsSelection(); if (!text) { out.textContent = "Der Notizblock ist leer."; return; }
-    out.textContent = "Jarvis denkt …"; setState("denkt");
+    out.textContent = "Victor denkt …"; setState("denkt");
     try {
       const d = await api("/api/zentrale/arbeitsspace/ki", write("POST", { modus, text }));
       out.textContent = d.text; setState("aktiv"); lightUp();
@@ -2790,7 +2861,7 @@ button:active:not(:disabled) { transform: scale(.96); }
   });
   addEventListener("keydown", (e) => { if (e.key === "Escape" && !drop.hidden) { drop.hidden = true; dragDepth = 0; } });
   async function uploadFile(f, ziel) {
-    jlineShow(f.name, ziel === "kontoauszug" ? "Jarvis liest den Kontoauszug, das dauert etwa eine Minute …" : ziel === "auto" ? "Jarvis prüft die Datei … (Kontoauszüge brauchen etwa eine Minute)" : "Wird abgelegt …");
+    jlineShow(f.name, ziel === "kontoauszug" ? "Victor liest den Kontoauszug, das dauert etwa eine Minute …" : ziel === "auto" ? "Victor prüft die Datei … (Kontoauszüge brauchen etwa eine Minute)" : "Wird abgelegt …");
     const fd = new FormData(); fd.append("datei", f); fd.append("ziel", ziel);
     if (ziel === "unterlagen" || (ziel === "auto" && wsArea)) fd.append("bereich", wsArea);
     try {
@@ -2810,7 +2881,7 @@ button:active:not(:disabled) { transform: scale(.96); }
         jlineShow(f.name, "Als Ausgangsrechnung abgelegt" + why + ". Sie zählt jetzt zu den erwarteten Einnahmen.");
         loadIncome();
       } else if (d.ziel === "rechnung") {
-        jlineShow(f.name, "Als Rechnung in der Buchhaltung abgelegt" + why + ". Jarvis liest sie jetzt aus.");
+        jlineShow(f.name, "Als Rechnung in der Buchhaltung abgelegt" + why + ". Victor liest sie jetzt aus.");
         loadInvoices();
       } else {
         jlineShow(f.name, "Im Arbeitsspace unter " + (d.bereich || "Unterlagen") + " abgelegt" + why + ".");
@@ -2862,7 +2933,7 @@ button:active:not(:disabled) { transform: scale(.96); }
     $("wsHint").textContent = o.letzter_abruf ? "Postfach geprüft " + new Date(o.letzter_abruf).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Bereich wählen";
     const items = o.ablage || [];
     if (!o.postfach) { notice(ul, "Für diesen Bereich gibt es keinen automatischen Mailabruf. Unterlagen rechts hochladen."); return; }
-    if (!items.length) { notice(ul, "Noch nichts automatisch abgelegt. Jarvis prüft das Postfach alle 15 Minuten."); return; }
+    if (!items.length) { notice(ul, "Noch nichts automatisch abgelegt. Victor prüft das Postfach alle 15 Minuten."); return; }
     ul.innerHTML = "";
     for (const x of items) {
       const li = mk("li"); const a = mk("a");
@@ -2896,7 +2967,7 @@ button:active:not(:disabled) { transform: scale(.96); }
     }
   }
   $("wsCheck").onclick = async () => {
-    const b = $("wsCheck"); b.disabled = true; $("wsMsg").textContent = "Jarvis prüft die Postfächer und legt neue Anhänge ab …"; setState("denkt");
+    const b = $("wsCheck"); b.disabled = true; $("wsMsg").textContent = "Victor prüft die Postfächer und legt neue Anhänge ab …"; setState("denkt");
     try {
       const d = await api("/api/zentrale/arbeitsspace/abruf", write("POST", {}));
       const n = Object.values(d.abgelegt || {}).reduce((s, v) => s + v.length, 0);
@@ -2910,7 +2981,7 @@ button:active:not(:disabled) { transform: scale(.96); }
     try {
       const d = await api("/api/zentrale/arbeitsspace/text", write("POST", { bereich: wsArea, text: t }));
       if (!d.ok) throw new Error(d.fehler);
-      $("wsPaste").value = ""; docOpen = d.datei; $("wsMsg").textContent = "Als Unterlage übernommen: " + d.datei + ". Schreib jetzt, was Jarvis damit machen soll.";
+      $("wsPaste").value = ""; docOpen = d.datei; $("wsMsg").textContent = "Als Unterlage übernommen: " + d.datei + ". Schreib jetzt, was Victor damit machen soll.";
       loadDocs();
     } catch (err) { $("wsMsg").textContent = "Übernehmen fehlgeschlagen: " + err.message; }
   };
@@ -2961,15 +3032,15 @@ button:active:not(:disabled) { transform: scale(.96); }
     const box = mk("div", "doc-open");
     const links = mk("div", "doc-links"); const a = mk("a", null, "Original öffnen ↗");
     a.href = "/api/zentrale/unterlagen/datei?" + areaQ() + "&name=" + encodeURIComponent(x.datei); a.target = "_blank"; a.rel = "noopener"; links.append(a); box.append(links);
-    if (!x.lesbar) box.append(mk("div", "doc-msg", "Diesen Dateityp kann Jarvis nicht lesen (geht: PDF, Bilder, Word, Text)."));
+    if (!x.lesbar) box.append(mk("div", "doc-msg", "Diesen Dateityp kann Victor nicht lesen (geht: PDF, Bilder, Word, Text)."));
     const form = mk("form", "doc-cmd"); form.autocomplete = "off";
-    const inp = mk("input"); inp.placeholder = st.entwurf ? "Änderungswunsch zum Entwurf …" : "Was soll Jarvis damit machen? z. B. Antwortschreiben entwerfen";
+    const inp = mk("input"); inp.placeholder = st.entwurf ? "Änderungswunsch zum Entwurf …" : "Was soll Victor damit machen? z. B. Antwortschreiben entwerfen";
     const go = mk("button", null, st.entwurf ? "Überarbeiten" : "Los"); go.type = "submit";
     form.append(inp, go); box.append(form);
     const msg = mk("div", "doc-msg", st.msg || ""); box.append(msg);
     form.onsubmit = async (e) => {
       e.preventDefault(); const v = inp.value.trim(); if (!v) return;
-      go.disabled = true; msg.textContent = "Jarvis arbeitet am Dokument …"; setState("denkt");
+      go.disabled = true; msg.textContent = "Victor arbeitet am Dokument …"; setState("denkt");
       try {
         const d = await api("/api/zentrale/unterlagen/bearbeiten", write("POST", { datei: x.datei, anweisung: v, entwurf: st.entwurf?.id, bereich: area }));
         if (!d.ok) throw new Error(d.fehler);
@@ -3064,7 +3135,7 @@ button:active:not(:disabled) { transform: scale(.96); }
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("mailModal").hidden) closeMail(); });
   const fmtFull = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString("de-DE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); };
   function setReadBtn(unread) { const b = $("mRead"); b.disabled = !unread; b.textContent = unread ? "Als gelesen markieren" : "Gelesen"; }
-  /* ---------- Antworten: Jarvis entwirft, Julian prüft und sendet ---------- */
+  /* ---------- Antworten: Victor entwirft, Julian prüft und sendet ---------- */
   function replyPanel(m) {
     const old = $("mBody").querySelector(".reply"); if (old) { old.querySelector("input")?.focus(); return; }
     const box = document.createElement("div"); box.className = "reply";
@@ -3072,7 +3143,7 @@ button:active:not(:disabled) { transform: scale(.96); }
     $("mBody").append(box); box.scrollIntoView({ block: "nearest" }); box.querySelector(".wish").focus();
     const st = box.querySelector(".st");
     const make = async () => {
-      const b = box.querySelector(".mk"); b.disabled = true; st.textContent = "Jarvis schreibt den Entwurf …";
+      const b = box.querySelector(".mk"); b.disabled = true; st.textContent = "Victor schreibt den Entwurf …";
       try {
         const d = await api("/api/zentrale/mail/entwurf", write("POST", { konto: m.konto, uid: m.uid, anweisung: box.querySelector(".wish").value }));
         if (d.fehler) throw new Error(d.fehler);
@@ -3186,7 +3257,7 @@ button:active:not(:disabled) { transform: scale(.96); }
   }
   async function peLoad() {
     try { PE.data = await api("/api/zentrale/personal/daten?jahr=" + PE.jahr); }
-    catch (e) { $("peBody").innerHTML = '<div class="notice">Personaldaten konnten nicht geladen werden. Läuft der Jarvis-Server mit personal_tools.py?</div>'; return; }
+    catch (e) { $("peBody").innerHTML = '<div class="notice">Personaldaten konnten nicht geladen werden. Läuft der Victor-Server mit personal_tools.py?</div>'; return; }
     peRender();
   }
   async function peLoadPlan() {
@@ -3720,7 +3791,7 @@ button:active:not(:disabled) { transform: scale(.96); }
         peEl("td", { class: "num", text: peH(m.summe.krank) }), peEl("td", { class: "num", text: m.summe.krank ? peNum(m.summe.krank / spt, 1) : "" }), peEl("td", { class: "num", text: peH(m.monate.reduce((a, r) => a + r.unbezahlt, 0)) })));
     }
     body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Urlaubsstand & Krankenstand " + PE.jahr), peEl("div", { class: "tablewrap" }, t)));
-    body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Neue Abwesenheit"), peAbsForm(null), peEl("p", { class: "hint", text: "Ohne Tage zählt Jarvis die Werktage Mo–Fr; ohne Stunden rechnet er Tage × Stunden je Urlaubstag. Urlaub und Krank werden bezahlt und zählen im Zeitkonto als geleistet." })));
+    body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Neue Abwesenheit"), peAbsForm(null), peEl("p", { class: "hint", text: "Ohne Tage zählt Victor die Werktage Mo–Fr; ohne Stunden rechnet er Tage × Stunden je Urlaubstag. Urlaub und Krank werden bezahlt und zählen im Zeitkonto als geleistet." })));
     const rows = PE.data.abwesenheiten.filter(a => peMa(a.mitarbeiter_id)?.aktiv);
     body.append(peEl("section", { class: "panel pe-sec" }, peEl("h2", {}, "Alle Einträge", peEl("span", { text: rows.length })), peAbsTable(rows, true)));
   }
@@ -3924,7 +3995,7 @@ button:active:not(:disabled) { transform: scale(.96); }
     BOXES = [["alle", "Alle"], ...((i && i.postfaecher) || []).map(b => [b.postfach, b.label])];
     if (!BOXES.some(b => b[0] === box)) { box = "alle"; store.set("jz.box", box); }
     renderBoxes();
-    if (i && !i.todoist) { notice($("todoList"), "Kein Todoist-Zugang in der Jarvis-config.json."); $("tiles").innerHTML = ""; }
+    if (i && !i.todoist) { notice($("todoList"), "Kein Todoist-Zugang in der Victor-config.json."); $("tiles").innerHTML = ""; }
     else { loadProjects(); loadToday(); loadInbox(); }
     loadMails(); loadShifts(); loadInvoices(); loadOpenShifts(); loadDayPlan();
     setInterval(loadOpenShifts, 30 * 60 * 1000);
